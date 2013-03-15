@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,9 +39,9 @@ public:
 	// InfiniteISBSDF Public Methods
 	InfiniteISBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const InfiniteAreaLightIS &l, const Transform &WL) :
+		const InfiniteAreaLightIS &l, const Transform &LW) :
 		BSDF(dgs, ngeom, exterior, interior, SWCSpectrum(0.f)), light(l),
-		WorldToLight(WL) { }
+		LightToWorld(LW) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
@@ -58,7 +58,7 @@ public:
 		const float cosi = w.z;
 		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
 			w.z * Vector(dgShading.nn));
-		*wiW = Normalize(WorldToLight.GetInverse()(wi));
+		*wiW = Normalize(LightToWorld * wi);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -87,7 +87,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(WorldToLight(-wiW));
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -106,7 +106,7 @@ protected:
 	// InfiniteISBSDF Private Methods
 	virtual ~InfiniteISBSDF() { }
 	const InfiniteAreaLightIS &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 };
 
 // InfiniteAreaLightIS Method Definitions
@@ -117,10 +117,13 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	const RGBColor &l, u_int ns, int LNs, const string &texmap, u_int immaxres,
-	EnvironmentMapping *m, float gain, float gamma, bool sup )
-	: Light(light2world, ns), SPDbase(l)
+	EnvironmentMapping *m, float g, float gm, bool sup )
+	: Light("InfiniteAreaLightIS-" + boost::lexical_cast<string>(this), light2world, ns, sup), SPDbase(l)
 {
-	support = sup;
+	lightColor = l;
+	gain = g;
+	gamma = gm;
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -197,6 +200,11 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	C_MCLight.clear();
 	delete [] predata;
 
+	AddFloatAttribute(*this, "gain", "InfiniteAreaLightIS gain", &InfiniteAreaLightIS::gain);
+	AddFloatAttribute(*this, "gamma", "InfiniteAreaLightIS gamma", &InfiniteAreaLightIS::gamma);
+	AddFloatAttribute(*this, "color.r", "InfiniteAreaLightIS color R", &InfiniteAreaLightIS::GetColorR);
+	AddFloatAttribute(*this, "color.g", "InfiniteAreaLightIS color G", &InfiniteAreaLightIS::GetColorG);
+	AddFloatAttribute(*this, "color.b", "InfiniteAreaLightIS color B", &InfiniteAreaLightIS::GetColorB);
 }
 
 float InfiniteAreaLightIS::DirProb(Vector N, Point P = Point(0.f)) const
@@ -204,7 +212,7 @@ float InfiniteAreaLightIS::DirProb(Vector N, Point P = Point(0.f)) const
 	Vector w = N;
 	// Compute infinite light radiance for direction
 	if (lightdata != NULL) {
-		Vector wh = Normalize(WorldToLight(w));
+		Vector wh(Normalize(Inverse(LightToWorld) * w));
 		float T_rad = 0.f, P_rad = 0.f; 
 
 		for( int i=0; i < LNsamples; i++) {
@@ -231,7 +239,7 @@ bool InfiniteAreaLightIS::LeSupport(const Scene &scene, const Sample &sample,
 {
 
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize( Vector(WorldToLight(wr)) );
+	const Vector wh(Normalize(Inverse(LightToWorld) * Vector(wr)));
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -261,9 +269,9 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(WorldToLight(r.d));
+	const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -279,7 +287,7 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 float InfiniteAreaLightIS::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector d(Normalize(dg.p - p));
-	const Vector wh = Normalize(WorldToLight(d));
+	const Vector wh(Normalize(Inverse(LightToWorld) * d));
 	float s, t, pdf;
 	mapping->Map(wh, &s, &t, &pdf);
 	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, dg.nn) /
@@ -303,7 +311,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
@@ -323,7 +331,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	Vector wi;
 	float pdfMap;
 	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
-	wi = Normalize(LightToWorld(wi)); 
+	wi = Normalize(LightToWorld * wi); 
 	if (!(pdfMap > 0.f))
 		return false;
 	// Compute PDF for sampled direction
@@ -342,7 +350,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);

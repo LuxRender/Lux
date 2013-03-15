@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -63,6 +63,8 @@ lux_wrapped_context::lux_wrapped_context(const char* _name) : name(_name)
 {
 	boost::call_once(&luxDllInit, luxDllInitFlag);
 	ctx = new lux::Context(_name);
+	lux::Context::SetActive(ctx);
+	ctx->Init();
 }
 lux_wrapped_context::~lux_wrapped_context()
 {
@@ -536,7 +538,7 @@ unsigned int lux_wrapped_context::getServerCount()
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return ctx->GetServerCount();
+	return luxGetIntAttribute("render_farm", "slaveNodeCount");
 }
 void lux_wrapped_context::updateFilmFromNetwork()
 {
@@ -548,13 +550,13 @@ void lux_wrapped_context::setNetworkServerUpdateInterval(int updateInterval)
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	ctx->SetNetworkServerUpdateInterval(updateInterval);
+	luxSetNetworkServerUpdateInterval(updateInterval);
 }
 int lux_wrapped_context::getNetworkServerUpdateInterval()
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return ctx->GetNetworkServerUpdateInterval();
+	return luxGetNetworkServerUpdateInterval();
 }
 // TODO; see .h files
 

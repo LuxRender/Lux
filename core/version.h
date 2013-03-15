@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,10 +28,10 @@
 #define VERSION_STR(v) XVERSION_STR(v)
 
 
-#define LUX_VERSION 1.0
-#define LUX_VERSION_POSTFIX "RC2"
+#define LUX_VERSION 1.2
+#define LUX_VERSION_POSTFIX ""
 
-#define LUX_SERVER_PROTOCOL_VERSION 1007
+#define LUX_SERVER_PROTOCOL_VERSION 1010
 
 
 #define LUX_VERSION_STRING    VERSION_STR(LUX_VERSION) LUX_VERSION_POSTFIX

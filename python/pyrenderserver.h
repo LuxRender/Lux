@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -72,7 +72,7 @@ void export_PyRenderServer()
 	class_<RenderServer, boost::noncopyable>(
 		"RenderServer",
 		ds_pylux_RenderServer,
-		init<int, optional<int,bool> >(args("RenderServer", "threadCount", "tcpPort", "writeFlmFile"))
+		init<int, std::string, optional<int,bool> >(args("RenderServer", "threadCount", "serverPass", "tcpPort", "writeFlmFile"))
 		)
 		/* .def_readonly("DEFAULT_TCP_PORT", &RenderServer::DEFAULT_TCP_PORT) // Doesn't currently work */
 		.def("getServerPort",
@@ -84,6 +84,11 @@ void export_PyRenderServer()
 			&RenderServer::getServerState,
 			args("RenderServer"),
 			ds_pylux_RenderServer_getServerState
+		)
+		.def("getServerPass",
+			&RenderServer::getServerPass,
+			args("RenderServer"),
+			ds_pylux_RenderServer_getServerPass
 		)
 		.def("start",
 			&RenderServer::start,

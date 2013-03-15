@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -75,7 +75,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	p = new Point[nverts];
 	// Dade - transform mesh vertices to world space
 	for (u_int i  = 0; i < nverts; ++i)
-		p[i] = ObjectToWorld(P[i]);
+		p[i] = ObjectToWorld * P[i];
 
 	// Aldo - copy WUV, if present
 	if (WUV) {
@@ -115,9 +115,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		// Dade - transform mesh normals to world space
 		for (u_int i  = 0; i < nverts; ++i) {
 			if (ro)
-				n[i] = Normalize(-ObjectToWorld(N[i]));
+				n[i] = Normalize(-(ObjectToWorld * N[i]));
 			else
-				n[i] = Normalize(ObjectToWorld(N[i]));
+				n[i] = Normalize(ObjectToWorld * N[i]);
 		}
 	} else
 		n = NULL;
@@ -266,7 +266,7 @@ BBox Mesh::ObjectBound() const
 {
 	BBox bobj;
 	for (u_int i = 0; i < nverts; ++i)
-		bobj = Union(bobj, WorldToObject(p[i]));
+		bobj = Union(bobj, Inverse(ObjectToWorld) * p[i]);
 	return bobj;
 }
 
@@ -360,7 +360,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 
 				break;
 			default: {
-				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown subdivision type in a mesh: " << concreteSubdivType;
 				break;
 			}
 		}
@@ -438,13 +438,13 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 			}
 			break;
 		default: {
-			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type: " << concreteTriType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown triangle type: " << concreteTriType;
 			break;
 		}
 	}
 
 	if (inconsistentShadingTris > 0) {
-		SHAPE_LOG(name, LUX_WARNING, LUX_CONSISTENCY) <<
+		SHAPE_LOG(name, LUX_DEBUG, LUX_CONSISTENCY) <<
 			"Inconsistent shading normals in " << 
 			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
 	}
@@ -471,7 +471,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 			}
 			break;
 		default: {
-			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown quad type in a mesh: " << quadType;
 			break;
 		}
 	}
@@ -543,6 +543,9 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 		for(u_int i = 0; i < refinedPrims.size(); ++i)
 			refined[offset+i].swap(refinedPrims[i]);
 	} else  {
+		//FIXME: QBVH doesn't play well with PrimitiveSet
+		if (refineHints.forSampling && concreteAccelType == ACCEL_QBVH)
+			concreteAccelType = ACCEL_KDTREE;
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
 		switch (concreteAccelType) {
@@ -559,7 +562,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
 				break;
 			default:
-				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type: " << concreteAccelType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown accel type: " << concreteAccelType;
 		}
 		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
@@ -572,8 +575,17 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
 	// A little hack with pointers
 	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(
-			nverts, ntris,
-			(luxrays::Point *)p, (luxrays::Triangle *)triVertexIndex);
+			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex);
+
+	meshList->push_back(tm);
+	primitiveList->push_back(this);
+}
+
+void Mesh::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
+	// A little hack with pointers
+	luxrays::ExtTriangleMesh *tm = new luxrays::ExtTriangleMesh(
+			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex,
+			n, (luxrays::UV *)uvs);
 
 	meshList->push_back(tm);
 	primitiveList->push_back(this);
@@ -639,7 +651,7 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-	isect->Set(WorldToObject, this, GetMaterial(),
+	isect->Set(ObjectToWorld, this, GetMaterial(),
 		GetExterior(), GetInterior());
 	isect->dg.iData.mesh.coords[0] = b0;
 	isect->dg.iData.mesh.coords[1] = b1;
@@ -1043,7 +1055,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		displacementMap = dm;
 
 		if (!displacementMap) {
-			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "'.";
+			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "'.";
 		}
 	}
 

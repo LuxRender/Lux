@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "sphericalfunction.h"
+using luxrays::SphericalDirection;
 #include "sphericalfunction_ies.h"
 #include "mipmap.h"
 #include "mcdistribution.h"

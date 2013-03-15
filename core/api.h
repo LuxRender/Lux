@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -152,6 +152,11 @@ LUX_EXPORT unsigned char* luxFramebuffer();
 LUX_EXPORT float* luxFloatFramebuffer();
 LUX_EXPORT float* luxAlphaBuffer();
 
+/* User defined sampling */
+LUX_EXPORT void luxSetUserSamplingMap(const float *map);
+// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+LUX_EXPORT float *luxGetUserSamplingMap();
+
 /* Histogram access */
 LUX_EXPORT void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 //histogram drawing options
@@ -283,11 +288,12 @@ LUX_EXPORT void luxSetAttribute(const char * objectName, const char * attributeN
 /* Networking */
 LUX_EXPORT void luxAddServer(const char * name);
 LUX_EXPORT void luxRemoveServer(const char * name);
-LUX_EXPORT unsigned int luxGetServerCount();
+LUX_EXPORT void luxResetServer(const char * name, const char * password);
+LUX_EXPORT unsigned int luxGetServerCount();	// deprecated
 LUX_EXPORT void luxUpdateFilmFromNetwork();
 LUX_EXPORT void luxUpdateLogFromNetwork();
-LUX_EXPORT void luxSetNetworkServerUpdateInterval(int updateInterval);
-LUX_EXPORT int luxGetNetworkServerUpdateInterval();
+LUX_EXPORT void luxSetNetworkServerUpdateInterval(int updateInterval);	// deprecated
+LUX_EXPORT int luxGetNetworkServerUpdateInterval();	// deprecated
 
 struct RenderingServerInfo {
 	int serverIndex;

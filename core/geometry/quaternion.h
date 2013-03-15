@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -24,7 +24,8 @@
 #define LUX_QUATERNION_H
 // quaternion.h*
 #include "lux.h"
-#include "vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 namespace lux
 {
@@ -36,7 +37,7 @@ public:
 	Vector v;
 
 	// generate quaternion from 4x4 matrix
-	Quaternion(const boost::shared_ptr<Matrix4x4> m);
+	Quaternion(const Matrix4x4 &m);
 	Quaternion() : w(1.f), v(0.f) { }
 	Quaternion(const Quaternion &q) : w(q.w), v(q.v) { }
 	Quaternion(float _w, const Vector &_v) : w(_w), v(_v) { }

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -43,9 +43,10 @@ public:
 		float z = Lerp(u1, zmin, zmax);
 		float t = u2 * phiMax;
 		Point p = Point(radius * cosf(t), radius * sinf(t), z);
-		*Ns = Normalize(ObjectToWorld(Normal(p.x, p.y, 0.)));
-		if (reverseOrientation) *Ns *= -1.f;
-		return ObjectToWorld(p);
+		*Ns = Normalize(ObjectToWorld * Normal(p.x, p.y, 0.));
+		if (reverseOrientation)
+			*Ns *= -1.f;
+		return ObjectToWorld * p;
 	}
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

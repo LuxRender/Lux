@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -38,35 +38,7 @@ public:
 	EVOp() { }
 	virtual ~EVOp() { }
 	
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
-		// read data from film
-		const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
-		const float Y = luxGetFloatAttribute("film", "averageLuminance");
-		
-		if (Y <= 0.f)
-			return;
-
-		/*
-		(fstop * fstop) / exposure = Y*sensitivity/K
-
-		take K = 12.5
-
-		(fstop * fstop) / exposure = Y * sensitivity / 12.5
-
-		exposure = 12.5*(fstop * fstop) / Y * sensitivity
-
-		*/
-
-		// linear tonemap operation
-		//float factor = (exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma));
-		
-		// substitute exposure, fstop and sensitivity cancel out; collect constants
-		const float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
-
-		const u_int numPixels = xRes * yRes;
-		for (u_int i = 0; i < numPixels; ++i)
-			xyz[i] *= factor;
-	}
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:
@@ -91,11 +63,7 @@ public:
 	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
 		factor(exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma)) { }
 	virtual ~LinearOp() { }
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
-		const u_int numPixels = xRes * yRes;
-		for (u_int i = 0; i < numPixels; ++i)
-			xyz[i] *= factor;
-	}
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:

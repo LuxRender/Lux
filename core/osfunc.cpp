@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -134,5 +134,24 @@ uint32_t osReadLittleEndianUInt(bool isLittleEndian,
 {
 	return osReadLittleEndian<uint32_t>(isLittleEndian, is);
 }
+
+namespace fpdebug
+{
+
+#if defined(DEBUGFP) &&  defined(__linux__)
+#include <boost/detail/fenv.hpp>
+
+void disable()
+{
+	fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+}
+
+void enable()
+{
+	feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+}
+#endif
+
+}//namespace fpdebug
 
 }//namespace lux

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -51,8 +51,7 @@ BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 }
 Material* Null::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
-	return new Null(mp, Sc);
+	return new Null(mp);
 }
 
 static DynamicLoader::RegisterMaterial<Null> r("null");

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -25,12 +25,14 @@
 // volume.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "geometry/bbox.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 #include "primitive.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"
 #include "color.h"
 #include "materials/scattermaterial.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -43,8 +45,9 @@ float PhaseMieMurky(const Vector &w, const Vector &wp);
 float PhaseHG(const Vector &w, const Vector &wp, float g);
 float PhaseSchlick(const Vector &w, const Vector &wp, float g);
 
-class Volume {
+class Volume : public Queryable {
 public:
+	Volume(const string &name) : Queryable(name) { }
 	// Volume Interface
 	virtual ~Volume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
@@ -72,7 +75,7 @@ public:
 class RGBVolume : public Volume {
 public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
-		float gg) : sigA(sA), sigS(sS), le(l), g(gg),
+		float gg) : Volume("RGBVolume-" + boost::lexical_cast<string>(this)), sigA(sA), sigS(sS), le(l), g(gg),
 		material(sS, sA, gg), primitive(&material, this, this) { }
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
@@ -127,8 +130,8 @@ private:
 class  Region : public Volume {
 public:
 	// VolumeRegion Interface
-	Region() { }
-	Region(const BBox &b) : bound(b) { }
+	Region(const string &name) : Volume(name) { }
+	Region(const string &name, const BBox &b) : Volume(name), bound(b) { }
 	virtual ~Region() { }
 	virtual BBox WorldBound() const { return bound; };
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect = false) const {
@@ -141,30 +144,30 @@ protected:
 template<class T> class VolumeRegion : public Region {
 public:
 	VolumeRegion(const Transform &v2w, const BBox &b, const T &v) :
-		Region(v2w(b)), WorldToVolume(v2w.GetInverse()), region(b),
-		volume(v) { }
+		Region("VolumeRegion-" + boost::lexical_cast<string>(this), v2w * b),
+		VolumeToWorld(v2w), region(b), volume(v) { }
 	virtual ~VolumeRegion() { }
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect = false) const {
-		return region.IntersectP(WorldToVolume(ray), t0, t1, null_shp_isect);
+		return region.IntersectP(Inverse(VolumeToWorld) * ray, t0, t1, null_shp_isect);
 	}
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaT(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.Lve(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual float P(const SpectrumWavelengths &sw,
@@ -186,7 +189,7 @@ public:
 	virtual bool Scatter(const Sample &sample, bool scatteredStart,
 		const Ray &ray, float u, Intersection *isect, float *pdf,
 		float *pdfBack, SWCSpectrum *L) const {
-		Ray r(WorldToVolume(ray));
+		Ray r(Inverse(VolumeToWorld) * ray);
 		if (!region.IntersectP(r, &r.mint, &r.maxt))
 			return false;
 		if (r.maxt <= r.mint)
@@ -195,17 +198,11 @@ public:
 			pdfBack, L))
 			return false;
 		ray.maxt = r.maxt;
-		Transform VolumeToWorld(WorldToVolume.GetInverse());
-		isect->dg.p = VolumeToWorld(isect->dg.p);
-		isect->dg.nn = VolumeToWorld(isect->dg.nn);
-		isect->dg.dpdu = VolumeToWorld(isect->dg.dpdu);
-		isect->dg.dpdv = VolumeToWorld(isect->dg.dpdv);
-		isect->dg.dndu = VolumeToWorld(isect->dg.dndu);
-		isect->dg.dndv = VolumeToWorld(isect->dg.dndv);
+		isect->dg *= VolumeToWorld;
 		return true;
 	}
 protected:
-	Transform WorldToVolume;
+	Transform VolumeToWorld;
 	BBox region;
 	T volume;
 };
@@ -213,7 +210,7 @@ protected:
 template<class T> class  DensityVolume : public Volume {
 public:
 	// DensityVolume Public Methods
-	DensityVolume(const T &v) : volume(v) { }
+	DensityVolume(const string &name, const T &v) : Volume(name), volume(v) { }
 	virtual ~DensityVolume() { }
 	virtual float Density(const Point &Pobj) const = 0;
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,

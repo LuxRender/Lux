@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,13 +20,19 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_lightgroup.h"
-#include "lightgroupwidget.hxx"
+#include <cmath>
 
-#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QColorDialog>
+#include <QFont>
+#include <QPalette>
+#include <QSettings>
 
 #include "api.h"
+
+#include "lightgroupwidget.hxx"
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_lightgroup.h"
 
 LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LightGroupWidget)
 {
@@ -96,7 +102,7 @@ void LightGroupWidget::bbEnabledChanged(int value)
 float LightGroupWidget::SliderValToScale(int sliderval)
 {
 	float logscale = (float)sliderval * (LG_SCALE_LOG_MAX - LG_SCALE_LOG_MIN) / FLOAT_SLIDER_RES + LG_SCALE_LOG_MIN;
-	return powf(10.f, logscale);
+	return std::pow(10.f, logscale);
 }
 
 int LightGroupWidget::ScaleToSliderVal(float scale)
@@ -119,8 +125,8 @@ void LightGroupWidget::gainChanged(double value)
 {
 	m_LG_scale = value;
 	
-	if (m_LG_scale > powf(10.f, LG_SCALE_LOG_MAX))
-		m_LG_scale = powf(10.f, LG_SCALE_LOG_MAX);
+	if (m_LG_scale > std::pow(10.f, LG_SCALE_LOG_MAX))
+		m_LG_scale = std::pow(10.f, LG_SCALE_LOG_MAX);
 	else if (m_LG_scale < 0.f)
 		m_LG_scale = 0.f;
 	
@@ -231,6 +237,7 @@ void LightGroupWidget::UpdateWidgetValues()
 					Clamp(int(m_LG_scaleBlue * 255.0), 0, 255));
 	m_LG_rgbPicker->SetColour(colour);*/
 }
+
 void LightGroupWidget::ResetValues()
 {
 	title = QString("lightgroup");
@@ -352,6 +359,3 @@ void LightGroupWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -45,18 +45,18 @@ void FresnelGeneral::Evaluate(const SpectrumWavelengths &sw, float cosi,
 	const SWCSpectrum cost2 = (SWCSpectrum(1.f) - sint2);
 	if (cosi > 0.f) {
 		if (model == DIELECTRIC_FRESNEL)
-			FrDiel2(cosi, cost2.Sqrt(), eta, f);
+			FrDiel2(cosi, Sqrt(cost2), eta, f);
 		else {
 			const SWCSpectrum a(2.f * k * k * sint2);
-			FrFull(cosi, ((cost2 + (cost2 * cost2 + a * a).Sqrt()) / 2.f).Sqrt(), eta, k, f);
+			FrFull(cosi, Sqrt((cost2 + Sqrt(cost2 * cost2 + a * a)) / 2.f), eta, k, f);
 		}
 	} else {
 		if (model == DIELECTRIC_FRESNEL)
-			FrDiel2(-cosi, cost2.Sqrt(), SWCSpectrum(1.f) / eta, f);
+			FrDiel2(-cosi, Sqrt(cost2), SWCSpectrum(1.f) / eta, f);
 		else {
 			const SWCSpectrum a(2.f * k * k * sint2);
 			const SWCSpectrum d2 = eta * eta + k * k;
-			FrFull(-cosi, ((cost2 + (cost2 * cost2 + a * a).Sqrt()) / 2.f).Sqrt(), eta / d2, -k / d2, f);
+			FrFull(-cosi, Sqrt((cost2 + Sqrt(cost2 * cost2 + a * a)) / 2.f), eta / d2, -k / d2, f);
 		}
 	}
 }

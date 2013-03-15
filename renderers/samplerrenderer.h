@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -128,7 +128,7 @@ private:
 		u_int  n;
 		SamplerRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
-		double samples, blackSamples;
+		double samples, blackSamples, blackSamplePaths;
 		fast_mutex statLock;
 	};
 

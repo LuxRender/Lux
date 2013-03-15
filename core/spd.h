@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -95,6 +95,7 @@ public:
 	float Y() const;
 	float Filter() const;
 	XYZColor ToXYZ() const;
+	XYZColor ToNormalizedXYZ() const;
 	void AllocateSamples(u_int n);
 	void FreeSamples();
 	void Normalize();

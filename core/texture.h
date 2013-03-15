@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -25,6 +25,8 @@
 // texture.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "error.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -39,6 +41,7 @@ public:
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const = 0;
+	static TextureMapping2D *Create(const Transform &tex2world, const ParamSet &tp);
 };
 class  UVMapping2D : public TextureMapping2D {
 public:
@@ -51,6 +54,12 @@ public:
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
+
+	const float GetUScale() const { return su; }
+	const float GetVScale() const { return sv; }
+	const float GetUDelta() const { return du; }
+	const float GetVDelta() const { return dv; }
+
 private:
 	float su, sv, du, dv;
 };
@@ -216,8 +225,9 @@ public:
 	virtual void Map(float s, float t, Vector *wh, float *pdf = NULL) const;
 };
 
-template <class T> class Texture {
+template <class T> class Texture : public Queryable {
 public:
+	Texture(const std::string &name) : Queryable(name) { }
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
 	virtual T Evaluate(const SpectrumWavelengths &sw,

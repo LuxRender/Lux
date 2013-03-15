@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,11 +39,10 @@ using namespace lux;
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
 	: renderer(renderer),
 	windowPassCount(0.0),
-	windowPhotonCount(0.0)
+	windowPhotonCount(0.0),
+	exponentialMovingAveragePass(0.0),
+	exponentialMovingAveragePhotons(0.0)
 {
-	windowPps.set_capacity(samplesInWindow);
-	windowYps.set_capacity(samplesInWindow);
-
 	formattedLong = new SPPMRStatistics::FormattedLong(this);
 	formattedShort = new SPPMRStatistics::FormattedShort(this);
 
@@ -67,11 +66,10 @@ SPPMRStatistics::~SPPMRStatistics()
 }
 
 void SPPMRStatistics::resetDerived() {
-	windowPps.clear();
-	windowYps.clear();
-
 	windowPassCount = 0.0;
 	windowPhotonCount = 0.0;
+	exponentialMovingAveragePass = 0.0;
+	exponentialMovingAveragePhotons = 0.0;
 }
 
 void SPPMRStatistics::updateStatisticsWindowDerived()
@@ -80,15 +78,18 @@ void SPPMRStatistics::updateStatisticsWindowDerived()
 	double photonCount = getPhotonCount();
 	double elapsedTime = windowCurrentTime - windowStartTime;
 
-	if (elapsedTime == 0.0)
+	if (elapsedTime != 0.0)
 	{
-		windowPps.clear();
-		windowYps.clear();
-	}
-	else
-	{
-		windowPps.push_back((passCount - windowPassCount) / elapsedTime);
-		windowYps.push_back((photonCount - windowPhotonCount) / elapsedTime);
+		double pps = (passCount - windowPassCount) / elapsedTime;
+		double yps = (photonCount - windowPhotonCount) / elapsedTime;
+
+		if (exponentialMovingAveragePass == 0.0)
+			exponentialMovingAveragePass = pps;
+		if (exponentialMovingAveragePhotons == 0.0)
+			exponentialMovingAveragePhotons = yps;
+
+		exponentialMovingAveragePass += min(1.0, elapsedTime / statisticsWindowSize) * (pps - exponentialMovingAveragePass);
+		exponentialMovingAveragePhotons += min(1.0, elapsedTime / statisticsWindowSize) * (yps - exponentialMovingAveragePhotons);
 	}
 
 	windowPassCount = passCount;
@@ -102,9 +103,7 @@ double SPPMRStatistics::getAveragePassesPerSecond() {
 
 double SPPMRStatistics::getAveragePassesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowPps.size();
-	return (s == 0) ? 0 : std::accumulate(windowPps.begin(), windowPps.end(), 0.0) / s;
+	return exponentialMovingAveragePass;
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
@@ -130,9 +129,7 @@ double SPPMRStatistics::getAveragePhotonsPerSecond() {
 
 double SPPMRStatistics::getAveragePhotonsPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowYps.size();
-	return (s == 0) ? 0 : std::accumulate(windowYps.begin(), windowYps.end(), 0.0) / s;
+	return exponentialMovingAveragePhotons;
 }
 
 SPPMRStatistics::FormattedLong::FormattedLong(SPPMRStatistics* rs)
@@ -240,6 +237,10 @@ std::string SPPMRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
+std::string SPPMRStatistics::FormattedShort::getProgress() { 
+	return static_cast<SPPMRStatistics::FormattedLong*>(rs->formattedLong)->getPassCount();
+}
+
 std::string SPPMRStatistics::FormattedShort::getPassCount() {
 	return boost::str(boost::format("%1% Pass") % rs->getPassCount());
 }
@@ -269,5 +270,5 @@ double SPPMRStatistics::getPhotonCount() {
 		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
 
 	// The amount of photon is stored "by pass"
-	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera->film->GetSamplePerPass();
+	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera()->film->GetSamplePerPass();
 }

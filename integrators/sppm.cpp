@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -44,9 +44,9 @@ void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) 
 	BufferOutputConfig config = BUF_FRAMEBUFFER;
 	if (debug)
 		config = BufferOutputConfig(config | BUF_STANDALONE);
-	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, config, "photons");
-	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, config, "eye");
-	scene.camera->film->CreateBuffers();
+	bufferPhotonId = scene.camera()->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, config, "photons");
+	bufferEyeId = scene.camera()->film->RequestBuffer(BUF_TYPE_PER_PIXEL, config, "eye");
+	scene.camera()->film->CreateBuffers();
 
 	hints.InitStrategies(scene);
 }
@@ -93,6 +93,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	sppmi->parallelHashGridSpare = params.FindOneFloat("parallelhashgridspare", 1.0f);
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
+	sppmi->hitpointPerPass = params.FindOneInt("hitpointperpass", 0);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
 	sppmi->directLightSampling = params.FindOneBool("directlightsampling", true);

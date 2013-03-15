@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -357,8 +357,7 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	float thit;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 
 	if (!FindIntersection(ray, &thit, &phit, &phi, &theta))
 		return false;
@@ -424,12 +423,10 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	Normal dndv((g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
-	*dg = DifferentialGeometry(ObjectToWorld(phit),
-	                           ObjectToWorld(dpdu),
-							   ObjectToWorld(dpdv),
-	                           ObjectToWorld(dndu),
-							   ObjectToWorld(dndv),
-	                           u, v, this);
+	*dg = DifferentialGeometry(ObjectToWorld * phit,
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * dndu, ObjectToWorld * dndv,
+		u, v, this);
 	// Update _tHit_
 	*tHit = thit;
 	return true;
@@ -441,8 +438,7 @@ bool Torus::IntersectP(const Ray &r, bool null_shp_isect) const {
 	Point phit;
 
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 
 	return FindIntersection(ray, &thit, &phit, &phi, &theta);
 }

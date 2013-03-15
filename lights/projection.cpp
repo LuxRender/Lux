@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -49,7 +49,7 @@ public:
 		if (cos < 0.f)
 			return;
 		const float cos2 = cos * cos;
-		const Point p0(Projection(Point(wi.x, wi.y, wi.z)));
+		const Point p0(Projection * Point(wi.x, wi.y, wi.z));
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return;
 		if (!projectionMap)
@@ -65,7 +65,9 @@ public:
 		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
-		const Point pS(Projection.GetInverse()(Point(u1 * (xEnd - xStart) + xStart, u2 * (yEnd - yStart) + yStart, 0.f)));
+		const Point pS(Inverse(Projection) *
+			Point(u1 * (xEnd - xStart) + xStart,
+			u2 * (yEnd - yStart) + yStart, 0.f));
 		*wi = Normalize(Vector(pS.x, pS.y, pS.z));
 		const float cos = wi->z;
 		const float cos2 = cos * cos;
@@ -85,7 +87,7 @@ public:
 		if (cos < 0.f)
 			return 0.f;
 		const float cos2 = cos * cos;
-		const Point p0(Projection(Point(wo.x, wo.y, wo.z)));
+		const Point p0(Projection * Point(wo.x, wo.y, wo.z));
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return 0.f;
 		else 
@@ -102,9 +104,9 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float g, const string &texname,
 		float fov, bool sup)
-	: Light(light2world), Lbase(L) {
-	support = sup;
-	lightPos = LightToWorld(Point(0,0,0));
+	: Light("ProjectionLight-" + boost::lexical_cast<string>(this), light2world, sup),
+	Lbase(L) {
+	lightPos = LightToWorld * Point(0,0,0);
 	Lbase->SetIlluminant();
 	gain = g;
 	// Create _ProjectionLight_ MIP-map
@@ -152,10 +154,11 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
-	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
+	DifferentialGeometry dg(lightPos, ns,
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
@@ -171,12 +174,13 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
-	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
 	if (pdf)
 		*pdf = 1.f;
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
+	DifferentialGeometry dg(lightPos, ns,
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,

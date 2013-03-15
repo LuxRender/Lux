@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,8 +28,6 @@
 
 #include <algorithm>
 
-#include <boost/circular_buffer.hpp>
-
 namespace lux
 {
 
@@ -46,6 +44,7 @@ public:
 		SPPMRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getProgress() { return getPassCount(); }
 
 		std::string getPassCount();
 		std::string getHaltPass();
@@ -70,6 +69,7 @@ public:
 		SPPMRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getProgress();
 
 		std::string getPassCount();
 		std::string getHaltPass();
@@ -81,10 +81,10 @@ public:
 private:
 	SPPMRenderer* renderer;
 
-	boost::circular_buffer<double> windowPps;
-	boost::circular_buffer<double> windowYps;
 	double windowPassCount;
 	double windowPhotonCount;
+	double exponentialMovingAveragePass;
+	double exponentialMovingAveragePhotons;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
@@ -101,6 +101,9 @@ private:
 	double getPercentHaltPassesComplete();
 
 	double getEfficiency() { return renderer->photonHitEfficiency; }
+	// TODO after 1.0 release: Move renderer->photonHitEfficiency calculation
+	// out of renderer and do it here so we can also calculate the windowed value
+	double getEfficiencyWindow() { return getEfficiency(); }
 
 	double getPhotonCount();
 	double getAveragePhotonsPerSecond();

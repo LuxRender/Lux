@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,7 @@
 #ifndef HISTOGRAMWIDGET_H
 #define HISTOGRAMWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 
 #include "histogramview.hxx"
 
@@ -37,7 +37,6 @@ class HistogramWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	HistogramWidget(QWidget *parent = 0);
 	~HistogramWidget();
 
@@ -45,16 +44,12 @@ public:
 	void SetEnabled(bool enabled);
 
 private:
-
 	Ui::HistogramWidget *ui;
 	HistogramView *histogramView;
 
 private slots:
-
 	void SetOption(int option);
 	void LogChanged(int value);
-
 };
 
 #endif // HISTOGRAMWIDGET_H
-

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -24,12 +24,17 @@
 #ifndef LUX_RAYDIFFERENTIAL_H
 #define LUX_RAYDIFFERENTIAL_H
 
-#include "vector.h"
-#include "point.h"
-#include "normal.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
 
 namespace lux
 {
+
+class Primitive;
 
 class PartialDifferentialGeometry
 {
@@ -64,6 +69,11 @@ public:
 		const Normal &NN,
 		const Vector &DPDU,
 		const Vector &DPDV, const Point &WUV);
+	/**
+	 * Returns the volume defined by dpdu, dpdv and nn
+	 * @return The volume defined by dpdu, dpdv and nn
+	 */
+	float Volume() const { return fabsf(Dot(Cross(dpdu, dpdv), Vector(nn))); }
 };
 
 // DifferentialGeometry Declarations
@@ -86,39 +96,39 @@ public:
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr);
+			const Primitive *pr);
 	DifferentialGeometry(
 			const Point &P,
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr, float scale, const Point &WUV);
+			const Primitive *pr, float scale, const Point &WUV);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr);
+			const Primitive *pr);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr, float scale, const Point &WUV);
-	DifferentialGeometry(
-			const Point &P, const Normal &NN,
-			const Vector &DPDU,	const Vector &DPDV,
-			const Normal &DNDU, const Normal &DNDV,
-			const Vector &T, const Vector &BiT, float BiTsign,
-			float uu, float vv,
-			const void *pr);
+			const Primitive *pr, float scale, const Point &WUV);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			const Vector &T, const Vector &BiT, float BiTsign,
 			float uu, float vv,
-			const void *pr, float scale, const Point &WUV);
+			const Primitive *pr);
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Normal &DNDU, const Normal &DNDV,
+			const Vector &T, const Vector &BiT, float BiTsign,
+			float uu, float vv,
+			const Primitive *pr, float scale, const Point &WUV);
 	void AdjustNormal(bool ro, bool swapsHandedness) {
 		// Adjust normal based on orientation and handedness
 		if (ro ^ swapsHandedness)
@@ -129,10 +139,10 @@ public:
 	Vector tangent, bitangent; // surface tangents, may be different to dpdu,dpdv but in same plane, not normalized
 	float btsign; // sign of the bitangent, actual bitangent is "bitangent * (btsign > 0.f ? 1.f : -1.f)"
 	float u, v;
-	const void* handle;
-	const void* ihandle; // handle to intersected primitive, used with instances
 	mutable float Scale;
 
+	const Primitive *handle;
+	const Primitive *ihandle; // handle to intersected primitive, used with instances
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()

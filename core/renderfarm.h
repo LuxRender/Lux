@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -24,6 +24,8 @@
 #define LUX_RENDERFARM_H
 
 #include "osfunc.h"
+#include "queryable.h"
+#include "timer.h"
 
 #include <vector>
 #include <string>
@@ -40,14 +42,16 @@ class RenderFarm;
 class FilmUpdaterThread : public boost::noncopyable {
 public:
     FilmUpdaterThread(RenderFarm *rFarm, Scene *scn) :
-        renderFarm(rFarm), scene(scn), thread(NULL), signal(SIG_NONE) { }
+        renderFarm(rFarm), scene(scn), thread(NULL) { }
 
     ~FilmUpdaterThread() {
         delete thread;
     }
 
-    void interrupt() {
-        signal = SIG_EXIT;
+	double getUpdateTimeRemaining();
+
+    void stop() {
+        thread->interrupt();
         thread->join();
     }
 
@@ -58,26 +62,28 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
-
-    // Dade - used to send signals to the thread
-    int signal;
-    static const int SIG_NONE = 0;
-    static const int SIG_EXIT = 1;
+	Timer timer;
 };
 
-class RenderFarm {
+class RenderFarm : public Queryable {
 public:
 	RenderFarm();
-	~RenderFarm() { delete filmUpdateThread; }
+	~RenderFarm();
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
 	void disconnectAll();
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
-	
+
+	// Resets server's rendering session
+	bool sessionReset(const string &serverName, const string &password);
+
 	// signal that rendering is done
-	void renderingDone() { netBufferComplete = false; };
+	void renderingDone() {
+		netBufferComplete = false;
+		doneRendering = true;
+	}
 
 	void send(const std::string &command);
 	void send(const std::string &command,
@@ -102,21 +108,20 @@ public:
 	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-	u_int getServerCount() { return serverInfoList.size(); }
-	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
+	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const;
 
-	// Dade - used to periodically update the film
-	void startFilmUpdater(Scene *scene);
-	void stopFilmUpdater();
+	// Start the rendering server (including the film update thread)
+	void start(Scene *scene);
+	void stop();
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
 	//!<Gets the log from the network
 	void updateLog();
 
-public:
-	// Dade - film update infromation
-	int serverUpdateInterval;
+	void updateUserSamplingMap(const u_int size, const float *map);
+
+	double getUpdateTimeRemaining();
 
 private:
 	struct ExtRenderingServerInfo {
@@ -125,6 +130,10 @@ private:
 			timeLastSamples(boost::posix_time::second_clock::local_time()),
 			numberOfSamplesReceived(0.0), calculatedSamplesPerSecond(0.0),
 			name(n), port(p), sid(id), active(false), flushed(false) { }
+
+		// returns true if "other" has the same name and port
+		bool sameServer(const std::string &name, const std::string &port) const;
+		bool sameServer(const ExtRenderingServerInfo &other) const;
 
 		boost::posix_time::ptime timeLastContact;
 		boost::posix_time::ptime timeLastSamples;
@@ -170,6 +179,7 @@ private:
 
 	class CompiledFiles {
 	public:
+		// filename must be the actual file on disk, call AdjustFilename first
 		CompiledFile add(const std::string &filename);
 
 		const CompiledFile& fromFilename(std::string filename) const;
@@ -236,26 +246,35 @@ private:
 	};
 	typedef reconnect_status::type reconnect_status_t;
 
-	static void decodeServerName(const string &serverName, string &name, string &port);
+	static bool decodeServerName(const string &serverName, string &name, string &port);
 	bool connect(ExtRenderingServerInfo &serverInfo);
 	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void reconnectFailed();
+	void stopImpl();
+
+	u_int getSlaveNodeCount();
 
 	// Any operation on servers must be synchronized via this mutex
-	boost::mutex serverListMutex;
+	mutable boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
 	// Dade - film update information
 	FilmUpdaterThread *filmUpdateThread;
+
+	// for async flushing
+	boost::thread *flushThread;
 
 	CompiledCommands compiledCommands;
 	CompiledFiles compiledFiles;
 
 	//std::stringstream netBuffer;
 	bool netBufferComplete; // Raise this flag if the scene is complete
+	bool doneRendering; // true if rendering is done
 	bool isLittleEndian;
+	int pollingInterval;
+	int defaultTcpPort;
 };
 
 }//namespace lux

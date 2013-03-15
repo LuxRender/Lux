@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -25,6 +25,7 @@
 // bxdf.h*
 #include "lux.h"
 #include "geometry/raydifferential.h"
+#include "geometry/transform.h"
 #include "spectrum.h"
 
 namespace lux
@@ -46,6 +47,8 @@ enum BxDFType {
 	BSDF_ALL              = BSDF_ALL_REFLECTION |
 	                        BSDF_ALL_TRANSMISSION
 };
+
+std::ostream& operator <<(std::ostream& stream, const BxDFType& type);
 
 /**
  * The BxDF abstract class represents a simple bidirectional scattering function.
@@ -177,7 +180,8 @@ public:
 	 * @param interior The volume on the opposite side
 	 */
 	BSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor = SWCSpectrum(0.f), const float Bscale = 1.f );
+		const Volume *exterior, const Volume *interior, 
+		const SWCSpectrum Bcolor = SWCSpectrum(0.f), const float Bscale = 1.f );
 	/**
 	 * The number of BxDF composing the BSDF
 	 */
@@ -334,6 +338,13 @@ public:
 	virtual SWCSpectrum ScaledBcolor() const;
 
 	virtual float GetBscale() const;
+	/**
+	 * Apply a transformation to the BSDF
+	 * This is useful for light instances.
+	 * @param transform The transformation to be applied
+	 * @return The volume defined by the transformed dpdu, dpdv and nn
+	 */
+	virtual float ApplyTransform(const Transform &transform);
 
 	// BSDF Public Data
 	/**
@@ -344,8 +355,8 @@ public:
 	 * @var const Normal ng
 	 * @brief The geometric normal
 	 */
-	const Normal ng;
-	const PartialDifferentialGeometry dgShading; /** The differential shading geometry */
+	Normal ng;
+	PartialDifferentialGeometry dgShading; /** The differential shading geometry */
 	/**
 	 * @var const Volume *exterior
 	 * @brief The volume in the half space containing the geometric normal

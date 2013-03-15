@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,8 @@
 #include "material.h"
 #include "renderfarm.h"
 #include "film/fleximage.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 #include "renderers/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -167,29 +168,26 @@ void Context::AddServer(const string &n) {
 	if (!renderFarm->connect(n))
 		return;
 
-	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
-	if (GetServerCount() == 1 && luxCurrentScene)
-		renderFarm->startFilmUpdater(luxCurrentScene);
+	// if this is the first server added during rendering, make sure update thread is started
+	renderFarm->start(luxCurrentScene);
 }
 
 void Context::RemoveServer(const RenderingServerInfo &rsi) {
 	renderFarm->disconnect(rsi);
 
-	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
-	if (GetServerCount() == 0)
-		renderFarm->stopFilmUpdater();
+	// if this is the last server, make sure update thread is stopped
+	renderFarm->stop();
 }
 
 void Context::RemoveServer(const string &n) {
 	renderFarm->disconnect(n);
 
-	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
-	if (GetServerCount() == 0)
-		renderFarm->stopFilmUpdater();
+	// if this is the last server, make sure update thread is stopped
+	renderFarm->stop();
 }
 
-u_int Context::GetServerCount() {
-	return renderFarm->getServerCount();
+void Context::ResetServer(const string &n, const string &p) {
+	renderFarm->sessionReset(n, p);
 }
 
 u_int Context::GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
@@ -237,12 +235,10 @@ void Context::Translate(float dx, float dy, float dz) {
 void Context::Transform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("Transform");
 	renderFarm->send("luxTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
-			tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -251,11 +247,10 @@ void Context::Transform(float tr[16]) {
 void Context::ConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("ConcatTransform");
 	renderFarm->send("luxConcatTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -264,7 +259,7 @@ void Context::ConcatTransform(float tr[16]) {
 void Context::Rotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Rotate");
 	renderFarm->send("luxRotate", angle, dx, dy, dz);
-	lux::Transform t = lux::Rotate(angle, Vector(dx, dy, dz));
+	::Transform t(::Rotate(angle, Vector(dx, dy, dz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -273,7 +268,7 @@ void Context::Rotate(float angle, float dx, float dy, float dz) {
 void Context::Scale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Scale");
 	renderFarm->send("luxScale", sx, sy, sz);
-	lux::Transform t = lux::Scale(sx, sy, sz);
+	::Transform t(::Scale(sx, sy, sz));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -283,8 +278,8 @@ void Context::LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 	float ux, float uy, float uz) {
 	VERIFY_INITIALIZED_TRANSFORMS("LookAt");
 	renderFarm->send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
-	lux::Transform t = lux::LookAt(Point(ex, ey, ez),
-		Point(lx, ly, lz), Vector(ux, uy, uz));
+	::Transform t(::LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
+		Vector(ux, uy, uz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -438,7 +433,7 @@ void Context::TransformBegin() {
 void Context::TransformEnd() {
 	VERIFY_INITIALIZED("TransformEnd");
 	renderFarm->send("luxTransformEnd");
-	if (!pushedTransforms.size()) {
+	if (!(pushedTransforms.size() > pushedGraphicsStates.size())) {
 		LOG(LUX_ERROR,LUX_ILLSTATE)<< "Unmatched luxTransformEnd() encountered. Ignoring it.";
 		return;
 	}
@@ -596,7 +591,10 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
 			graphicsState->currentLightPtr0 = NULL;
 		} else {
-			renderOptions->lights.push_back(lt_sun);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
 			lt_sun->group = lg;
@@ -612,20 +610,63 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
 			graphicsState->currentLightPtr1 = NULL;
 		} else {
-			renderOptions->lights.push_back(lt_sky);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
 			lt_sky->group = lg;
 			lt_sky->SetVolume(graphicsState->exterior);
 		}
+	} else if (n == "sunsky2") {
+		//SunSky2 light - create both sun & sky2 lightsources
 
+		ParamSet sunparams(params);
+
+		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
+		if (lt_sun == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
+			graphicsState->currentLightPtr0 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr0 = lt_sun;
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
+		}
+
+		// Stop the sky complaining about unused sun params
+		ParamSet skyparams(params);
+		skyparams.EraseFloat("relsize");
+
+		Light *lt_sky = MakeLight("sky2", curTransform.StaticTransform(), skyparams);
+		if (lt_sky == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky2 unknown.";
+			graphicsState->currentLightPtr1 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr1 = lt_sky;
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
+		}
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
 		if (lt == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX) << "luxLightSource: light type '" << n << "' unknown";
 		} else {
-			renderOptions->lights.push_back(lt);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt));
+			else
+				renderOptions->lights.push_back(lt);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt;
 			graphicsState->currentLightPtr1 = NULL;
@@ -682,18 +723,6 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		return;
 	params.ReportUnused();
 
-	// Initialize area light for shape
-	AreaLight *area = NULL;
-	if (graphicsState->areaLight != "") {
-		u_int lg = GetLightGroup();
-		area = MakeAreaLight(graphicsState->areaLight, curTransform.StaticTransform(),
-			graphicsState->areaLightParams, sh);
-		if (area) {
-			area->group = lg;
-			area->SetVolume(graphicsState->exterior); //unused
-		}
-	}
-
 	// Lotus - Set the material
 	if (graphicsState->material)
 		sh->SetMaterial(graphicsState->material);
@@ -706,24 +735,45 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	sh->SetInterior(graphicsState->interior);
 
 	// Create primitive and add to scene or current instance
-	boost::shared_ptr<Primitive> pr(sh);
-	if (renderOptions->currentInstance) {
-		if (area)
+	if (renderOptions->currentInstanceRefined) {
+		if (graphicsState->areaLight != "") {
 			LOG(LUX_WARNING,LUX_UNIMPLEMENT)<<"Area lights not supported with object instancing";
-		if (!pr->CanIntersect())
-			pr->Refine(*(renderOptions->currentInstance),
-				PrimitiveRefinementHints(false), pr);
-		else
-			renderOptions->currentInstance->push_back(pr);
-	} else if (area) {
+/*			// Lotus - add a decorator to set the arealight field
+			boost::shared_ptr<Primitive> prim(
+				new AreaLightPrimitive(pr, area));
+			if (!prim->CanIntersect())
+				prim->Refine(*(renderOptions->currentInstance),
+					PrimitiveRefinementHints(false), prim);
+			else
+				renderOptions->currentInstance->push_back(prim);
+			// Add area light for primitive to light vector
+			renderOptions->currentLightInstance->push_back(area);*/
+		} /*else*/ {
+			renderOptions->currentInstanceSource->push_back(sh);
+			if (!sh->CanIntersect())
+				sh->Refine(*(renderOptions->currentInstanceRefined),
+					PrimitiveRefinementHints(false), sh);
+			else
+				renderOptions->currentInstanceRefined->push_back(sh);
+		}
+	} else if (graphicsState->areaLight != "") {
+		u_int lg = GetLightGroup();
+		AreaLight *area = MakeAreaLight(graphicsState->areaLight,
+			curTransform.StaticTransform(),
+			graphicsState->areaLightParams, sh);
+		if (area) {
+			area->group = lg;
+			area->SetVolume(graphicsState->exterior); //unused
+		}
 		// Lotus - add a decorator to set the arealight field
+		boost::shared_ptr<Primitive> pr(sh);
 		boost::shared_ptr<Primitive> prim(new AreaLightPrimitive(pr,
 			area));
 		renderOptions->primitives.push_back(prim);
 		// Add area light for primitive to light vector
 		renderOptions->lights.push_back(area);
 	} else
-		renderOptions->primitives.push_back(pr);
+		renderOptions->primitives.push_back(sh);
 }
 void Context::Renderer(const string &n, const ParamSet &params) {
 	VERIFY_OPTIONS("Renderer");
@@ -779,79 +829,115 @@ void Context::ObjectBegin(const string &n) {
 	VERIFY_WORLD("ObjectBegin");
 	renderFarm->send("luxObjectBegin", n);
 	AttributeBegin();
-	if (renderOptions->currentInstance)
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectBegin called inside of instance definition";
-	renderOptions->instances[n] = vector<boost::shared_ptr<Primitive> >();
-	renderOptions->currentInstance = &renderOptions->instances[n];
+	if (renderOptions->currentInstanceRefined) {
+		LOG(LUX_ERROR,LUX_NESTING) <<
+			"ObjectBegin called inside of instance definition";
+		return;
+	}
+	renderOptions->instancesSource[n] = vector<boost::shared_ptr<Primitive> >();
+	renderOptions->instancesRefined[n] = vector<boost::shared_ptr<Primitive> >();
+	renderOptions->currentInstanceSource = &renderOptions->instancesSource[n];
+	renderOptions->currentInstanceRefined = &renderOptions->instancesRefined[n];
+	renderOptions->lightInstances[n] = vector<boost::shared_ptr<Light> >();
+	renderOptions->currentLightInstance = &renderOptions->lightInstances[n];
 }
 void Context::ObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	renderFarm->send("luxObjectEnd");
-	if (!renderOptions->currentInstance)
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectEnd called outside of instance definition";
-	renderOptions->currentInstance = NULL;
+	if (!renderOptions->currentInstanceRefined) {
+		LOG(LUX_ERROR,LUX_NESTING) <<
+			"ObjectEnd called outside of instance definition";
+		return;
+	}
+	renderOptions->currentInstanceSource = NULL;
+	renderOptions->currentInstanceRefined = NULL;
+	renderOptions->currentLightInstance = NULL;
 	AttributeEnd();
 }
 void Context::ObjectInstance(const string &n) {
 	VERIFY_WORLD("ObjectInstance");
 	renderFarm->send("luxObjectInstance", n);
 	// Object instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectInstance can't be called inside instance definition";
-		return;
-	}
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (in.size() == 0)
-		return;
-	if (in.size() > 1 || !in[0]->CanIntersect()) {
-		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(
-			MakeAccelerator(renderOptions->acceleratorName, in,
-			renderOptions->acceleratorParams));
-		if (!accel)
-			accel = MakeAccelerator("kdtree", in, ParamSet());
-		if (!accel)
-			LOG(LUX_SEVERE,LUX_BUG)<< "Unable to find \"kdtree\" accelerator";
-		in.clear();
-		in.push_back(accel);
-	}
 
-	if (curTransform.IsStatic()) {
-		boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0],
-			curTransform.StaticTransform(), graphicsState->material,
-			graphicsState->exterior, graphicsState->interior));
-		renderOptions->primitives.push_back(o);
-	} else {
-		boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform.GetMotionSystem(),
-			graphicsState->material, graphicsState->exterior, graphicsState->interior));
-		renderOptions->primitives.push_back(o);
+	vector<boost::shared_ptr<Primitive> > &inSource = renderOptions->instancesSource[n];
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "ObjectInstance '" << n << "' self reference";
+		return;
+	}
+	if (in.size() != 0) {
+		if (in.size() > 1 || !in[0]->CanIntersect()) {
+			// Refine instance _Primitive_s and create aggregate
+			boost::shared_ptr<Primitive> accel(
+				MakeAccelerator(renderOptions->acceleratorName,
+				in, renderOptions->acceleratorParams));
+			if (!accel)
+				accel = MakeAccelerator("kdtree", in,
+					ParamSet());
+			if (!accel)
+				LOG(LUX_SEVERE,LUX_BUG) <<
+					"Unable to find \"kdtree\" accelerator";
+			in.clear();
+			in.push_back(accel);
+		}
+
+		boost::shared_ptr<Primitive> o;
+		if (curTransform.IsStatic()) {
+			o = boost::shared_ptr<Primitive>(new InstancePrimitive(inSource, in[0],
+				curTransform.StaticTransform(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+		} else {
+			o = boost::shared_ptr<Primitive>(new MotionPrimitive(in[0],
+				curTransform.GetMotionSystem(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+		}
+		if (renderOptions->currentInstanceRefined) {
+			// Instance of instances case
+			renderOptions->currentInstanceRefined->push_back(o);
+		} else
+			renderOptions->primitives.push_back(o);
+	}
+	vector<boost::shared_ptr<Light> > &li = renderOptions->lightInstances[n];
+	for (u_int i = 0; i < li.size(); ++i) {
+		Light *l;
+		if (curTransform.IsStatic())
+			l = new InstanceLight(curTransform.StaticTransform(),
+				li[i]);
+		else
+			l = new MotionLight(curTransform.GetMotionSystem(),
+				li[i]);
+		if (renderOptions->currentLightInstance)
+			renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(l));
+		else
+			renderOptions->lights.push_back(l);
 	}
 }
 void Context::PortalInstance(const string &n) {
 	VERIFY_WORLD("PortalInstance");
 	renderFarm->send("luxPortalInstance", n);
 	// Portal instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "PortalInstance can't be called inside instance definition";
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
+		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
-		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "PortalInstance '" << n << "' self reference";
 		return;
 	}
 
 	if (graphicsState->currentLight == "")
 		return;
 
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (in.size() == 0)
-		return;
-
-	for (size_t i = 0; i < in.size(); i++) {
+	for (size_t i = 0; i < in.size(); ++i) {
 		if (graphicsState->currentLightPtr0)
 			graphicsState->currentLightPtr0->AddPortalShape(in[i]);
 
@@ -862,16 +948,17 @@ void Context::PortalInstance(const string &n) {
 void Context::MotionInstance(const string &n, float startTime, float endTime, const string &toTransform) {
 	VERIFY_WORLD("MotionInstance");
 	renderFarm->send("luxMotionInstance", n, startTime, endTime, toTransform);
+	LOG(LUX_WARNING, LUX_SYNTAX) << "MotionInstance '" << n << "' is deprecated, use a MotionBegin/MotionEnd block with an ObjectInstance inside";
 	// Object instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "MotionInstance can't be called inside instance definition";
-		return;
-	}
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "MotionInstance '" << n << "' self reference";
+		return;
+	}
 	if (in.size() == 0)
 		return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
@@ -912,8 +999,8 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 
 void Context::WorldEnd() {
 	VERIFY_WORLD("WorldEnd");
+	// renderfarm will flush when detecting WorldEnd
 	renderFarm->send("luxWorldEnd");
-	renderFarm->flush();
 
 	// Dade - get the lock, other thread can use this lock to wait the end
 	// of the rendering
@@ -929,35 +1016,35 @@ void Context::WorldEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
-		if (luxCurrentScene) {
-			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
+		if (luxCurrentScene && !terminated) {
+			luxCurrentScene->camera()->SetVolume(graphicsState->exterior);
 
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
-			if (luxCurrentRenderer) {
-				// Dade - check if we have to start the network rendering updater thread
-				if (renderFarm->getServerCount() > 0)
-					renderFarm->startFilmUpdater(luxCurrentScene);
+			if (luxCurrentRenderer && !terminated) {
+				// start the network rendering updater thread
+				renderFarm->start(luxCurrentScene);
 
 				luxCurrentRenderer->Render(luxCurrentScene);
 
-				// Check if we have to stop the network rendering updater thread
-				if (GetServerCount() > 0) {
-					// Stop the render farm too
-					activeContext->renderFarm->stopFilmUpdater();
+				// Signal that rendering is done, so any slaves connected
+				// after this won't start rendering
+				activeContext->renderFarm->renderingDone();
+
+				// Stop the film updating thread etc
+				activeContext->renderFarm->stop();
+
+				if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
-				// Signal that rendering is done, so any slaves connected
-				// after this won't start rendering
-				activeContext->renderFarm->renderingDone();
 
 				// Store final image
 				if (!aborted)
-					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
+					luxCurrentScene->camera()->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}
@@ -1009,12 +1096,16 @@ Scene *Context::RenderOptions::MakeScene() const {
 	primitives.clear();
 	lights.clear();
 	volumeRegions.clear();
-	currentInstance = NULL;
-	instances.clear();
+	currentInstanceSource = NULL;
+	currentInstanceRefined = NULL;
+	currentLightInstance = NULL;
+	instancesSource.clear();
+	instancesRefined.clear();
+	lightInstances.clear();
 
 	// Set a fixed seed for animations or debugging
 	if (debugMode || !randomMode)
-		ret->seedBase = 1000;
+		ret->seedBase = 1001;
 
 	return ret;
 }
@@ -1044,7 +1135,7 @@ void Context::LoadFLM(const string &flmFileName) {
 	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
-	luxCurrentScene->SaveFLM(flmFileName);
+	luxCurrentScene->camera()->film->WriteFilmToFile(flmFileName);
 }
 
 // Save current film to OpenEXR image
@@ -1086,7 +1177,7 @@ void Context::Pause() {
 
 void Context::SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 	bool suspendThreadsWhenDone) {
-	lux::Film *film = luxCurrentScene->camera->film;
+	lux::Film *film = luxCurrentScene->camera()->film;
 	film->haltSamplesPerPixel = haltspp;
 	film->enoughSamplesPerPixel = haveEnoughSamplesPerPixel;
 	luxCurrentRenderer->SuspendWhenDone(suspendThreadsWhenDone);
@@ -1102,9 +1193,9 @@ void Context::Wait() {
 }
 
 void Context::Exit() {
-	if (GetServerCount() > 0) {
+	if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 		// Dade - stop the render farm too
-		activeContext->renderFarm->stopFilmUpdater();
+		activeContext->renderFarm->stop();
 		// Dade - update the film for the last time
 		if (!aborted)
 			activeContext->renderFarm->updateFilm(luxCurrentScene);
@@ -1132,21 +1223,24 @@ void Context::Abort() {
 
 //controlling number of threads
 u_int Context::AddThread() {
-	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
+		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	//FIXME
-	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-	desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
+		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+		desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
 
-	return desc->GetUsedUnitsCount();
+		return desc->GetUsedUnitsCount();
+	} else
+		return 1;
 }
 
 void Context::RemoveThread() {
-	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
+		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	//FIXME
-	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-	desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
+		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+		desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
+	}
 }
 
 //framebuffer access
@@ -1261,25 +1355,31 @@ bool Context::IsRendering() {
 	return luxCurrentRenderer != NULL && luxCurrentRenderer->GetState() == Renderer::RUN;
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream) {
-	luxCurrentScene->camera->film->TransmitFilm(stream);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream) {
+	luxCurrentScene->camera()->film->WriteFilmToStream(stream);
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
-	luxCurrentScene->camera->film->TransmitFilm(stream, true, false, useCompression, directWrite);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite) {
+	luxCurrentScene->camera()->film->WriteFilmToStream(stream, true, false, directWrite);
 }
 
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }
+
 void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
 }
-void Context::SetNetworkServerUpdateInterval(int updateInterval)
-{
-	activeContext->renderFarm->serverUpdateInterval = updateInterval;
+
+void Context::SetUserSamplingMap(const float *map) {
+	luxCurrentScene->camera()->film->SetUserSamplingMap(map);
+
+	// Transmit the new map to the slaves
+	renderFarm->updateUserSamplingMap(luxCurrentScene->camera()->film->GetXPixelCount() *
+		luxCurrentScene->camera()->film->GetYPixelCount(), map);
+	
 }
-int Context::GetNetworkServerUpdateInterval()
-{
-	return activeContext->renderFarm->serverUpdateInterval;
+
+float *Context::GetUserSamplingMap() {
+	return luxCurrentScene->camera()->film->GetUserSamplingMap();
 }

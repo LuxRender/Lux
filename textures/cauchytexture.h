@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,6 +35,7 @@ class CauchyTexture : public Texture<FresnelGeneral> {
 public:
 	// ConstantTexture Public Methods
 	CauchyTexture(float cauchya, float cauchyb) :
+		Texture("CauchyTexture-" + boost::lexical_cast<string>(this)),
 		fresnel(cauchya, cauchyb, 0.f), index(cauchya + cauchyb * 1e6f /
 		(WAVELENGTH_END * WAVELENGTH_START)) { }
 	virtual ~CauchyTexture() { }

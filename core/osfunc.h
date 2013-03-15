@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -157,6 +157,27 @@ inline unsigned int osAtomicRead(unsigned int *val) {
 inline void osAtomicWrite(unsigned int *val, unsigned int newVal) {
 	atomic_write32(reinterpret_cast<boost::uint32_t*>(val), static_cast<boost::uint32_t>(newVal));
 }
+
+// Floating point exception debuging
+// Currently only works on linux
+// You can use disable/enable at anypoint on your code, if DEBUGFP is defined,
+// it may slow stuff a lot, but without DEBUGFP, it will not change anything.
+
+namespace fpdebug
+{
+
+//#define DEBUGFP
+
+#if defined(DEBUGFP) &&  defined(__linux__)
+void disable();
+void enable();
+
+#else
+inline void disable(){}
+inline void enable(){}
+#endif
+
+} // namespace fpdebug
 
 }//namespace lux
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,6 +28,8 @@
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 
 using namespace lux;
@@ -40,7 +42,7 @@ LayeredBSDF::LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 {
 	nBSDFs = 0;
 	maxNumBounces = 1; // Note this gets changed when layers are added
-	probSampleSpec = .9f;
+	probSampleSpec = .5f;
 }
 
 bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Vector *sampled,
@@ -64,6 +66,8 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 		return false;
 
 	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	
 	if (glossy && specular) { // then choose one
 		if (u3 < probSampleSpec) {
@@ -223,67 +227,85 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	// now connect them
 	SWCSpectrum L(0.f);	// this is the accumulated L value for the current path 
 	SWCSpectrum newF(0.f);
-			
+
+	const u_int maxVertices = eyeLayer.size() + lightLayer.size() - 1;
+	float* fwdProb = new float[maxVertices];
+	float* backProb = new float[maxVertices];
+	bool* spec = new bool[maxVertices];
 	for (size_t i = 0; i < eyeLayer.size(); ++i) { // for every vertex in the eye path
 		for (size_t j = 0;j < lightLayer.size(); ++j) { // try to connect to every vert in the light path
-			if (eyeLayer[i] == lightLayer[j]) { // then pass the "visibility test" so connect them
-				int curLayer = eyeLayer[i];
-				// First calculate the total L for the path
-				
-				SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)); // calc how much goes between them
-				// NOTE: used reverse==True to get F=f*|wo.ns| = f * cos(theta_in)
-			
-				Lpath = eyeL[i] * Lpath * lightL[j];
+			if (eyeLayer[i] != lightLayer[j]) // then pass the "visibility test" so connect them
+				continue;
+			int curLayer = eyeLayer[i];
+			// First calculate the total L for the path
 
-				if (!Lpath.Black() ) {	// if it is black we may have a specular connection
-					float pgapFwd = bsdfs[curLayer]->Pdf(sw, lightVector[j], eyeVector[i], BxDFType(BSDF_ALL)); // should be prob of sampling eye vector given light vector
-					float pgapBack = bsdfs[curLayer]->Pdf(sw, eyeVector[i], lightVector[j], BxDFType(BSDF_ALL));
+			SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)) / AbsDot(eyeVector[i], bsdfs[curLayer]->dgShading.nn); // calc how much goes between them
+			// NOTE: used reverse==True to get F=f*|wo.ns| = f * cos(theta_in)
 
-					// Now calc the probability of sampling this path (surely there must be a better way!!!)
-					float totProb = 0.f;
+			Lpath = eyeL[i] * Lpath * lightL[j];
 
-					// construct the list of fwd/back probs
-					float* fwdProb = new float[i + j + 3];
-					float* backProb = new float[i + j + 3];
-					bool* spec = new bool[i + j + 3];
-					for (size_t k = 0; k <= j; ++k) {
-						fwdProb[k] = lightPdfForward[k];
-						backProb[k] = lightPdfBack[k];
-						spec[k] = (BSDF_SPECULAR & lightType[k]) != 0;
-					}
-					fwdProb[j + 1] = pgapFwd;
-					backProb[j + 1] = pgapBack;
-					spec[j + 1] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
-					for (size_t k = 0; k <= i; ++k) {	
-						fwdProb[j + 2 + i - k] = eyePdfBack[k];
-						backProb[j + 2 + i - k] = eyePdfForward[k];
-						spec[j + 2 + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
-					}
+			if (Lpath.Black())	// if it is black we may have a specular connection
+				continue;
+			float pgapFwd = bsdfs[curLayer]->Pdf(sw, lightVector[j], eyeVector[i], BxDFType(BSDF_ALL)); // should be prob of sampling eye vector given light vector
+			float pgapBack = bsdfs[curLayer]->Pdf(sw, eyeVector[i], lightVector[j], BxDFType(BSDF_ALL));
 
-					for (size_t join = 0; join <= i + j; ++join) {
-						float curProb = 1.f;
-						for (size_t k = 0; k <= join; ++k)
-							curProb *= fwdProb[k];
-						for (size_t k = join + 2; k < i + j + 3 ; ++k)
-							curProb *= backProb[k];
-						if (!spec[join + 1]) // can use it -  if these terms are specular then the delta functions make the L term 0
-							totProb += curProb;
-					}
-					if (totProb > 0.f)
-						L += Lpath / totProb;
-					delete[] fwdProb;
-					delete[] backProb;
-					delete[] spec;
-				}
+			// Now calc the probability of sampling this path (surely there must be a better way!!!)
+			float totProb = 0.f;
+			float pathProb = 1.f;
+
+			// construct the list of fwd/back probs
+			for (size_t k = 0; k < j; ++k) {
+				fwdProb[k] = lightPdfForward[k + 1];
+				backProb[k] = lightPdfBack[k + 1];
+				spec[k] = (BSDF_SPECULAR & lightType[k + 1]) != 0;
 			}
+			fwdProb[j] = pgapFwd;
+			backProb[j] = pgapBack;
+			spec[j] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
+			for (size_t k = 0; k < i; ++k) {	
+				fwdProb[j + i - k] = eyePdfBack[k];
+				backProb[j + i - k] = eyePdfForward[k];
+				spec[j + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
+			}
+
+			for (size_t join = 0; join <= i + j; ++join) {
+				if (spec[join]) // can't use it -  if these terms are specular then the delta functions make the L term 0
+					continue;
+				float curProb = 1.f;
+				for (size_t k = 0; k < join; ++k)
+					curProb *= fwdProb[k];
+				for (size_t k = join + 1; k <= i + j; ++k)
+					curProb *= backProb[k];
+				totProb += curProb;
+				if (join == j)
+					pathProb = curProb;
+			}
+			if (totProb > 0.f)
+				L += Lpath * (pathProb / totProb);
 		}
 	}
+	delete[] fwdProb;
+	delete[] backProb;
+	delete[] spec;
 
 	// Apply the geometric correction factor if the result is used for
 	// a light path (reverse=false)
-	if (!reverse)
-		L *= fabsf(Dot(wiW, ng) / Dot(woW, ng));
-	return L / (1.f - probSampleSpec / 2.f);
+	if (!reverse) {
+		// If cosWo is too small, discard the result
+		// to avoid numerical instability
+		const float cosWo = Dot(woW, ng);
+		if (fabsf(cosWo) < MachineEpsilon::E(1.f))
+			return SWCSpectrum(0.f);
+		L *= fabsf(Dot(wiW, ng) / cosWo);
+	}
+	return L * AbsDot(woW, dgShading.nn);
+}
+
+float LayeredBSDF::ApplyTransform(const Transform &transform)
+{
+	for (u_int i = 0; i < nBSDFs; ++i)
+		bsdfs[i]->ApplyTransform(transform);
+	return this->BSDF::ApplyTransform(transform);
 }
 
 int LayeredBSDF::GetPath(const SpectrumWavelengths &sw, const Vector &vin,
@@ -329,7 +351,7 @@ int LayeredBSDF::GetPath(const SpectrumWavelengths &sw, const Vector &vin,
 			&sampledType, &pdfBack, true)) // then couldn't sample
 				return i;
 
-		L *= newF * pdfForward;	// NOTE: remove pdf adjustment
+		L *= newF;
 
 		if (Dot(ng, curVout) > 0.f)
 			--curLayer;	// ie, if woW is in same direction as normal - decrement layer index

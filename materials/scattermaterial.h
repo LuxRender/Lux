@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,7 +37,8 @@ public:
 	// ScatterMaterial Public Methods
 	ScatterMaterial(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g,
-		const ParamSet &mp) : Material(mp, false), Kd(kd), G(g) { }
+		const ParamSet &mp) : Material("ScatterMaterial-" + boost::lexical_cast<string>(this), mp, false),
+		Kd(kd), G(g) { }
 	virtual ~ScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
@@ -55,7 +56,8 @@ class UniformRGBScatterMaterial : public Material {
 public:
 	// UniformRGBScatterMaterial Public Methods
 	UniformRGBScatterMaterial(const RGBColor &ks, const RGBColor &ka,
-		float &g_) : Material(ParamSet(), false), kS(ks), kA(ka), g(g_) { }
+		float &g_) : Material("UniformRGBScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
+		kS(ks), kA(ka), g(g_) { }
 	virtual ~UniformRGBScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
@@ -72,7 +74,8 @@ public:
 	// VolumeScatterMaterial Public Methods
 	VolumeScatterMaterial(const Volume *v,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g)
-		: Material(ParamSet(), false), volume(v), G(g) { }
+		: Material("VolumeScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
+		volume(v), G(g) { }
 	virtual ~VolumeScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt)                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -44,7 +44,6 @@ public:
 		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
 	virtual float DirProb(Vector N, Point P  ) const;
-	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual bool LeSupport(const Scene &scene, const Sample &sample,
@@ -76,12 +75,18 @@ public:
 	float *llum;
 	Point *lpos;
 private:
+	// Used by Queryable interface
+	float GetColorR() { return lightColor.c[0]; }
+	float GetColorG() { return lightColor.c[1]; }
+	float GetColorB() { return lightColor.c[2]; }
+
+	RGBColor lightColor;
+	float gain, gamma;
+
 	// EnvironmentLight Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;
 	float mean_y;
-	u_int support_sample;
-	bool support;
 };
 
 }

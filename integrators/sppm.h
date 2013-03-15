@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -54,6 +54,7 @@ public:
 	float parallelHashGridSpare;
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
+	u_int hitpointPerPass;
 	u_int photonPerPass;
 	u_int photonStartK;
 
@@ -69,6 +70,7 @@ public:
 	bool directLightSampling;
 	bool debug;
 	bool storeGlossy;
+
 };
 
 }//namespace lux

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,8 @@
 #ifndef TONEMAPWIDGET_H
 #define TONEMAPWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QString>
+#include <QWidget>
 
 #define TM_REINHARD_YWA_RANGE 1.0f
 #define TM_REINHARD_PRESCALE_RANGE 8.0f
@@ -53,7 +54,6 @@ class ToneMapWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	ToneMapWidget(QWidget *parent = 0);
 	~ToneMapWidget();
 
@@ -68,7 +68,6 @@ public:
 	void LoadSettings( QString fName );
 
 private:
-
 	Ui::ToneMapWidget *ui;
 
 	int m_TM_kernel;
@@ -92,7 +91,6 @@ signals:
 	void valuesChanged();
 
 private slots:
-
 	void setTonemapKernel (int choice);
 	void setClampMethod (int choice);
 	void setSensitivityPreset (int choice);
@@ -117,8 +115,6 @@ private slots:
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);
-
 };
 
 #endif // TONEMAPWIDGET_H
-

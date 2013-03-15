@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -153,7 +153,8 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 }
 
 bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
-{//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Waldtriangle intersect ";
+{
+	//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Waldtriangle intersect ";
 	//look if shape is a null type
 	if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
@@ -210,7 +211,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_
 
 	const float vv = (hu * cnu + hv * cnv) / det + cnd;
 	if (vv < 0.f)
-                return false;
+		return false;
 
 	const float b0 = 1.f - uu - vv;
 	if (b0 < 0.f)
@@ -243,7 +244,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_
 	//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Wald: "<< wtext;
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this, 0.f, wtext);
-	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+	isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
 	isect->dg.iData.baryTriangle.coords[0] = b0;
 	isect->dg.iData.baryTriangle.coords[1] = uu;

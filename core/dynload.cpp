@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -235,7 +235,7 @@ Camera *MakeCamera(const string &name,
 }
 
 Sampler *MakeSampler(const string &name,
-	const ParamSet &paramSet, const Film *film)
+	const ParamSet &paramSet, Film *film)
 {
 	if (DynamicLoader::registeredSamplers().find(name) !=
 		DynamicLoader::registeredSamplers().end()) {

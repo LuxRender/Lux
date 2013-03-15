@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,25 +23,16 @@
 #ifndef HISTOGRAMVIEW_H
 #define HISTOGRAMVIEW_H
 
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QApplication>
-#include <QEvent>
 #include <QGraphicsPixmapItem>
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QMatrix>
-#include <QPoint>
-#include <QClipboard>
-
-#include "api.h"
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QWidget>
 
 class HistogramView : public QGraphicsView
 {
 	Q_OBJECT
 
 public:
-
 	HistogramView(QWidget *parent = 0);
 	~HistogramView ();
 
@@ -52,7 +43,6 @@ public:
 	void LogChanged(int value);
 	
 private:
-
 	QWidget *frame;
 	int m_Options;
 	int w, h;

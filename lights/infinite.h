@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,7 +39,6 @@ public:
 		float gain, float gamma, bool sup);
 	virtual ~InfiniteAreaLight();
 	virtual float Power(const Scene &scene) const;
-	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual bool Le(const Scene &scene, const Sample &arena, const Ray &r,
@@ -56,12 +55,21 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
+	MIPMap *GetRadianceMap() { return radianceMap; }
+
 	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
 private:
+	// Used by Queryable interface
+	float GetColorR() { return lightColor.c[0]; }
+	float GetColorG() { return lightColor.c[1]; }
+	float GetColorB() { return lightColor.c[2]; }
+
+	RGBColor lightColor;
+	float gain, gamma;
+
 	// InfiniteAreaLight Private Data
 	RGBIllumSPD SPDbase;
-	bool support;
 };
 
 }//namespace lux

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,15 +37,23 @@ public:
 		boost::shared_ptr<Texture<float> > &cbf,
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex,
-		bool archi, const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kr(r), Kt(t), index(i),
-		cauchyb(cbf), film(flm), filmindex(flmindex), architectural(archi) { Sc = sc; }
+		bool archi, const ParamSet &mp) : Material("Glass-" + boost::lexical_cast<string>(this), mp),
+		Kr(r), Kt(t), index(i),
+		cauchyb(cbf), film(flm), filmindex(flmindex), architectural(archi) {
+		AddBoolAttribute(*this, "architectural", "Glass architectural flag", &Glass::architectural);
+	}
 	virtual ~Glass() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	
+
+	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
+	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
+	Texture<float> *GetIndexTexture() { return index.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
+
 private:
 	// Glass Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

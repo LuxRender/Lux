@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,7 @@ public:
 
 	BlenderCloudsTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_CLOUDS) {
+		BlenderTexture3D("BlenderCloudsTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_CLOUDS) {
 		tex.stype = GetCloudType(tp.FindOneString("type", "default"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -48,7 +48,7 @@ private:
 	std::vector<float> density;
 	const int nx, ny, nz;
 	const BBox extent;
-	Transform WorldToVolume;
+	Transform VolumeToWorld;
 };
 
 }//namespace lux

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,7 +37,7 @@ void Lafortune::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	SWCSpectrum v(x * (wo.x * wi.x) + y * (wo.y * wi.y) + z * (wo.z * wi.z));
-	*f_ += v.Pow(exponent) * fabsf(wo.z);
+	*f_ += Pow(v, exponent) * fabsf(wo.z);
 }
 
 bool Lafortune::SampleF(const SpectrumWavelengths &sw, const Vector &wo,

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -25,9 +25,10 @@
 
 // motionsystem.h*
 #include "lux.h"
+#include "api.h"
 #include "geometry/quaternion.h"
-#include "geometry/bbox.h"
-#include "geometry/matrix4x4.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 #include "geometry/transform.h"
 // MotionSystem Declarations
 
@@ -61,7 +62,7 @@ protected:
 		// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
 		// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
 		// TODO - implement extraction of perspective transform
-		DecomposedTransform(const boost::shared_ptr<Matrix4x4> &m);
+		DecomposedTransform(const Matrix4x4 &m);
 
 		// Represents a valid series of transformations
 		bool Valid;
@@ -70,7 +71,7 @@ protected:
 		// Shearing
 		float Sxy, Sxz, Syz;
 		// Rotation
-		boost::shared_ptr<Matrix4x4> R;
+		Matrix4x4 R;
 		// Translation
 		float Tx, Ty, Tz;
 		// Perspective
@@ -81,7 +82,6 @@ protected:
 	float startTime, endTime;
 	Transform start, end;
 	DecomposedTransform startT, endT;
-	boost::shared_ptr<Matrix4x4> startMat, endMat;
 	Quaternion startQ, endQ;
 	bool hasRotation, hasTranslation, hasScale;
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;

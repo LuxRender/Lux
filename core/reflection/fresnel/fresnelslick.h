@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -38,8 +38,8 @@ public:
 	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
 		SWCSpectrum *const f) const;
 	virtual float Index(const SpectrumWavelengths &sw) const {
-		return ((SWCSpectrum(1.f) - normalIncidence.Sqrt()) /
-			(SWCSpectrum(1.f) + normalIncidence.Sqrt())).Filter(sw);
+		return ((SWCSpectrum(1.f) - Sqrt(normalIncidence)) /
+			(SWCSpectrum(1.f) + Sqrt(normalIncidence))).Filter(sw);
 	}
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw) const {
 		return a;

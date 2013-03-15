@@ -36,12 +36,12 @@ using namespace lux;
 //FIXME - do proper sampling
 class  EnvironmentBSDF : public BSDF  {
 public:
-    // EnvironmentBSDF Public Methods
-    EnvironmentBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+	// EnvironmentBSDF Public Methods
+	EnvironmentBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-        const EnvironmentLight &l, const Transform &WL) :
+		const EnvironmentLight &l, const Transform &LW) :
 		BSDF(dgs, ngeom, exterior, interior, SWCSpectrum(0.f)), light(l),
-		WorldToLight(WL) { }
+		LightToWorld(LW) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
@@ -58,7 +58,7 @@ public:
 		const float cosi = w.z;
 		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
 			w.z * Vector(dgShading.nn));
-		*wiW = Normalize(WorldToLight.GetInverse()(wi));
+		*wiW = Normalize(LightToWorld * wi);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -87,7 +87,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(WorldToLight(-wiW));
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -103,10 +103,10 @@ public:
 	}
 
 protected:
-    // EnvironmentBSDF Private Methods
-    virtual ~EnvironmentBSDF() { }
-    const EnvironmentLight &light;
-	const Transform &WorldToLight;
+	// EnvironmentBSDF Private Methods
+	virtual ~EnvironmentBSDF() { }
+	const EnvironmentLight &light;
+	const Transform &LightToWorld;
 };
 
 // EnvironmentLight Method Definitions
@@ -117,10 +117,13 @@ EnvironmentLight::~EnvironmentLight() {
 }
 EnvironmentLight::EnvironmentLight(const Transform &light2world,
     const RGBColor &l, u_int ns, int LNs, const string &texmap, const string &contrib, u_int immaxres,
-    EnvironmentMapping *m, float gain, float gamma, bool sup )
-	: Light(light2world, ns), SPDbase(l)
+    EnvironmentMapping *m, float g, float gm, bool sup )
+	: Light("EnvironmentLight-" + boost::lexical_cast<string>(this), light2world, ns, sup), SPDbase(l)
 {
-	support = sup;
+	lightColor = l;
+	gain = g;
+	gamma = gm;
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -212,7 +215,7 @@ EnvironmentLight::EnvironmentLight(const Transform &light2world,
 	lpos = new Point[LNsamples];
 	tlum = 0.f;
 	for( int i=0; i< LNsamples; i++){
-		lpos[i] = LightToWorld( Point( C_MCLight[i].x*C_MCLight[i].r, C_MCLight[i].y*C_MCLight[i].r, C_MCLight[i].z*C_MCLight[i].r ) );
+		lpos[i] = LightToWorld * Point( C_MCLight[i].x*C_MCLight[i].r, C_MCLight[i].y*C_MCLight[i].r, C_MCLight[i].z*C_MCLight[i].r ) ;
 		llum[i]= C_MCLight[i].lum;
 		tlum += llum[i];
 	}
@@ -220,7 +223,13 @@ EnvironmentLight::EnvironmentLight(const Transform &light2world,
 	C_MCLight.clear();
 	delete [] predata;
 	delete [] depth;
-	LOG(LUX_INFO, LUX_NOERROR) << "Environment light created";
+//	LOG(LUX_INFO, LUX_NOERROR) << "Environment light created";
+
+	AddFloatAttribute(*this, "gain", "InfiniteAreaLightIS gain", &EnvironmentLight::gain);
+	AddFloatAttribute(*this, "gamma", "InfiniteAreaLightIS gamma", &EnvironmentLight::gamma);
+	AddFloatAttribute(*this, "color.r", "InfiniteAreaLightIS color R", &EnvironmentLight::GetColorR);
+	AddFloatAttribute(*this, "color.g", "InfiniteAreaLightIS color G", &EnvironmentLight::GetColorG);
+	AddFloatAttribute(*this, "color.b", "InfiniteAreaLightIS color B", &EnvironmentLight::GetColorB);
 
 }
 
@@ -249,7 +258,7 @@ bool EnvironmentLight::LeSupport(const Scene &scene, const Sample &sample,
 {
 	*L *= SWCSpectrum(sample.swl, SPDbase);
 	//Point lpos = WorldToLight(p);
-	const Vector wh = Normalize( Vector( WorldToLight(p) ) );
+	const Vector wh( Normalize( Vector( Inverse(LightToWorld) * p ) ) );
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL) {
@@ -284,15 +293,9 @@ bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-
-
-//	const Vector wh = Normalize(WorldToLight(r.d));
-
-	const Vector wh = Normalize( Vector( WorldToLight(Point(r.d.x, r.d.y, r.d.z) ) ) );
-
-
+	const Vector wh( Normalize( Inverse(LightToWorld) * r.d ) );
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -310,8 +313,7 @@ bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
 {
 
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize( Vector( WorldToLight(p) ) );
-
+	const Vector wh( Normalize( Vector( Inverse(LightToWorld) * p ) ) );
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -326,7 +328,7 @@ bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
 float EnvironmentLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector d(Normalize(dg.p - p));
-	const Vector wh = Normalize(WorldToLight(d));
+	const Vector wh( Normalize( Inverse(LightToWorld) * d ) );
 	float s, t, pdf;
 	mapping->Map(wh, &s, &t, &pdf);
 	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, dg.nn) /
@@ -350,7 +352,7 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
     *bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
@@ -370,7 +372,7 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
 	worldRadius = radianceMap->LookupFloat(CHANNEL_ALPHA, uv[0], uv[1]);
 	// Find the light point in World space
-	wi = LightToWorld( worldRadius*wi );
+	wi = LightToWorld * ( worldRadius * wi );
 
 	if (!(pdfMap > 0.f))
 		return false;
@@ -388,7 +390,7 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
-							   v, v, *this, WorldToLight);
+							   v, v, *this, LightToWorld);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	//AbsDot(Normalize(wi), ns) = 1.f
@@ -412,7 +414,7 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
 	worldRadius = radianceMap->LookupFloat(CHANNEL_ALPHA, uv[0], uv[1]);
 	// Find the light point in World space
-	const Point ps = LightToWorld( worldRadius * Point(wi.x ,wi.y, wi.z) );
+	const Point ps = LightToWorld * ( worldRadius * Point(wi.x ,wi.y, wi.z) );
 	wi = Normalize(ps - p);
 	if (!(pdfMap > 0.f))
 		return false;
@@ -426,7 +428,7 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, n,
-							   v, v, *this, WorldToLight);
+							   v, v, *this, LightToWorld);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 

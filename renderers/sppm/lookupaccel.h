@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRays.                                         *
  *                                                                         *
@@ -236,7 +236,7 @@ public:
 
 	void TransformToKdTree();
 
-	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
+	void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	u_int GetSize() const { return size; }
 
@@ -246,7 +246,7 @@ private:
 		HCKdTree( std::list<HitPoint *> *hps, const u_int count);
 		~HCKdTree();
 
-	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
+	void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	private:
 		struct KdNode {

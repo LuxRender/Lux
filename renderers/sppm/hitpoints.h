@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRays.                                         *
  *                                                                         *
@@ -40,6 +40,7 @@ public:
 	Vector wi;
 	SWCSpectrum alpha;
 	u_int lightGroup;
+	bool single;
 };
 
 
@@ -58,6 +59,7 @@ public:
 	float distance;
 
 	Vector wo;
+	bool single;
 };
 
 /*
@@ -207,7 +209,7 @@ public:
 		u_int pathCount;
 		float **values;
 	};
-	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps);
+	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps, u_int npix);
 	virtual ~HaltonEyeSampler() { }
 	virtual u_int GetTotalSamplePos() { return nPixels; }
 	virtual u_int RoundSize(u_int sz) const { return sz; }
@@ -238,7 +240,11 @@ public:
 		halton[data->index]->Sample(data->pathCount,
 			data->values[0] - 4);
 		int x, y;
-		pixelSampler->GetNextPixel(&x, &y, data->index);
+
+		// please note that offset may overflow, but it is handled by the
+		// modulo
+		osAtomicInc(&offset);
+		pixelSampler->GetNextPixel(&x, &y, offset % pixelSampler->GetTotalPixels());
 
 		// Add an offset to the samples to avoid to start with 0.f values
 		for (int i = -4; i < static_cast<int>(data->size); ++i) {
@@ -268,6 +274,11 @@ public:
 			result[i] = sample.rng->floatValue();
 		return result;
 	}
+
+	float GetInvPixelPdf()
+	{
+		return ((float) pixelSampler->GetTotalPixels()) / nPixels;
+	}
 //	virtual void AddSample(const Sample &sample);
 	PixelSampler *pixelSampler;
 private:
@@ -276,6 +287,8 @@ private:
 	vector<PermutedHalton *> halton;
 	vector<float> haltonOffset;
 	mutable boost::mutex initMutex;
+
+	u_int offset;
 };
 
 class HitPoints {
@@ -331,7 +344,7 @@ public:
 	}
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample);
+	void TraceEyePath(HitPoint *hp, const Sample &sample, float const invPixelPdf);
 
 	SPPMRenderer *renderer;
 public:
@@ -354,6 +367,8 @@ private:
 	float wavelengthSample, timeSample;
 	u_int wavelengthSampleScramble, timeSampleScramble;
 	u_int wavelengthStratPasses;
+
+	u_int nSamplePerPass;
 };
 
 }//namespace lux

@@ -56,7 +56,7 @@ void DepthfieldIntegrator::Preprocess(const RandomGenerator &rng,
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 }

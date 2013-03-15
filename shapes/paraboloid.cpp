@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -47,8 +47,7 @@ bool Paraboloid::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic paraboloid coefficients
 	float k = zmax/(radius*radius);
 	float A =   k*(ray.d.x * ray.d.x + ray.d.y * ray.d.y);
@@ -117,12 +116,10 @@ bool Paraboloid::Intersect(const Ray &r, float *tHit,
 	Normal dndv((g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
-	*dg = DifferentialGeometry(ObjectToWorld(phit),
-	                           ObjectToWorld(dpdu),
-							   ObjectToWorld(dpdv),
-	                           ObjectToWorld(dndu),
-							   ObjectToWorld(dndv),
-	                           u, v, this);
+	*dg = DifferentialGeometry(ObjectToWorld * phit,
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * dndu, ObjectToWorld * dndv,
+		u, v, this);
 	// Update _tHit_ for quadric intersection
 	*tHit = thit;
 	return true;
@@ -132,8 +129,7 @@ bool Paraboloid::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic paraboloid coefficients
 	float k = zmax/(radius*radius);
 	float A =   k*(ray.d.x * ray.d.x + ray.d.y * ray.d.y);

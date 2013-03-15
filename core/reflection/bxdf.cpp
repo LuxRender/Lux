@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -30,6 +30,9 @@
 #include "volume.h"
 
 using namespace lux;
+
+namespace lux
+{
 
 static RandomGenerator rng(1);
 
@@ -112,15 +115,46 @@ BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 	tn = Cross(dg.nn, sn);
 	compParams = NULL; 
 }
+
 SWCSpectrum BSDF::GetBcolor() const
 {
 	return Bcolor;
 }
+
 SWCSpectrum BSDF::ScaledBcolor() const
 {
-	return Bcolor*Bscale;
+	return Bcolor * Bscale;
 }
+
 float BSDF::GetBscale() const
 {
 	return Bscale;
 }
+
+float BSDF::ApplyTransform(const Transform &transform) {
+	ng = Normalize(transform * ng);
+	dgShading *= transform;
+	sn = Normalize(dgShading.dpdu);
+	tn = Cross(dgShading.nn, sn);
+	return fabsf(Dot(Cross(dgShading.dpdu, dgShading.dpdv),
+		Vector(dgShading.nn)));
+}
+
+#define IFTYPE(T) if(type & T) stream << #T << "|"
+
+std::ostream& operator <<(std::ostream& stream, const BxDFType& type) {
+	stream << "BxDFType(";
+
+	IFTYPE(BSDF_REFLECTION);
+	IFTYPE(BSDF_TRANSMISSION);
+	IFTYPE(BSDF_DIFFUSE);
+	IFTYPE(BSDF_GLOSSY);
+	IFTYPE(BSDF_SPECULAR);
+
+	stream << ")";
+
+	return stream;
+}
+
+}//namespace lux
+

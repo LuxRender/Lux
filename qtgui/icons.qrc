@@ -1,7 +1,9 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/mappainticon.png</file>
     <file>icons/queuetabicon.png</file>
     <file>icons/advancedicon.png</file>
+    <file>icons/clipboardicon_alpha.png</file>
     <file>icons/resolutionicon.png</file>
     <file>icons/collapsedicon.png</file>
     <file>icons/powerofficon.png</file>
@@ -28,5 +30,9 @@
     <file>icons/stopicon.png</file>
     <file>icons/tonemapicon.png</file>
     <file>icons/zoomicon.png</file>
+    <file>icons/analogclockicon.png</file>
+    <file>icons/arrowicon.png</file>
+    <file>icons/imageicon.png</file>
+    <file>icons/viewicon.png</file>
   </qresource>
 </RCC>

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -26,8 +26,10 @@
 #include "lux.h"
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
+#include "error.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/exttrianglemesh.h"
 
 namespace lux
 {
@@ -54,7 +56,7 @@ public:
 	 * If this primitive should not be deallocated after refinement, it must
 	 * make sure that one of the refined primitives has a shared pointer to
 	 * this primitive (i.e. a copy of thisPtr)
-	 * @param refined     The destenation list for the result.
+	 * @param refined     The destination list for the result.
 	 * @param refineHints The hints for the refinement.
 	 * @param thisPtr     The shared pointer to this primitive.
 	 */
@@ -156,13 +158,23 @@ public:
 	}
 	/**
 	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tasselation is not supported.
+	 * argument. It can do nothing in case tesselation is not supported.
 	 * @param meshList      The vector where the mesh.
 	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
 	 */
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tesselation";
+	}
+	/**
+	 * Add a tesselated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tesselation is not supported.
+	 * @param meshList      The vector where the mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 */
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support ExtTesselate";
 	}
 	/**
 	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit
@@ -177,11 +189,11 @@ public:
 
 	/**
 	 * This methods allows to retrieve the primitive transform from
-	 * world to local coordinates. It is used by textures.
+	 * local to world coordinates. It is used by textures.
 	 * @param time The time to sample the transform (for motion)
-	 * @return The primitive world to local transform
+	 * @return The primitive local to world transform
 	 */
-	virtual Transform GetWorldToLocal(float time) const = 0;
+	virtual Transform GetLocalToWorld(float time) const = 0;
 };
 
 class PrimitiveRefinementHints {
@@ -203,14 +215,16 @@ public:
 		interior(NULL), arealight(NULL) { }
 	BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Ray &ray) const;
-	SWCSpectrum Le(const Sample &sample, const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const;
+	bool Le(const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
 
-	void Set(const Transform& world2object,
+	void Set(const Transform& object2world,
 			const Primitive* prim, const Material* mat,
 			const Volume *extv, const Volume *intv,
 			const AreaLight* areal = NULL)
 	{
-		WorldToObject = world2object;
+		ObjectToWorld = object2world;
 		primitive = prim;
 		material = mat;
 		exterior = extv;
@@ -219,7 +233,7 @@ public:
 	}
 
 	DifferentialGeometry dg;
-	Transform WorldToObject;
+	Transform ObjectToWorld;
 	const Primitive *primitive;
 	const Material *material;
 	const Volume *exterior;
@@ -275,6 +289,8 @@ public:
 		return prim;
 	}
 
+	AreaLight *GetAreaLight() const { return areaLight; }
+
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
@@ -285,14 +301,25 @@ public:
 			primitiveList->push_back(this);
 	}
 
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		vector<const Primitive *> plist;
+
+		prim->ExtTesselate(meshList, &plist);
+
+		for (u_int i = 0; i < plist.size(); ++i)
+			primitiveList->push_back(this);
+	}
+
 	virtual void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
 		prim->GetIntersection(rayHit, index, in);
 		in->arealight = areaLight; // set the intersected arealight
 	}
 
-	virtual Transform GetWorldToLocal(float time) const {
-		return prim->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return prim->GetLocalToWorld(time);
 	}
+
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
@@ -316,15 +343,16 @@ public:
 	 * @param mat The material this instance or NULL to use the
 	 *            instanced primitive's material.
 	 */
-	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
+	InstancePrimitive(const vector<boost::shared_ptr<Primitive> > &instSources,
+		boost::shared_ptr<Primitive> &i, const Transform &i2w,
 		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
-		boost::shared_ptr<Volume> &in) : instance(i),
-		InstanceToWorld(i2w), WorldToInstance(i2w.GetInverse()),
-		material(mat), exterior(ex), interior(in) { }
+		boost::shared_ptr<Volume> &in) : instanceSources(instSources), instance(i),
+		InstanceToWorld(i2w), material(mat), exterior(ex),
+		interior(in) { }
 	virtual ~InstancePrimitive() { }
 
 	virtual BBox WorldBound() const  {
-		return InstanceToWorld(instance->WorldBound());
+		return InstanceToWorld * instance->WorldBound();
 	}
 	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
@@ -345,45 +373,51 @@ public:
 	virtual float Area() const { return instance->Area(); }
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		const float pdf = instance->Sample(u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
-		InstanceToWorld(*dg, dg);
+		float pdf = instance->Sample(u1, u2, u3, dg);
+		pdf *= dg->Volume();
+		*dg *= InstanceToWorld;
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
-		return instance->Pdf(dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		const float pdf = instance->Sample(WorldToInstance(P),
-			u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
-		InstanceToWorld(*dg, dg);
+		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
+			u1, u2, u3, dg);
+		pdf *= dg->Volume();
+		*dg *= InstanceToWorld;
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
-		return instance->Pdf(p, dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(p, dgi) * factor;
 	}
 
-	virtual Transform GetWorldToLocal(float time) const {
-		return instance->GetWorldToLocal(time) * WorldToInstance;
+	virtual Transform GetLocalToWorld(float time) const {
+		return InstanceToWorld * instance->GetLocalToWorld(time);
 	}
+
+	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
+	const Transform &GetTransform() const { return InstanceToWorld; }
+	Material *GetMaterial() const { return material.get(); }
+
 private:
 	// InstancePrimitive Private Data
+	vector<boost::shared_ptr<Primitive> > instanceSources;
 	boost::shared_ptr<Primitive> instance;
-	Transform InstanceToWorld, WorldToInstance;
+	Transform InstanceToWorld;
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
 };
@@ -446,44 +480,43 @@ public:
 	virtual float Area() const { return instance->Area(); }
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		Transform InstanceToWorld = motionPath.Sample(dg->time);
-		const float pdf = instance->Sample(u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
-		InstanceToWorld(*dg, dg);
+		const Transform InstanceToWorld(motionPath.Sample(dg->time));
+		float pdf = instance->Sample(u1, u2, u3, dg);
+		pdf *= dg->Volume();
+		*dg *= InstanceToWorld;
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg.time);
-		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
-		return instance->Pdf(dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const Transform InstanceToWorld(motionPath.Sample(dg.time));
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg->time);
-		const float pdf = instance->Sample(InstanceToWorld.GetInverse()(P),
-			u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
-		InstanceToWorld(*dg, dg);
+		const Transform InstanceToWorld(motionPath.Sample(dg->time));
+		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
+			u1, u2, u3, dg);
+		pdf *= dg->Volume();
+		*dg *= InstanceToWorld;
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg.time);
-		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
-		return instance->Pdf(p, dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const Transform InstanceToWorld(motionPath.Sample(dg.time));
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(p, dgi) * factor;
 	}
-	virtual Transform GetWorldToLocal(float time) const {
-		return instance->GetWorldToLocal(time) *
-			motionPath.Sample(time).GetInverse();
+	virtual Transform GetLocalToWorld(float time) const {
+		return motionPath.Sample(time) * instance->GetLocalToWorld(time);
 	}
 private:
 	// MotionPrimitive Private Data
@@ -535,7 +568,7 @@ public:
 	 */
 	virtual bool CanSample() const { return false; }
 	virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -75,13 +75,12 @@ BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
 }
 Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr(mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
 	bool conserving = mp.FindOneBool("energyconserving", false);
 
-	return new MatteTranslucent(Kr, Kt, sigma, conserving, mp, Sc);
+	return new MatteTranslucent(Kr, Kt, sigma, conserving, mp);
 }
 
 static DynamicLoader::RegisterMaterial<MatteTranslucent> r("mattetranslucent");

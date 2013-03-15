@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -142,7 +142,7 @@ struct SDEdge {
 class LoopSubdiv {
 public:
 	// LoopSubdiv Public Methods
-	LoopSubdiv(u_int shpType, bool proj, Point cam_, u_int nt, u_int nv, const int *vi,
+	LoopSubdiv(ShapeType type, bool proj, Point cam_, u_int nt, u_int nv, const int *vi,
 		const Point *P, const float *uv, const Normal *n,
 		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset, bool dmnormalsmooth,
@@ -150,7 +150,7 @@ public:
 	virtual ~LoopSubdiv();
     virtual float GetScale(u_int i) const { return 1.f; }
     virtual bool SetScale(float scale, u_int i) const {  return false; }
-	virtual u_int GetPrimitiveType() const { return shape_type; }
+	virtual ShapeType GetPrimitiveType() const { return shape_type; }
 	virtual bool GetNormal(Vector *N) const { return true; }
 	virtual bool GetBaryPoint(Point *P) const { return true; }
 
@@ -212,7 +212,7 @@ private:
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;
 
-	u_int shape_type;
+	ShapeType shape_type;
 	bool proj_text;
 	Point cam;
 	float *Scale;

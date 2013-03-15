@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -26,6 +26,7 @@
 #include "error.h"
 #include "osfunc.h"
 #include <limits>
+#include <string>
 #include <boost/cstdint.hpp>
 #ifdef LUX_NO_LIBPNG
 #include <FreeImage.h>
@@ -153,6 +154,18 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 		}
 	}
 
+	FITAG *tag = FreeImage_CreateTag();
+	if(tag) {
+		std::string tagValue("LuxRender");
+		FreeImage_SetTagType(tag, FIDT_ASCII);
+		FreeImage_SetTagLength(tag, tagValue.size());
+		FreeImage_SetTagCount(tag, tagValue.size());
+		FreeImage_SetTagValue(tag, tagValue.c_str());
+		FreeImage_SetTagKey(tag, "Software");
+		FreeImage_SetMetadata(FIMD_COMMENTS, dib, FreeImage_GetTagKey(tag), tag);
+		FreeImage_DeleteTag(tag);
+	}
+
 	if (!FreeImage_Save(FIF_PNG, dib, name.c_str(), PNG_DEFAULT)) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "Error writing PNG file '" << name << "'";
 	}
@@ -256,7 +269,7 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 
 	png_set_IHDR(
 		png, info,
-		xPixelCount, yPixelCount, ubit ? 16 : 8,
+		xResolution, yResolution, ubit ? 16 : 8,
 		colorType, PNG_INTERLACE_NONE,
 		PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
@@ -270,142 +283,152 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 	// write png file row by row
 	if (ubit) {
 		// 16 bit per channel
-		std::vector<png_uint_16> row(xPixelCount*4);
+		std::vector<png_uint_16> row(xResolution*4);
+		for (u_int y = 0; y < yPixelStart; ++y)
+			png_write_row(png, reinterpret_cast<png_bytep>(&row[0]));
 
 		for (u_int y = 0; y < yPixelCount; ++y)
 		{
-			int i = 0;
+			int i = xPixelStart;
 
 			switch (colorType) {
 				case PNG_COLOR_TYPE_GRAY:
+				{
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
-								pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
-
+						png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
+							pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
 							row[i++] = gray;
-						}
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_GRAY_ALPHA:
+				{
+					i *= 2;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
-								pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
-							png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xPixelCount], 0.f, 65535.f));
-
-							row[i++] = gray;
-							row[i++] = a;
-						}
+						png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
+							pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
+						png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xPixelCount], 0.f, 65535.f));
+						row[i++] = gray;
+						row[i++] = a;
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_RGB:
+				{
+					i *= 3;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							const RGBColor &c = pixels[(x + y * xPixelCount)];
-							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
-							png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
-							png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
-
-							row[i++] = r;
-							row[i++] = g;
-							row[i++] = b;
-						}
+						const RGBColor &c = pixels[(x + y * xPixelCount)];
+						png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
+						png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
+						png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
+						row[i++] = r;
+						row[i++] = g;
+						row[i++] = b;
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_RGB_ALPHA:
+				{
+					i *= 4;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							const RGBColor &c = pixels[(x + y * xPixelCount)];
-							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
-							png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
-							png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
-							png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xPixelCount], 0.f, 65535.f));
-
-							row[i++] = r;
-							row[i++] = g;
-							row[i++] = b;
-							row[i++] = a;
-						}
+						const RGBColor &c = pixels[(x + y * xPixelCount)];
+						png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
+						png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
+						png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
+						png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xPixelCount], 0.f, 65535.f));
+						row[i++] = r;
+						row[i++] = g;
+						row[i++] = b;
+						row[i++] = a;
 					}
 					break;
+				}
 			}
 			
 			png_write_row(png, reinterpret_cast<png_bytep>(&row[0]));
 		}
+		for (u_int i = 0; i < row.size(); ++i)
+			row[i] = 0;
+		for (u_int y = yPixelStart + yPixelCount; y < yResolution; ++y)
+			png_write_row(png, reinterpret_cast<png_bytep>(&row[0]));
 	} else {
 		// 8 bit per channel
-		std::vector<png_byte> row(xPixelCount*4);
+		std::vector<png_byte> row(xResolution*4);
+		for (u_int y = 0; y < yPixelStart; ++y)
+			png_write_row(png, &row[0]);
 
 		for (u_int y = 0; y < yPixelCount; ++y)
 		{
-			int i = 0;
+			int i = xPixelStart;
 
 			switch (colorType) {
 				case PNG_COLOR_TYPE_GRAY:
+				{
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
-								pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
-
-							row[i++] = gray;
-						}
+						png_byte gray = static_cast<png_byte>(Clamp(255.f * 
+							pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
+						row[i++] = gray;
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_GRAY_ALPHA:
+				{
+					i *= 2;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
-								pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
-							png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xPixelCount], 0.f, 255.f));
-
-							row[i++] = gray;
-							row[i++] = a;
-						}
+						png_byte gray = static_cast<png_byte>(Clamp(255.f * 
+							pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
+						png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xPixelCount], 0.f, 255.f));
+						row[i++] = gray;
+						row[i++] = a;
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_RGB:
+				{
+					i *= 3;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							const RGBColor &c = pixels[(x + y * xPixelCount)];
-							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
-							png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
-							png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
-
-							row[i++] = r;
-							row[i++] = g;
-							row[i++] = b;
-						}
+						const RGBColor &c = pixels[(x + y * xPixelCount)];
+						png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
+						png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
+						png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
+						row[i++] = r;
+						row[i++] = g;
+						row[i++] = b;
 					}
 					break;
+				}
 				case PNG_COLOR_TYPE_RGB_ALPHA:
+				{
+					i *= 4;
+					for (u_int x = 0; x < xPixelCount; ++x)
 					{
-						for (u_int x = 0; x < xPixelCount; ++x)
-						{
-							const RGBColor &c = pixels[(x + y * xPixelCount)];
-							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
-							png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
-							png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
-							png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xPixelCount], 0.f, 255.f));
-
-							row[i++] = r;
-							row[i++] = g;
-							row[i++] = b;
-							row[i++] = a;
-						}
+						const RGBColor &c = pixels[(x + y * xPixelCount)];
+						png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
+						png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
+						png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
+						png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xPixelCount], 0.f, 255.f));
+						row[i++] = r;
+						row[i++] = g;
+						row[i++] = b;
+						row[i++] = a;
 					}
 					break;			
+				}
 			}
 			
 			png_write_row(png, &row[0]);
 		}
+		for (u_int i = 0; i < row.size(); ++i)
+			row[i] = 0;
+		for (u_int y = yPixelStart + yPixelCount; y < yResolution; ++y)
+			png_write_row(png, &row[0]);
 	}
 
 	// cleanup

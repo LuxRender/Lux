@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,11 +28,57 @@
 using namespace lux;
 
 // EVOp Method Definitions
+void EVOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const 
+{
+	// read data from film
+	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+
+	const u_int numPixels = xRes * yRes;
+
+	float Y = 0.f;
+	u_int nPixels = 0;
+	for (u_int i = 0; i < numPixels; ++i) {
+		if (xyz[i].Y() <= 0.f)
+			continue;
+		Y += xyz[i].Y();
+		nPixels++;
+	}
+	Y = Y / max(1U, nPixels);
+
+	if (Y <= 0.f)
+		return;
+
+	/*
+	(fstop * fstop) / exposure = Y*sensitivity/K
+
+	take K = 12.5
+
+	(fstop * fstop) / exposure = Y * sensitivity / 12.5
+
+	exposure = 12.5*(fstop * fstop) / Y * sensitivity
+
+	*/
+
+	// linear tonemap operation
+	//float factor = (exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma));
+		
+	// substitute exposure, fstop and sensitivity cancel out; collect constants
+	const float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
+
+	for (u_int i = 0; i < numPixels; ++i)
+		xyz[i] *= factor;
+}
 ToneMap * EVOp::CreateToneMap(const ParamSet &ps) {
 	return new EVOp();
 }
 
 // LinearOp Method Definitions
+void LinearOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const
+{
+	const u_int numPixels = xRes * yRes;
+	for (u_int i = 0; i < numPixels; ++i)
+		xyz[i] *= factor;
+}
 ToneMap * LinearOp::CreateToneMap(const ParamSet &ps) {
 	float sensitivity = ps.FindOneFloat("sensitivity", 100.f);
 	float exposure = ps.FindOneFloat("exposure", 1.f / 1000.f);

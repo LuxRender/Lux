@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -300,7 +300,7 @@ ImageData *createImageData(const std::string &name, FIBITMAP *image) {
 
 ImageData *StandardImageReader::read(const string &name)
 {
-	LOG(LUX_INFO, LUX_NOERROR) << "Loading FreeImage Texture: '" <<
+	LOG(LUX_INFO, LUX_NOERROR) << "Loading texture: '" <<
 		name << "'...";
 
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -323,10 +323,13 @@ ImageData *StandardImageReader::read(const string &name)
 	switch (fif) {
 		case FIF_ICO:
 			flags = ICO_MAKEALPHA;
+			break;
 		case FIF_JPEG:
 			flags = JPEG_ACCURATE;
+			break;
 		case FIF_PNG:
 			flags = PNG_IGNOREGAMMA;
+			break;
 		default:
 			flags = 0;
 	}
@@ -552,6 +555,33 @@ void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	delete[] hy;
 	delete[] hrgb;
 	delete[] ha;
+}
+
+// Write a single channel float EXR
+void WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *map) {
+	Header header(xRes, yRes);
+	header.compression() = RLE_COMPRESSION;
+
+	Box2i dataWindow(V2i(0, 0),
+		V2i(0 + xRes - 1, 0 + yRes - 1));
+	header.dataWindow() = dataWindow;
+
+	Imf::PixelType savetype = Imf::FLOAT;
+	header.channels().insert("Y", Imf::Channel(savetype));
+
+	FrameBuffer fb;
+	fb.insert("Y", Slice(Imf::FLOAT,
+		(char *)map, sizeof(float),
+		xRes * sizeof(float)));
+
+	try {
+		OutputFile file(name.c_str(), header);
+		file.setFrameBuffer(fb);
+		file.writePixels(yRes);
+	} catch (const std::exception &e) {
+		LOG(LUX_SEVERE, LUX_BUG) << "Unable to write image file '" <<
+			name << "': " << e.what();
+	}
 }
 
 }

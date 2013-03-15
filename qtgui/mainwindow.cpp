@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,49 +20,70 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <cmath>
+#include <ctime>
+#include <string>
+#include <vector>
+
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <QApplication>
+#include <QClipboard>
+#include <QColor>
+#include <QCompleter>
+#include <QCursor>
+#include <QDateTime>
+#include <QDesktopServices>
+#include <QDir>
+#include <QDialog>
+#include <QFileDialog>
+#include <QFont>
+#include <QFontMetrics>
+#include <QInputDialog>
+#include <QIntValidator>
+#include <QLayoutItem>
+#include <QLineEdit>
+#include <QListIterator>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMutableListIterator>
+#include <QPair>
+#include <QPixmap>
+#include <QSet>
+#include <QSettings>
+#include <QSize>
+#include <QSizePolicy>
+#include <QStringListIterator>
+#include <QTableWidgetItem>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextStream>
+#include <QUrl>
+
+#include "error.h"
+
+#include "aboutdialog.hxx"
+#include "batchprocessdialog.hxx"
+#include "lightgroupwidget.hxx"
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "openexroptionsdialog.hxx"
+#include "ui_luxrender.h"
+
 #define TAB_ID_RENDER  1
 #define TAB_ID_QUEUE   2
 #define TAB_ID_NETWORK 3
 #define TAB_ID_LOG     4
 
-#include <boost/bind.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
-#include <boost/cast.hpp>
-#include <boost/regex.hpp>
-#include <boost/format.hpp>
+#define OUTPUT_TAB_ID_IMAGING		0
+#define OUTPUT_TAB_ID_LIGHTGROUP	1
+#define OUTPUT_TAB_ID_REFINE		2
+#define OUTPUT_TAB_ID_ADVANCED		3
 
-#include <sstream>
-#include <clocale>
-
-#include <QProgressDialog>
-
-#include <QList>
-
-#include <QDateTime>
-#include <QTextStream>
-
-#include <QTextLayout>
-#include <QFontMetrics>
-
-#include <QStringListModel>
-
-#include "error.h"
-
-#include "mainwindow.hxx"
-#include "ui_luxrender.h"
-#include "aboutdialog.hxx"
-#include "batchprocessdialog.hxx"
-#include "openexroptionsdialog.hxx"
-#include "guiutil.h"
-
-#if defined(WIN32) && !defined(__CYGWIN__)
-#include "direct.h"
-#define chdir _chdir
-#endif
-
-inline int Floor2Int(float val) {
-	return static_cast<int>(floorf(val));
+inline int Floor2Int(float val)
+{
+	return static_cast<int>(std::floor(val));
 }
 
 bool copyLog2Console = false;
@@ -90,7 +111,6 @@ NetworkUpdateTreeEvent::NetworkUpdateTreeEvent() : QEvent((QEvent::Type)EVT_LUX_
 {
 	setAccepted(false);
 }
-
 
 void updateWidgetValue(QSlider *slider, int value)
 {
@@ -145,7 +165,9 @@ double retrieveParam(bool useDefault, luxComponent comp, luxComponentParameters 
 }
 
 QWidget *MainWindow::instance;
-MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(parent), ui(new Ui::MainWindow), m_copyLog2Console(copylog2console)
+MainWindow::MainWindow(QWidget *parent, bool copylog2console)
+	: QMainWindow(parent), ui(new Ui::MainWindow), m_copyLog2Console(copylog2console),
+	  renderQueue(boost::bind(&MainWindow::beginRenderingSession, this, _1), boost::bind(&MainWindow::endRenderingSession, this, false))
 {
 	MainWindow::instance = this;
 
@@ -190,7 +212,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
 	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_showAlphaView, SIGNAL(triggered(bool)), this, SLOT(showAlphaChanged(bool)));
 	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
+	connect(ui->action_showUserSamplingMapView, SIGNAL(triggered(bool)), this, SLOT(showUserSamplingMapChanged(bool)));
 	connect(ui->action_Show_Side_Panel, SIGNAL(triggered(bool)), this, SLOT(ShowSidePanel(bool)));
 
 	// Help menu slots
@@ -202,6 +226,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
+	connect(ui->spinBox_overrideWriteInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideWriteIntervalChanged(int)));
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
@@ -213,8 +238,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	advpanes[0] = new PaneWidget(ui->advancedAreaContents, "Scene information", ":/icons/logtabicon.png");
 
-#if defined(__APPLE__)
-	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
+#if defined(__APPLE__) // cosmetical work to have the tabs less crowded
+	ui->outputTabs->setFont(QFont  ("Lucida Grande", 10));
+	QSize iconSize(12, 12);
+	ui->outputTabs->setIconSize(iconSize);
 #endif
 
 	// Tonemap page
@@ -262,6 +289,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	advancedinfowidget = new AdvancedInfoWidget(advpanes[0]);
 	advpanes[0]->setWidget(advancedinfowidget);
 	ui->advancedLayout->addWidget(advpanes[0]);
+	advpanes[0]->setMinimumHeight(300);
 	advpanes[0]->expand();
 	//connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
@@ -275,31 +303,65 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
 	connect(ui->lineEdit_server, SIGNAL(returnPressed()), this, SLOT(addServer()));
 	connect(ui->button_removeServer, SIGNAL(clicked()), this, SLOT(removeServer()));
-	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
+	connect(ui->button_resetServer, SIGNAL(clicked()), this, SLOT(resetServer()));
+	connect(ui->comboBox_updateInterval, SIGNAL(currentIndexChanged(int)), this, SLOT(updateIntervalChanged(int)));
+	connect(ui->comboBox_updateInterval->lineEdit(), SIGNAL(editingFinished()), this, SLOT(updateIntervalChanged()));
 	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
 
 	m_recentServersModel = new QStringMRUListModel(MaxRecentServers, this);
 	ui->lineEdit_server->setCompleter(new QCompleter(m_recentServersModel, this));
 	ui->lineEdit_server->completer()->setCompletionRole(Qt::DisplayRole);
+	ui->comboBox_updateInterval->setValidator(new QIntValidator(1, 86400, this));
+
+	setServerUpdateInterval(luxGetIntAttribute("render_farm", "pollingInterval"));
 
 	// Queue tab
-	ui->table_queue->setModel(&renderQueueData);
-	renderQueueData.setColumnCount(3);
-	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
-	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
-	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
+	ui->tree_queue->setModel(&renderQueue);
+	ui->tree_queue->setContextMenuPolicy(Qt::CustomContextMenu);
+	ui->tree_queue->header()->setMovable(false);
+	ui->checkBox_overrideWriteFlm->setTristate();
+	ui->checkBox_overrideWriteFlm->setCheckState(Qt::PartiallyChecked);
+
+	connect(ui->tree_queue, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(queueContextMenu(const QPoint&)));
+
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
-	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
-	connect(ui->spinBox_overrideHaltTime, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+
 	connect(ui->checkBox_loopQueue, SIGNAL(stateChanged(int)), this, SLOT(loopQueueChanged(int)));
-	connect(ui->checkBox_overrideWriteFlm, SIGNAL(toggled(bool)), this, SLOT(overrideWriteFlmChanged(bool)));
-	ui->table_queue->setColumnHidden(2, true);
+	connect(ui->checkBox_overrideWriteFlm, SIGNAL(stateChanged(int)), this, SLOT(overrideWriteFlmChanged(int)));
+
+	connect(ui->checkBox_haltTime, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+	connect(ui->checkBox_haltProgress, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltProgressChanged(int)));
+	connect(ui->checkBox_haltThreshold, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltThresholdChanged(int)));
+
+	connect(ui->timeEdit_overrideHaltTime, SIGNAL(timeChanged(const QTime&)), this, SLOT(overrideHaltTimeValueChanged(const QTime&)));
+	connect(ui->spinBox_overrideHaltProgress, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltProgressValueChanged(int)));
+	connect(ui->doubleSpinBox_overrideHaltThreshold, SIGNAL(valueChanged(double)), this, SLOT(overrideHaltThresholdValueChanged(double)));
+	
+#if defined(__APPLE__) // cosmetical work
+	ui->tab_queue->setFont(QFont  ("Lucida Grande", 12));
+	ui->horizontalLayout_queueControls->setSpacing(6);
+#endif
+	
+	// Log tab
+	connect(ui->comboBox_verbosity, SIGNAL(currentIndexChanged(int)), this, SLOT(setVerbosity(int)));
 
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
+
 	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
+	connect(ui->outputTabs, SIGNAL(currentChanged(int)), this, SLOT(outputTabChanged(int)));
+
+	// User driven sampling tab
+	connect(ui->button_usAddPenButton, SIGNAL(clicked()), this, SLOT(userSamplingAddPen()));
+	connect(ui->button_usSubPenButton, SIGNAL(clicked()), this, SLOT(userSamplingSubPen()));
+	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
+	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
+	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
+	connect(ui->slider_usPenSize, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenSize(int)));
+	connect(ui->slider_usOpacity, SIGNAL(valueChanged(int)), this, SLOT(userSamplingMapOpacity(int)));
+	connect(ui->slider_usPenStrength, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenStrength(int)));
 
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
@@ -328,6 +390,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	statusMessage->setMaximumWidth(320);
 	statusMessage->setMinimumWidth(100);
 	statusProgress->setMaximumWidth(100);
+	statusProgress->setTextVisible(false);
 	statusProgress->setRange(0, 100);
 
 	statsLabel->setMaximumWidth(70);
@@ -408,10 +471,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	sizes << 500 << 700;
 	ui->splitter->setSizes(sizes);
 
-	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
-
 	changeRenderState(WAITING);
-
+	clearQueue();
 	ReadSettings();
 }
 
@@ -427,6 +488,8 @@ MainWindow::~MainWindow()
 	}
 	m_LightGroupPanes.clear();
 
+	// TODO - figure out why core has been reset on OSX but not Windows
+	updateIntervalChanged();
 	WriteSettings();
 
 	delete ui;
@@ -498,6 +561,7 @@ void MainWindow::ReadSettings()
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	m_recentServersModel->setList(settings.value("recentServers").toStringList());
+	setServerUpdateInterval(settings.value("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval")).toInt());
 	ui->action_Show_Side_Panel->setChecked(settings.value("outputTabs", 1 ).toBool());
 	ui->outputTabs->setVisible(ui->action_Show_Side_Panel->isChecked());
 	settings.endGroup();
@@ -526,6 +590,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
 	settings.setValue("outputTabs", ui->action_Show_Side_Panel->isChecked());
 	settings.setValue("recentServers", QStringList(m_recentServersModel->list()));
+	settings.setValue("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval"));
 	settings.endGroup();
 }
 
@@ -547,15 +612,8 @@ void MainWindow::toneMapParamsChanged()
 void MainWindow::indicateActivity(bool active)
 {
 	if (active) {
-#if !defined(__APPLE__)
-		statusProgress->show ();
-#endif
 		statusProgress->setRange(0, 0);
-	}
-	else {
-#if !defined(__APPLE__)
-		statusProgress->hide ();
-#endif
+	} else {
 		statusProgress->setRange(0, 100);
 	}
 }
@@ -620,6 +678,17 @@ void MainWindow::overrideDisplayIntervalChanged(int value)
 		m_renderTimer->setInterval(1000*luxGetIntAttribute("film", "displayInterval"));
 }
 
+void MainWindow::overrideWriteIntervalChanged(int value)
+{
+	if (m_guiRenderState != RENDERING)
+		return;
+
+	if (value > 0)
+		luxSetIntAttribute("film", "writeInterval", value);
+	else
+		luxSetIntAttribute("film", "writeInterval", luxGetIntAttributeDefault("film", "writeInterval"));
+}
+
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
 {
 	if (copyLog2Console)
@@ -632,7 +701,6 @@ bool MainWindow::canStopRendering()
 {
 	if (m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		const int acceptButton = 0;
 		const int rejectButton = 1;
 		if (customMessageBox(this, QMessageBox::Question, 
 				tr("Rendering in progress"),
@@ -660,52 +728,96 @@ void MainWindow::exitApp()
 	endRenderingSession(true);
 }
 
+bool MainWindow::renderScene(const QPersistentModelIndex& sceneIndex)
+{
+	return renderQueue.renderScene(sceneIndex);
+}
+
+bool MainWindow::renderNextScene()
+{
+	return renderQueue.renderNextScene();
+}
+
+void MainWindow::clearQueue()
+{
+	renderQueue.clear();
+	ui->tree_queue->hideColumn(renderQueue.COLUMN_FLMFILENAME);
+	ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
+	for (int i = 0; i < renderQueue.columnCount(); ++i)
+		ui->tree_queue->resizeColumnToContents(i);
+}
+
+void MainWindow::openOneQueueFile(const QString& file)
+{
+	QPersistentModelIndex queueIndex = renderQueue.addFile(file);
+	if(queueIndex.isValid()) {
+		updateRecentFiles(renderQueue.getFilename(queueIndex));
+
+		ui->tree_queue->expand(queueIndex);
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(queueIndex.child(0, 0));
+	}
+}
+
+void MainWindow::openOneSceneFile(const QString& file)
+{
+	QPersistentModelIndex sceneIndex = renderQueue.addFile(file);
+	if(sceneIndex.isValid()) {
+		if (file != "-")
+			updateRecentFiles(renderQueue.getFilename(sceneIndex));
+
+		ui->tree_queue->expand(sceneIndex.parent());
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(sceneIndex);
+	}
+}
+
+void MainWindow::updateQueueList()
+{
+	for (int i = 0; i < renderQueue.rowCount(); ++i)
+		ui->tree_queue->setFirstColumnSpanned(i,
+			renderQueue.invisibleRootItem()->index(), true);
+
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
+
+	if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
+		renderQueue.getSceneCount() > 1)
+		ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
+}
+
+void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
+{
+	if (clearQueueFirst)
+		clearQueue();
+
+	for (int i = 0; i < files.count(); i++) {
+		if (files[i].endsWith(".lxq"))
+			openOneQueueFile(files[i]);
+		else if (files[i].endsWith(".lxs") || files[i] == "-")
+			openOneSceneFile(files[i]);
+		else
+			return;
+	}
+}
+
 void MainWindow::openFile()
 {
 	if (!canStopRendering())
 		return;
 
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene- or queue-file file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
+	QStringList files = QFileDialog::getOpenFileNames(this, tr("Choose scene or queue files to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
 
-	if(!fileName.isNull()) {
-		if (fileName.endsWith(".lxs")){
-			renderNewScenefile(fileName);
-		} else {
-			// handle queue files
-			openQueueFile(fileName);
-		}
-	}
+	if (!files.empty())
+		openFiles(files, true);
 }
-
-void MainWindow::openQueueFile(const QString& fileName)
-{
-	ui->tabs_main->setCurrentIndex(1);	// jump to queue tab
-	QMessageBox msgBox;
-	msgBox.setIcon(QMessageBox::Information);
-	QFileInfo fi(fileName);
-	QString name = fi.fileName();
-	msgBox.setText("Set now the wished haltspp or haltime for this queue");
-	msgBox.exec();
-	QFile listFile(fileName);
-	QString renderQueueEntry;
-	if ( listFile.open(QIODevice::ReadOnly) ) {
-		QTextStream lfStream(&listFile);
-		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
-		chdir(fullPath.parent_path().string().c_str());
-		while(!lfStream.atEnd()) {
-			renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
-			if (!renderQueueEntry.isNull()) {
-				renderQueueList << renderQueueEntry;
-			}
-		};
-	}
-	if (renderQueueList.count()) {
-		foreach( renderQueueEntry, renderQueueList ) {
-			addFileToRenderQueue(renderQueueEntry);
-		}
-		RenderNextFileInQueue();
-	}
-}	
 	
 void MainWindow::openRecentFile()
 {
@@ -713,10 +825,8 @@ void MainWindow::openRecentFile()
 		return;
 
 	QAction *action = qobject_cast<QAction *>(sender());
-
-	if (action) {
-		renderNewScenefile(action->data().toString());
-	}
+	if (action)
+		openFiles(QStringList(action->data().toString()), true);
 }
 
 void MainWindow::resumeFLM()
@@ -729,18 +839,26 @@ void MainWindow::resumeFLM()
 	if(lxsFileName.isNull())
 		return;
 
-	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
-
 	// suggest .flm file with same name if it exists
-	QFileInfo openDirFile(m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm");
-	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : m_lastOpendir;
+	QFileInfo info(lxsFileName);
+	QFileInfo openDirFile(info.absolutePath() + "/" + info.completeBaseName() + ".flm");
+	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : info.absolutePath();
 
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), openDirName, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
 		return;
 
-	renderNewScenefile(lxsFileName, flmFileName);
+	clearQueue();
+
+	QPersistentModelIndex sceneIndex = renderQueue.addFile(lxsFileName);
+	if(sceneIndex.isValid())
+	{
+		updateRecentFiles(renderQueue.getFilename(sceneIndex));
+		renderQueue.setFlmFilename(sceneIndex, flmFileName);
+		ui->tree_queue->expand(sceneIndex.parent());
+		renderNextScene();
+	}
 }
 
 void MainWindow::loadFLM(QString flmFileName)
@@ -754,12 +872,9 @@ void MainWindow::loadFLM(QString flmFileName)
 	if(flmFileName.isNull())
 		return;
 
+	clearQueue();
+
 	setCurrentFile(flmFileName); // show flm-name in windowheader
-
-	endRenderingSession();
-	ClearRenderingQueue();
-
-	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
 	indicateActivity ();
 	statusMessage->setText("Loading FLM...");
@@ -768,7 +883,8 @@ void MainWindow::loadFLM(QString flmFileName)
 	m_loadTimer->start(1000);
 
 	delete m_flmloadThread;
-	m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, flmFileName));
+	m_flmloadThread = new FlmLoadThread(this, flmFileName);
+	m_flmloadThread->start();
 }
 
 void MainWindow::saveFLM()
@@ -780,8 +896,8 @@ void MainWindow::saveFLM()
 		return;
 
 	// add filename suggestion
-	QString saveDirName = (m_CurrentFile.isEmpty() || m_CurrentFile == "-") ? m_lastOpendir : m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm";
-
+	QFileInfo fi(m_CurrentFile);
+	QString saveDirName = (fi.fileName().isEmpty() || fi.fileName() == "-") ? m_lastOpendir : m_lastOpendir + "/" + fi.baseName() + ".flm";
 	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), saveDirName, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
@@ -795,7 +911,8 @@ void MainWindow::saveFLM()
 	m_saveTimer->start(1000);
 
 	delete m_flmsaveThread;
-	m_flmsaveThread = new boost::thread(boost::bind(&MainWindow::flmSaveThread, this, flmFileName));
+	m_flmsaveThread = new FlmSaveThread(this, flmFileName);
+	m_flmsaveThread->start();
 }
 
 // Render menu slots
@@ -832,7 +949,7 @@ void MainWindow::pauseRender()
 	if (m_guiRenderState != PAUSED && m_guiRenderState != TONEMAPPING) {
 		// We have to check if network rendering is enabled. In this case,
 		// we don't stop timer in order to save the image to the disk, etc.
-		if (luxGetServerCount() < 1) {
+		if (luxGetIntAttribute("render_farm", "slaveNodeCount") < 1) {
 			m_renderTimer->stop();
 			m_statsTimer->stop();
 		}
@@ -880,9 +997,21 @@ void MainWindow::endRender()
 
 void MainWindow::outputTonemapped()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString filter;
+	QFileInfo fi(m_CurrentFile);
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + fi.baseName(), tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
 	if (fileName.isEmpty())
 		return;
+
+	QString suffix = QFileInfo(fileName).suffix().toLower();
+	if (filter == "PNG Image (*.png)" && suffix != "png")
+		fileName += ".png";
+	else if (filter == "JPEG Image (*.jpg *.jpeg)" && suffix != "jpg" && suffix != "jpeg")
+		fileName += ".jpg";
+	else if (filter == "Windows Bitmap (*.bmp)" && suffix != "bmp")
+		fileName += ".bmp";
+	else if (filter == "TIFF Image (*.tif *.tiff)" && suffix != "tif" && suffix != "tiff")
+		fileName += ".tif";
 
 	if (saveCurrentImageTonemapped(fileName, ui->action_overlayStats->isChecked(), ui->action_useAlpha->isChecked())) {
 		statusMessage->setText(tr("Tonemapped image saved"));
@@ -896,7 +1025,8 @@ void MainWindow::outputTonemapped()
 
 void MainWindow::outputHDR()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("OpenEXR Image (*.exr)"));
+	QFileInfo fi(m_CurrentFile);
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir + "/" + fi.baseName(), tr("OpenEXR Image (*.exr)"));
 	if (fileName.isEmpty())
 		return;
 
@@ -931,7 +1061,21 @@ bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 void MainWindow::outputBufferGroupsTonemapped()
 {
 	// Where should these be output
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString filter;
+	QFileInfo fi(m_CurrentFile);
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + fi.baseName(), tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
+	if (fileName.isEmpty())
+		return;
+	QString suffix = QFileInfo(fileName).suffix().toLower();
+	if (filter == "PNG Image (*.png)" && suffix != "png")
+		fileName += ".png";
+	else if (filter == "JPEG Image (*.jpg *.jpeg)" && suffix != "jpg" && suffix != "jpeg")
+		fileName += ".jpg";
+	else if (filter == "Windows Bitmap (*.bmp)" && suffix != "bmp")
+		fileName += ".bmp";
+	else if (filter == "TIFF Image (*.tif *.tiff)" && suffix != "tif" && suffix != "tiff")
+		fileName += ".tif";
+
 	if (fileName.isEmpty())
 		return;
 
@@ -939,13 +1083,7 @@ void MainWindow::outputBufferGroupsTonemapped()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	// Output the light groups
-	if (saveAllLightGroups(fileName, false)) {
-		statusMessage->setText(tr("Light group tonemapped images saved"));
-		LOG(LUX_INFO, LUX_NOERROR) << "Light group tonemapped images saved to '" << qPrintable(fileName) << "'";
-	} else {
-		statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
-		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group tonemapped images to '" << qPrintable(fileName) << "'";
-	}
+	saveAllLightGroups(fileName, false);
 
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -971,13 +1109,7 @@ void MainWindow::outputBufferGroupsHDR()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	// Output the light groups
-	if (saveAllLightGroups(fileName, true)) {
-		statusMessage->setText(tr("Light group HDR images saved"));
-		LOG(LUX_INFO, LUX_NOERROR) << "Light group HDR images saved to '" << qPrintable(fileName) << "'";
-	} else {
-		statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
-		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group HDR images to '" << qPrintable(fileName) << "'";
-	}
+	saveAllLightGroups(fileName, true);
 
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -989,26 +1121,24 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	int lgCount = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 
 	// Start by save current light group state and turning off ALL light groups
-	vector<bool> prevLGState(lgCount);
-	for(int i=0; i<lgCount; i++)
+	vector<float> prevLGState(lgCount);
+	for (int i = 0; i < lgCount; ++i)
 	{
-		prevLGState[i] = (luxGetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, i) != 0.f);
+		prevLGState[i] = luxGetParameterValue(LUX_FILM,
+			LUX_FILM_LG_ENABLE, i);
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 0.f, i);
 	}
 
 	// Prepare filename (will hack up when outputting each light group)
-	boost::filesystem::path filenamePath(qPrintable(outFilename));
-
-	// Get film resolution (only needed for tonemapped case but better off being outside loop)
-	int w = luxGetIntAttribute("film", "xResolution");
-	int h = luxGetIntAttribute("film", "yResolution");
+	QFileInfo filenamePath(outFilename);
 
 	// Now, turn one light group on at a time, update the film and save to an image
 	bool result = true;
-	for(int i=0; i<lgCount; i++) {
+	for (int i = 0; i < lgCount; ++i) {
 		// Get light group name
 		char lgName[256];
-		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName, 256, i);
+		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName,
+			256, i);
 
 		// Enable light group (and tonemap if not saving as HDR)
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 1.f, i);
@@ -1016,20 +1146,34 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			luxUpdateFramebuffer();
 
 		// Output image
-		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
-			.arg(filenamePath.stem().string().c_str()).arg(lgName);
+		QString outputName = QDir(filenamePath.absolutePath()).absoluteFilePath(filenamePath.completeBaseName() + "-" + lgName);
 
-		if (asHDR)
-			if (ui->action_HDR_tonemapped->isChecked())
-				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
-			else
-				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
-		else {
-			QImage image = getFramebufferImage();
-			if(!image.isNull())
-				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().string().c_str()));
-			else
-				result = false;
+		if (asHDR) {
+			outputName += ".exr";
+			luxSaveEXR(qPrintable(outputName),
+				openExrHalfFloats, openExrDepthBuffer,
+				openExrCompressionType,
+				ui->action_HDR_tonemapped->isChecked());
+			statusMessage->setText(tr("HDR image saved"));
+			LOG(LUX_INFO, LUX_NOERROR) <<
+				"Light group HDR image saved to '" <<
+				qPrintable(outputName) << "'";
+		} else {
+			outputName += "." + filenamePath.suffix();
+			result = saveCurrentImageTonemapped(outputName,
+				ui->action_overlayStats->isChecked(),
+				ui->action_useAlpha->isChecked());
+			if (result) {
+				statusMessage->setText(tr("Tonemapped image saved"));
+				LOG(LUX_INFO, LUX_NOERROR) <<
+					"Light group tonemapped image saved to '" <<
+					qPrintable(outputName) << "'";
+			} else {
+				statusMessage->setText(tr("ERROR: Tonemapped image NOT saved."));
+				LOG(LUX_WARNING, LUX_SYSTEM) <<
+					"Error while saving light group tonemapped image to '" <<
+					qPrintable(outputName) << "'";
+			}
 		}
 
 		// Turn group back off
@@ -1039,8 +1183,9 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	}
 
 	// Restore previous light group state
-	for(int i=0; i<lgCount; i++)
-		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, (prevLGState[i]?1.f:0.f), i);
+	for (int i = 0; i < lgCount; ++i)
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE,
+			prevLGState[i], i);
 
 	if (!asHDR)
 		luxUpdateFramebuffer();
@@ -1103,8 +1248,7 @@ void MainWindow::batchProcess()
 	}
 
 	// Make sure rendering is ended
-	endRenderingSession();
-	ClearRenderingQueue();
+	clearQueue();
 
 	QString outExtension = "exr";
 	if(!asHDR) {
@@ -1125,16 +1269,77 @@ void MainWindow::batchProcess()
 	batchProgress->show();
 
 	// Execute in seperate thread
-	if(m_batchProcessThread != NULL) delete m_batchProcessThread;
-	m_batchProcessThread = new boost::thread(boost::bind(&MainWindow::batchProcessThread, this, inDir, outDir, outExtension, allLightGroups, asHDR));
+	if(m_batchProcessThread != NULL)
+		delete m_batchProcessThread;
+	m_batchProcessThread = new BatchProcessThread(this, inDir, outDir, outExtension, allLightGroups, asHDR);
+	m_batchProcessThread->start();
+}
+
+void MainWindow::beginRenderingSession(const QPersistentModelIndex& sceneIndex)
+{
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_STATUS);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_PROGRESS);
+
+	if (m_fixedSeed)
+		luxDisableRandomMode();
+
+	// Set the FLM filename
+	if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked || 
+		(ui->checkBox_overrideWriteFlm->checkState() == Qt::PartiallyChecked && !renderQueue.getFlmFilename(sceneIndex).isEmpty()))
+		luxOverrideResumeFLM(qPrintable(renderQueue.getFlmFilename(sceneIndex)));
+
+	// override server update interval
+	// trigger edit finished slot
+	updateIntervalChanged();
+	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetIntAttribute("render_farm", "pollingInterval") << " seconds";
+
+	// Render the scene
+	setCurrentFile(renderQueue.getFilename(sceneIndex));
+
+	changeRenderState(PARSING);
+
+	indicateActivity ();
+	statusMessage->setText("Loading scene...");
+	if (renderQueue.getFilename(sceneIndex) == "-")
+		LOG(LUX_INFO,LUX_NOERROR) << "Loading piped scene...";
+	else
+		LOG(LUX_INFO,LUX_NOERROR) << "Loading scene file: '" << qPrintable(renderQueue.getFilename(sceneIndex)) << "'...";
+
+	m_loadTimer->start(1000);
+
+	// Start main render thread
+	if (m_engineThread) {
+		m_engineThread->wait();
+		delete m_engineThread;
+	}
+
+	m_engineThread = new EngineThread(this, renderQueue.getFilename(sceneIndex));
+	m_engineThread->start();
 }
 
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
 void MainWindow::endRenderingSession(bool abort)
 {
 	statusMessage->setText("");
+	statusProgress->setValue(0);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_STATUS);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_PROGRESS);
+
+	// clear statistics box
+	for (int i = 0; statsBoxLayout->itemAt(i) != NULL; ++i)
+	{
+		QLabel* label = qobject_cast<QLabel*>(statsBoxLayout->itemAt(i)->widget());
+		if (label)
+		{
+			label->setText("");
+			label->setToolTip("");
+		}
+	}
+
 	// Clean up if this is not the first rendering
 	if (m_guiRenderState != WAITING) {
+		changeRenderState(ENDING);
+
 		// at least give user some hints of what's going on
 		activityMessage->setText("Shutting down...");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1142,20 +1347,17 @@ void MainWindow::endRenderingSession(bool abort)
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
-		if (!IsFileQueued())
-			// dont clear log if rendering a queue
-			clearLog();
 
 		if (m_flmloadThread)
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 		delete m_flmloadThread;
 		m_flmloadThread = NULL;
 		if (m_flmsaveThread)
-			m_flmsaveThread->join();
+			m_flmsaveThread->wait();
 		delete m_flmsaveThread;
 		m_flmsaveThread = NULL;
 		if (m_updateThread)
-			m_updateThread->join();
+			m_updateThread->wait();
 		delete m_updateThread;
 		m_updateThread = NULL;
 
@@ -1165,10 +1367,11 @@ void MainWindow::endRenderingSession(bool abort)
 		else
 			luxExit();
 		if (m_engineThread)
-			m_engineThread->join();
+			m_engineThread->wait();
 		delete m_engineThread;
 		m_engineThread = NULL;
-		changeRenderState (WAITING);
+		m_CurrentFile.clear();
+		changeRenderState(WAITING);
 		renderView->setLogoMode ();
 	}
 	LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
@@ -1197,6 +1400,9 @@ void MainWindow::fullScreen()
 		renderView->reload();
 		renderView->show ();
 		ui->action_normalScreen->setEnabled (false);
+		showAlphaChanged(ui->action_showAlphaView->isChecked());
+		overlayStatsChanged(ui->action_overlayStatsView->isChecked());
+		showUserSamplingMapChanged(ui->action_showUserSamplingMapView->isChecked());
 	}
 	else {
 		renderView->setParent( NULL );
@@ -1227,6 +1433,30 @@ void MainWindow::overlayStatsChanged(bool checked)
 	renderView->reload();
 }
 
+void MainWindow::showAlphaChanged(bool checked)
+{
+	renderView->setShowAlpha(checked);
+	static const QIcon alphaicon(":/icons/clipboardicon_alpha.png");
+	static const QIcon icon(":/icons/clipboardicon.png");
+	if(checked){
+		ui->button_copyToClipboard->setIcon(alphaicon);
+	}else{
+		ui->button_copyToClipboard->setIcon(icon);	
+	}
+	renderView->reload();
+}
+
+void MainWindow::showUserSamplingMapChanged(bool checked)
+{
+	renderView->setShowUserSamplingMap(checked);
+	renderView->reload();
+
+	if (checked)
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_REFINE);
+	else
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_IMAGING);
+}
+
 // Help menu slots
 void MainWindow::aboutDialog()
 {
@@ -1240,14 +1470,15 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 		} else {
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 			indicateActivity();
 		}
-		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+		m_updateThread = new UpdateThread(this);
+		m_updateThread->start();
 	}
 	else if (m_updateThread != NULL ) // Tonemapping in progress, request second event, hack for "tonemapping lag."
 	{
@@ -1255,108 +1486,137 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	}
 }
 
-void MainWindow::engineThread(QString filename)
+void MainWindow::userSamplingAddPen() {
+	renderView->setUserSamplingPen(true);
+}
+
+void MainWindow::userSamplingSubPen() {
+	renderView->setUserSamplingPen(false);
+}
+
+void MainWindow::userSamplingPenSize(int size) {
+	renderView->setUserSamplingPenSize(size);
+}
+
+void MainWindow::userSamplingPenStrength(int s) {
+	renderView->setUserSamplingPenSprayIntensity(s / 100.f);
+}
+
+void MainWindow::userSamplingMapOpacity(int size) {
+	renderView->setUserSamplingMapOpacity(size / 100.f);
+}
+
+void MainWindow::userSamplingApply() {
+	renderView->applyUserSampling();
+}
+
+void MainWindow::userSamplingUndo() {
+	renderView->undoUserSampling();
+}
+
+void MainWindow::userSamplingReset() {
+	renderView->resetUserSampling();
+}
+
+void MainWindow::EngineThread::run()
 {
-	boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(filename)));
-
-	chdir(fullPath.parent_path().string().c_str());
-
 	// NOTE - lordcrc - initialize rand()
 	qsrand(time(NULL));
 
 	// if stdin is input, don't use full path
 	if (filename == QString::fromAscii("-"))
-		luxParse(qPrintable(filename));
+		luxParse("-");
 	else
-		luxParse(fullPath.filename().string().c_str());
+	{
+		QFileInfo fullPath(filename);
+		QDir::setCurrent(fullPath.path());
+		luxParse(qPrintable(filename));
+	}
 
-	if (luxStatistics("terminated"))
+	if (luxStatistics("terminated") || mainWindow->m_guiRenderState == ENDING)
 		return;
 
 	if(!luxStatistics("sceneIsReady")) {
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_PARSEERROR));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_PARSEERROR));
 		luxWait();
 	} else {
 		luxWait();
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
 		LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering done.").toLatin1().data();
 	}
 }
 
-void MainWindow::updateThread()
+void MainWindow::UpdateThread::run()
 {
 	luxUpdateFramebuffer ();
 	luxUpdateLogFromNetwork();
-	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
+	qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
 }
 
-void MainWindow::flmLoadThread(QString filename)
+void MainWindow::FlmLoadThread::run()
 {
 	luxLoadFLM(qPrintable(filename));
 
 	if (!luxStatistics("filmIsReady")) {
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FLMLOADERROR));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_FLMLOADERROR));
 	}
 }
 
-void MainWindow::flmSaveThread(QString filename)
+void MainWindow::FlmSaveThread::run()
 {
 	luxSaveFLM(qPrintable(filename));
 
-	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_SAVEDFLM));
+	qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_SAVEDFLM));
 }
 
-void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR)
+void MainWindow::BatchProcessThread::run()
 {
+	QProgressDialog *batchProgress = mainWindow->batchProgress;
 	// Find 'flm' files in the input directory
-	QVector<string> flmFiles, flmStems;
-	for(boost::filesystem::directory_iterator itr(qPrintable(inDir));
-		itr != boost::filesystem::directory_iterator();
-		itr++)
-	{
-		const boost::filesystem::path curPath = itr->path();
-		if(curPath.extension() == ".flm")
-		{
-			flmFiles.push_back(curPath.string());
-			flmStems.push_back(curPath.stem().string());
-		}
-	}
+	QFileInfoList flmFiles(QDir(inDir).entryInfoList(QStringList("*.flm"),
+		QDir::Files));
 
 	// Process the 'flm' files
-	for(int i=0; i<flmFiles.size(); i++)
-	{
+	uint i = 0;
+	for(QFileInfoList::Iterator f(flmFiles.begin()); f != flmFiles.end(); ++i, ++f) {
 		// Update progress
-		qApp->postEvent(this, new BatchEvent(QString(flmStems[i].c_str()), i, flmFiles.size()));
+		qApp->postEvent(mainWindow, new BatchEvent(f->completeBaseName(), i, flmFiles.size()));
 
 		// Load FLM into Lux engine
-		luxLoadFLM(flmFiles[i].c_str());
-		if(!luxStatistics("filmIsReady")) continue;
+		luxLoadFLM(qPrintable(f->absoluteFilePath()));
+		if(!luxStatistics("filmIsReady"))
+			continue;
 
 		// Check for cancel
-		if (batchProgress && batchProgress->wasCanceled()) return;
+		if (batchProgress && batchProgress->wasCanceled())
+			return;
 
 		// Make output filename
-		QString outName = QString("%1/%2.%3").arg(outDir).arg(flmStems[i].c_str()).arg(outExtension);
+		QString outName = QDir(outDir).absoluteFilePath(f->completeBaseName() + "." + outExtension);
 
 		// Save loaded FLM
-		if(allLightGroups) saveAllLightGroups(outName, asHDR);
-		else
-		{
+		if(allLightGroups)
+			mainWindow->saveAllLightGroups(outName, asHDR);
+		else {
 			luxUpdateFramebuffer();
-			if(asHDR) saveCurrentImageHDR(outName);
-			else saveCurrentImageTonemapped(outName);
+			if(asHDR)
+				mainWindow->saveCurrentImageHDR(outName);
+			else
+				saveCurrentImageTonemapped(outName);
 		}
-		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << flmFiles[i] << "' as '" << qPrintable(outName);
+		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << qPrintable(f->path()) << "' as '" << qPrintable(outName);
 
 		// Check again for cancel
-		if (batchProgress && batchProgress->wasCanceled()) return;
+		if (batchProgress && batchProgress->wasCanceled())
+			return;
 	}
 
 	// Signal completion
-	qApp->postEvent(this, new BatchEvent(flmFiles[flmFiles.size()-1].c_str(), flmFiles.size(), flmFiles.size()));
+	qApp->postEvent(this, new BatchEvent("", flmFiles.size(), flmFiles.size()));
 }
 
-void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action) {
+void MainWindow::NetworkAddRemoveSlavesThread::run() {
+
 	for (int i = 0; i < slaves.size(); ++i) {
 		switch (action) {
 			case AddSlaves:
@@ -1369,9 +1629,9 @@ void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSla
 				break;
 		}
 	}
-	qApp->postEvent(this, new NetworkUpdateTreeEvent());
-}
 
+	qApp->postEvent(mainWindow, new NetworkUpdateTreeEvent());
+}
 
 void MainWindow::SetRenderThreads(int num)
 {
@@ -1391,45 +1651,25 @@ void MainWindow::SetRenderThreads(int num)
 	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
-
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .flm or .lxq in OSX Finder to LuxRender
 void  MainWindow::loadFile(const QString &fileName)
 {
-	if (fileName.endsWith(".lxs")){
-		if (!canStopRendering())
-			return;
-		renderNewScenefile(fileName);
-	} else if (fileName.endsWith(".flm")){
-		if (!canStopRendering())
-			return;
-		if(fileName.isNull())
-			return;
-
-		setCurrentFile(fileName); // show flm-name in windowheader
-
-		endRenderingSession();
-		ClearRenderingQueue();
-
-		indicateActivity ();
-		statusMessage->setText("Loading FLM...");
-		// Start load thread
-		m_loadTimer->start(1000);
-
-		delete m_flmloadThread;
-		m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, fileName));
-	} else if (fileName.endsWith(".lxq")){
-		if (!canStopRendering())
-			return;
-		if(fileName.isNull())
-			return;
-		openQueueFile(fileName);
-
-	} else {
+	if (fileName.endsWith(".lxs") || fileName.endsWith(".lxq"))
+	{
+		if (canStopRendering())
+			openFiles(QStringList(fileName), true);
+	}
+	else if (fileName.endsWith(".flm"))
+	{
+		loadFLM(fileName);
+	}
+	else
+	{
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		msgBox.setText(name +(" is not a renderable scenefile. Please choose an .lxs"));
+		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .flm or .lxq"));
 		msgBox.exec();
 	}
 }
@@ -1442,47 +1682,47 @@ public:
 
 	AttributeFormatter(QBoxLayout* l, int& label_count) : layout(l), count(label_count) { }
 
-	std::string operator()(boost::smatch m) {
-		// leading text in first capture subgroup
-		if (m[1].matched && m[1].str().length() > 0) {
-			QLabel* label = getNextLabel();
-			label->setText(m[1].str().c_str());
-			label->setToolTip("");
-		}
+	void operator()(QString s) {
+		QRegExp m("([^%]*)%([^%]*)%([^%]*)");
+		for (int pos = 0; (pos = m.indexIn(s, pos)) >= 0; pos += m.matchedLength()) {
+			// leading text in first capture subgroup
+			if (m.pos(1) >= 0 && m.cap(1).length() > 0) {
+				QLabel* label = getNextLabel();
+				label->setText(m.cap(1));
+				label->setToolTip("");
+			}
 
-		// attribute in second capture subgroup
-		if (m[2].matched) {
-			QLabel* label = getNextLabel();
-			if (m[2].str().length() > 0) {
-				std::string attr_name = m[2];
+			// attribute in second capture subgroup
+			if (m.pos(2) >= 0) {
+				QLabel* label = getNextLabel();
+				if (m.cap(2).length() > 0) {
+					QString attr(m.cap(2));
 
-				QString statValue = getStringAttribute("renderer_statistics_formatted", attr_name.c_str());
-				QString statDesc;
+					QString statValue = getStringAttribute("renderer_statistics_formatted", qPrintable(attr));
+					QString statDesc;
 
-				if (statValue.length() <= maxStatLength)
-					statDesc = getAttributeDescription("renderer_statistics_formatted", attr_name.c_str());
-				else
-				{
-					statValue = getStringAttribute("renderer_statistics_formatted_short", attr_name.c_str());
-					statDesc = getAttributeDescription("renderer_statistics_formatted_short", attr_name.c_str());
+					if (statValue.length() <= maxStatLength)
+						statDesc = getAttributeDescription("renderer_statistics_formatted", qPrintable(attr));
+					else {
+						statValue = getStringAttribute("renderer_statistics_formatted_short", qPrintable(attr));
+						statDesc = getAttributeDescription("renderer_statistics_formatted_short", qPrintable(attr));
+					}
+
+					label->setText(statValue);
+					label->setToolTip(statDesc);
+				} else {
+					label->setText("%");
+					label->setToolTip("");
 				}
+			}
 
-				label->setText(statValue);
-				label->setToolTip(statDesc);
-			} else {
-				label->setText("%");
+			// trailing text in third capture subgroup
+			if (m.pos(3) >= 0 && m.cap(3).length() > 0) {
+				QLabel* label = getNextLabel();
+				label->setText(m.cap(3));
 				label->setToolTip("");
 			}
 		}
-
-		// trailing text in third capture subgroup
-		if (m[3].matched && m[3].str().length() > 0) {
-			QLabel* label = getNextLabel();
-			label->setText(m[3].str().c_str());
-			label->setToolTip("");
-		}
-
-		return "";	// don't care about the string replacement
 	}
 
 private:
@@ -1502,24 +1742,26 @@ private:
 		return label;
 	}
 
-
 	QBoxLayout* layout;
 	int& count;
 };
 
 void MainWindow::updateStatistics()
 {
+	luxUpdateStatisticsWindow();
+
+	renderQueue.setProgress(renderQueue.getCurrentScene(), getStringAttribute("renderer_statistics_formatted", "progress"));
+
 	// prevent redraws while updating
 	statsBox->setUpdatesEnabled(false);
 
-	luxUpdateStatisticsWindow();
-
-	std::string st = getStringAttribute("renderer_statistics_formatted", "_recommended_string_template").toStdString();
+	QString st(getStringAttribute("renderer_statistics_formatted", "_recommended_string_template"));
 
 	int active_label_count = 0;
 	AttributeFormatter fmt(statsBoxLayout, active_label_count);
-	boost::regex attrib_expr("([^%]*)%([^%]*)%([^%]*)");
-	boost::regex_replace(st, attrib_expr, fmt, boost::match_default | boost::format_all);
+	fmt(st);
+
+	bool useFallbackStatistics = active_label_count == 0;
 
 	// clear remaining labels
 	QLayoutItem* item;
@@ -1532,17 +1774,43 @@ void MainWindow::updateStatistics()
 	}
 
 	// fallback statistics
-	if (active_label_count == 2)	// if only the spacer exists
+	if (useFallbackStatistics)
 	{
 		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
 
-		QLabel* label = new QLabel(boost::str(boost::format("%1$0.2f %2%S/p") % luxMagnitudeReduce(spp) % luxMagnitudePrefix(spp)).c_str());
+		QLayoutItem* item = statsBoxLayout->itemAt(0);
+		QLabel* label = item ? qobject_cast<QLabel*>(item->widget()) : NULL;
+		if (!label) {
+			// no existing label, create new
+			label = new QLabel("");
+			statsBoxLayout->insertWidget(0, label);
+			label->setVisible(true);
+		}
+		label->setText(QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp)));
 		label->setToolTip("Average number of samples per pixel");
-		statsBoxLayout->insertWidget(0, label);
 	}
 
+	// update progress bar
+	double percentComplete = luxGetDoubleAttribute("renderer_statistics", "percentComplete");
+	statusProgress->setValue(static_cast<int>(min(percentComplete, 100.0)));
+
 	statsBox->setUpdatesEnabled(true);
+
+	// update network tab
+	if ((m_guiRenderState == RENDERING || m_guiRenderState == PAUSED) && luxGetIntAttribute("render_farm", "slaveNodeCount") > 0)
+	{
+		double updateTimeRemaining = luxGetDoubleAttribute("render_farm", "updateTimeRemaining");
+		if (updateTimeRemaining > 0)
+		{
+			std::string timeRemaining(boost::posix_time::to_simple_string(boost::posix_time::time_duration(0, 0, updateTimeRemaining, 0)));
+			ui->label_serversStatus->setText(QString::fromStdString(timeRemaining).prepend("Next update in "));
+		}
+		else
+			ui->label_serversStatus->setText("Next update in progress");
+	}
+	else
+		ui->label_serversStatus->clear();
 }
 
 // show the render-resolution
@@ -1573,73 +1841,35 @@ void MainWindow::viewportChanged() {
 	showZoomfactor();
 }
 
-void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
-{
-	if (flmFilename != "") {
-		// Get the absolute path of the flm file
-		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(flmFilename)));
-
-		// Set the FLM filename
-		luxOverrideResumeFLM(fullPath.string().c_str());
-	}
-
-	// Render the scene
-	setCurrentFile(sceneFilename);
-
-	changeRenderState(PARSING);
-
-	indicateActivity ();
-	statusMessage->setText("Loading scene...");
-	if (sceneFilename == "-")
-		LOG(LUX_INFO,LUX_NOERROR) << "Loading piped scene...";
-	else
-		LOG(LUX_INFO,LUX_NOERROR) << "Loading scene file: '" << qPrintable(sceneFilename) << "'...";
-
-	m_loadTimer->start(1000);
-
-	// Start main render thread
-	if (m_engineThread) {
-		m_engineThread->join();
-		delete m_engineThread;
-	}
-
-	m_engineThread = new boost::thread(boost::bind(&MainWindow::engineThread, this, sceneFilename));
-}
-
-void MainWindow::renderNewScenefile(const QString& sceneFilename, const QString& flmFilename)
-{
-	endRenderingSession();
-	ClearRenderingQueue();
-	renderScenefile(sceneFilename, flmFilename);
-}
-
 void MainWindow::setCurrentFile(const QString& filename)
 {
 	m_CurrentFile = filename;
 	setWindowModified(false);
-	QString showName = "Untitled";
+	QString showName;
 
-	if (!m_CurrentFile.isEmpty()) {
-		QFileInfo info(m_CurrentFile);
-		showName = info.fileName();
+	if (!filename.isEmpty())
+	{
+		QFileInfo info(filename);
+
 		if (filename == "-")
-			showName = "LuxRender - Piped Scene";
-		else {
-			showName = "LuxRender - " + showName;
-
-			m_CurrentFileBaseName = info.completeBaseName();
-
-			m_lastOpendir = info.absolutePath();
-			if (filename.endsWith(".lxs")) {
-				m_recentFiles.removeAll(info);
-				m_recentFiles.prepend(info);
-
-				updateRecentFileActions(); // only parseble files .lxs to recentlist
-			}
-		}
+			showName += "Piped Scene";
+		else
+			showName += info.fileName();
 	}
 
-	setWindowTitle(tr("%1[*]").arg(showName));
+	setWindowTitle(tr("LuxRender - %1[*]").arg(showName));
+}
+
+void MainWindow::updateRecentFiles(const QString& fileName)
+{
+	QFileInfo info(fileName);
+	m_lastOpendir = info.absolutePath();
+	if (fileName.endsWith(".lxs") || fileName.endsWith(".lxq"))
+	{
+		m_recentFiles.removeAll(info);
+		m_recentFiles.prepend(info);
+		updateRecentFileActions();
+	}
 }
 
 void MainWindow::updateRecentFileActions()
@@ -1674,6 +1904,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 		case WAITING:
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1693,6 +1924,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Waiting for input file. Most controls disabled.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled(false);
+			ui->action_saveFLM->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled(false);
 			ui->button_stop->setEnabled (false);
@@ -1712,6 +1944,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is in progress.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (true);
 			ui->action_pauseRender->setEnabled (true);
 			ui->button_stop->setEnabled (true);
@@ -1729,6 +1962,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 		case FINISHED:
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1747,6 +1981,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is being stopped.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1763,6 +1998,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is stopped.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1780,6 +2016,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is ending.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1796,6 +2033,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering has ended.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1813,6 +2051,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is paused.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1840,7 +2079,7 @@ bool MainWindow::event (QEvent *event)
 	if (eventtype == EVT_LUX_TONEMAPPED) {
 		// Make sure the update thread has ended so we can start another one later.
 		if (m_updateThread)
-			m_updateThread->join();
+			m_updateThread->wait();
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
@@ -1870,7 +2109,7 @@ bool MainWindow::event (QEvent *event)
 		indicateActivity(false);
 		statusMessage->setText("Loading aborted");
 		if (m_flmloadThread) {
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 			delete m_flmloadThread;
 			m_flmloadThread = NULL;
 		}
@@ -1881,15 +2120,9 @@ bool MainWindow::event (QEvent *event)
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
 
-			bool renderingNext = false;
-
-			if (IsFileQueued())
-				renderingNext = RenderNextFileInQueue();
-
-			if (!renderingNext) {
+			if (!renderNextScene()) {
 				// Stop timers and update output one last time.
 				stopRender();
-
 				changeRenderState(FINISHED);
 			}
 		}
@@ -1901,7 +2134,7 @@ bool MainWindow::event (QEvent *event)
 		// reset progressindicator
 		indicateActivity(false);
 		if (m_flmsaveThread)
-			m_flmsaveThread->join();
+			m_flmsaveThread->wait();
 		delete m_flmsaveThread;
 		m_flmsaveThread = NULL;
 		retval = TRUE;
@@ -1929,7 +2162,6 @@ bool MainWindow::event (QEvent *event)
 		ui->button_addServer->setEnabled(true);
 		ui->button_removeServer->setEnabled(true);
 
-		saveNetworkSlaves();
 		UpdateNetworkTree();
 
 		retval = TRUE;
@@ -1953,8 +2185,6 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	QTextStream ss(new QString());
 	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mm:ss")) << ' ';
-	bool warning = false;
-	bool error = false;
 
 	// changing cursor does not change the visible cursor
 	QTextCursor cursor = ui->textEdit_log->textCursor();
@@ -1980,12 +2210,10 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		case LUX_WARNING:
 			ss << tr("Warning: ");
 			textColor = warningColour;
-			warning = true;
 			break;
 		case LUX_ERROR:
 			ss << tr("Error: ");
 			textColor = errorColour;
-			error = true;
 			break;
 		case LUX_SEVERE:
 			ss << tr("Severe error: ");
@@ -2031,11 +2259,28 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::tabChanged(int)
 {
 	int currentIndex = ui->tabs_main->currentIndex();
+
 	if (currentIndex == getTabIndex(TAB_ID_LOG)) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(TAB_ID_LOG, icon);
 		statusMessage->setText("Checking Log acknowledged");
+	}
+}
+
+void MainWindow::outputTabChanged(int) {
+	int currentIndex = ui->outputTabs->currentIndex();
+
+	if (currentIndex == OUTPUT_TAB_ID_REFINE) {
+		// Always show the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(true);
+		renderView->setShowUserSamplingMap(true);
+		renderView->reload();
+	} else {
+		// Always hide the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(false);
+		renderView->setShowUserSamplingMap(false);
+		renderView->reload();
 	}
 }
 
@@ -2065,9 +2310,10 @@ void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
-		LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+		LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 		statusMessage->setText("Tonemapping...");
-		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+		m_updateThread = new UpdateThread(this);
+		m_updateThread->start();
 	}
 }
 
@@ -2077,12 +2323,14 @@ void MainWindow::statsTimeout()
 		updateStatistics();
 		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED)) {
 			// Render threads stopped, do one last render update
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
+			qApp->postEvent(this, new NetworkUpdateTreeEvent());
 			if (m_updateThread)
-				m_updateThread->join();
+				m_updateThread->wait();
 			delete m_updateThread;
-			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+			m_updateThread = new UpdateThread(this);
+			m_updateThread->start();
 			m_statsTimer->stop();
 			//luxPause();
 			if (m_guiRenderState == FINISHED)
@@ -2101,13 +2349,14 @@ void MainWindow::statsTimeout()
 void MainWindow::loadTimeout()
 {
 	if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
+		statusProgress->setValue(0);
 		indicateActivity(false);
 		statusMessage->setText("");
 		m_loadTimer->stop();
 		gammawidget->resetFromFilm(true);
 
 		if (luxStatistics("sceneIsReady")) {
-			addRemoveSlaves(savedNetworkSlaves, AddSlaves);
+			addRemoveSlaves(QVector<QString>::fromList(networkSlaves.keys()), AddSlaves);
 
 			// Scene file loaded
 			// Add other render threads if necessary
@@ -2118,40 +2367,59 @@ void MainWindow::loadTimeout()
 			}
 
 			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
+			updateWidgetValue(ui->spinBox_overrideWriteInterval, luxGetIntAttribute("film", "writeInterval"));
 
-			// override halt conditions if needed
-			if (IsFileInQueue(m_CurrentFile)) {
-				if (ui->spinBox_overrideHaltSpp->value() > 0)
-					luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
-				if (ui->spinBox_overrideHaltTime->value() > 0)
-					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
+			if (ui->checkBox_haltTime->checkState() == Qt::Checked)
+			{
+				int seconds = QTime().secsTo(ui->timeEdit_overrideHaltTime->time());
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltTime: " << seconds;
+				luxSetIntAttribute("film", "haltTime", seconds);
+			}
+			if (ui->checkBox_haltProgress->checkState() == Qt::Checked)
+			{
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltSamplesPerPixel: " << ui->spinBox_overrideHaltProgress->value();
+				luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltProgress->value());
+			}
+			if (ui->checkBox_haltThreshold->checkState() == Qt::Checked)
+			{
+				double threshold = 1.0 - ui->doubleSpinBox_overrideHaltThreshold->value() / 100.0;
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltThreshold: " << threshold;
+				luxSetFloatAttribute("film", "haltThreshold", threshold);
+			}
 
-				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
-				luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
-				if (writeFlm)
-					luxSetBoolAttribute("film", "restartResumeFlm", false);
-				else
-					luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
+			if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked)
+			{
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding writeResumeFlm: true";
+				luxSetBoolAttribute("film", "writeResumeFlm", true);
+				luxSetBoolAttribute("film", "restartResumeFlm", false);
+			}
+			else if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Unchecked)
+			{
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding writeResumeFlm: false";
+				luxSetBoolAttribute("film", "writeResumeFlm", false);
 			}
 
 			// Start updating the display by faking a resume menu item click.
 			ui->action_resumeRender->activate(QAction::Trigger);
 
 			// Enable tonemapping options and reset from values trough API
-			ui->outputTabs->setEnabled (true);
-			resetToneMappingFromFilm (false);
-			ResetLightGroupsFromFilm (false);
+			resetToneMappingFromFilm(false);
+			ResetLightGroupsFromFilm(false);
+			// reset values from film before enabling the tabs
+			// to prevent overwriting film settings
+			ui->outputTabs->setEnabled(true);
 
 			renderView->resetTransform();
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
+		statusProgress->setValue(0);
 		indicateActivity(false);
 		statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if(m_flmloadThread) {
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 			delete m_flmloadThread;
 			m_flmloadThread = NULL;
 		}
@@ -2159,9 +2427,11 @@ void MainWindow::loadTimeout()
 		changeRenderState(TONEMAPPING);
 
 		// Enable tonemapping options and reset from values trough API
-		ui->outputTabs->setEnabled (true);
-		resetToneMappingFromFilm (false);
-		ResetLightGroupsFromFilm( false );
+		resetToneMappingFromFilm(false);
+		ResetLightGroupsFromFilm(false);
+		// reset values from film before enabling the tabs
+		// to prevent overwriting film settings
+		ui->outputTabs->setEnabled(true);
 		// Update framebuffer
 		if (!m_auto_tonemap)
 			// if auto tonemap is enabled then
@@ -2297,6 +2567,11 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	UpdateLightGroupWidgetValues();
 }
 
+void MainWindow::setFixedSeed()
+{
+	m_fixedSeed = true;
+}
+
 void MainWindow::setLightGroupSolo( int index )
 {
 	int n = 0;
@@ -2326,75 +2601,164 @@ void MainWindow::setLightGroupSolo( int index )
 
 void MainWindow::UpdateNetworkTree()
 {
-	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
-
 	int currentrow = ui->table_servers->currentRow();
 
-	ui->table_servers->setRowCount(0);
+	int nServers = luxGetIntAttribute("render_farm", "slaveNodeCount");
 
-	int nServers = luxGetServerCount();
+	vector<RenderingServerInfo> serverInfoList;
 
-	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
-	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
+	if (nServers > 0) {
+		serverInfoList.resize(nServers);
+		nServers = luxGetRenderingServersStatus( &serverInfoList[0], nServers );
+		serverInfoList.resize(nServers);
+	}
 
-	ui->table_servers->setRowCount(nServers);
+	// temporarily disable sorting while we update the table
+	bool sorted = ui->table_servers->isSortingEnabled();
+	ui->table_servers->setSortingEnabled(false);
+
+	ui->table_servers->setRowCount(static_cast<int>(serverInfoList.size() + networkSlaves.size()));
 
 	double totalpixels = luxGetIntAttribute("film", "xPixelCount") * luxGetIntAttribute("film", "yPixelCount");
 
-	for( int n = 0; n < nServers; n++ ) {
-		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));
-		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].port));
+	int n = 0;
 
-		double spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
-		double sps = pInfoList[n].calculatedSamplesPerSecond;
+	QSet<QString> connectedSlaves;
+
+	for (uint i = 0; i < serverInfoList.size(); ++i) {
+		QTableWidgetItem *status = new QTableWidgetItem(tr("Active session"));
+
+		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].name));
+		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].port));
+
+		connectedSlaves.insert(QString("%1:%2").arg(servername->text(), port->text()).toLower());
+
+		double spp = serverInfoList[i].numberOfSamplesReceived / totalpixels;
+		double sps = serverInfoList[i].calculatedSamplesPerSecond;
 
 		QString spp_string = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp),0,'g',3).arg(luxMagnitudePrefix(spp));
 		QString sps_string = QString("%1 %2S/s").arg(luxMagnitudeReduce(sps),0,'g',3).arg(luxMagnitudePrefix(sps));
 
-		QTableWidgetItem *spp_widget = new QTableWidgetItem(spp_string);
-		QTableWidgetItem *sps_widget = new QTableWidgetItem(sps_string);
+		QTableWidgetItem *spp_widget = new QTableWidgetItem((totalpixels > 0) ? spp_string : "");
+		QTableWidgetItem *sps_widget = new QTableWidgetItem((totalpixels > 0) ? sps_string : "");
 
 		ui->table_servers->setItem(n, 0, servername);
 		ui->table_servers->setItem(n, 1, port);
-		ui->table_servers->setItem(n, 2, spp_widget);
-		ui->table_servers->setItem(n, 3, sps_widget);
+		ui->table_servers->setItem(n, 2, status);
+		ui->table_servers->setItem(n, 3, spp_widget);
+		ui->table_servers->setItem(n, 4, sps_widget);
+		n++;
 	}
+
+	// add saved slaves which aren't in the connected list
+	QVector<QString> disconnectedSlaves;
+
+	QList<QString> slaves = networkSlaves.keys();
+
+	while (!slaves.empty()) {
+		QString s(slaves.takeFirst());
+		if (connectedSlaves.contains(s))
+			continue;
+		disconnectedSlaves.append(s);
+	}
+
+	for( int i = 0; i < disconnectedSlaves.size(); i++ ) {
+		QTableWidgetItem *status = new QTableWidgetItem(tr("No session"));
+
+		// assume saved slaves contain port number
+		int si = disconnectedSlaves[i].lastIndexOf(':');
+		QTableWidgetItem *servername = new QTableWidgetItem(disconnectedSlaves[i].left(si));
+		QTableWidgetItem *port = new QTableWidgetItem(disconnectedSlaves[i].mid(si+1));
+
+		ui->table_servers->setItem(n, 0, servername);
+		ui->table_servers->setItem(n, 1, port);
+		ui->table_servers->setItem(n, 2, status);
+		ui->table_servers->setItem(n, 3, NULL);
+		ui->table_servers->setItem(n, 4, NULL);
+		n++;
+	}
+
+	ui->table_servers->setRowCount(n);
+
+	// enable sorting again
+	ui->table_servers->setSortingEnabled(sorted);
+	ui->table_servers->sortItems(0);
 
 	ui->table_servers->blockSignals (true);
 	ui->table_servers->selectRow(currentrow);
 	ui->table_servers->blockSignals (false);
-
-	delete[] pInfoList;
 }
 
-void MainWindow::saveNetworkSlaves() {
-	int nServers = luxGetServerCount();
-
-	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
-	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
-
-	savedNetworkSlaves.clear();
-
-	for (int i = 0; i < nServers; ++i) {
-		savedNetworkSlaves.push_back(QString("%1:%2").arg(pInfoList[i].name).arg(pInfoList[i].port));
-	}
-
-	delete[] pInfoList;
-}
-
-void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action) {
+void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action)
+{
 
 	if (m_networkAddRemoveSlavesThread != NULL) {
-		m_networkAddRemoveSlavesThread->join();
+		m_networkAddRemoveSlavesThread->wait();
 		delete m_networkAddRemoveSlavesThread;
 	}
 
 	ui->button_addServer->setEnabled(false);
 	ui->button_removeServer->setEnabled(false);
 
-	m_networkAddRemoveSlavesThread = new boost::thread(boost::bind(&MainWindow::networkAddRemoveSlavesThread, this, slaves, action));
+	// update list of slaves
+	for (int i = 0; i < slaves.size(); i++) {
+		QString slave = slaves[i].toLower();
+		int pi = slave.lastIndexOf(':');
+		int pi6 = slave.lastIndexOf("::");
+		if (pi < 0 || (pi > 0 && pi-1 == pi6)) {
+			// append default port
+			slave.append(":").append(QString::number(luxGetIntAttribute("render_farm", "defaultTcpPort")));
+		}
+		switch (action) {
+			case AddSlaves:
+				networkSlaves.insert(slave, networkSlaves.size());
+				break;
+			case RemoveSlaves:
+				networkSlaves.remove(slave);
+				break;
+			default:
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "Invalid action in addRemoveSlaves: " << action;
+		}
+	}
+
+	// then update core
+	m_networkAddRemoveSlavesThread = new NetworkAddRemoveSlavesThread(this, slaves, action);
+	m_networkAddRemoveSlavesThread->start();
 }
 
+void MainWindow::setServerUpdateInterval(int interval)
+{
+	if (interval > 0) {
+		// only update if valid interval
+		luxSetIntAttribute("render_farm", "pollingInterval", interval);
+	} else {
+		// invalid interval, update combobox with old value
+		interval = luxGetIntAttribute("render_farm", "pollingInterval");
+	}
+
+	QString s = QString("%0").arg(interval);
+
+	int idx = ui->comboBox_updateInterval->findText(s);
+
+	ui->comboBox_updateInterval->blockSignals(true);
+	if (idx < 0) {
+		ui->comboBox_updateInterval->setCurrentIndex(0);
+		ui->comboBox_updateInterval->lineEdit()->setText(QString("%0").arg(interval));
+	} else {
+		ui->comboBox_updateInterval->setCurrentIndex(idx);
+	}
+	ui->comboBox_updateInterval->blockSignals(false);
+}
+
+void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves)
+{
+	addRemoveSlaves(slaves, AddSlaves);
+}
+
+void MainWindow::RemoveNetworkSlaves(const QVector<QString> &slaves)
+{
+	addRemoveSlaves(slaves, RemoveSlaves);
+}
 
 void MainWindow::addServer()
 {
@@ -2404,7 +2768,7 @@ void MainWindow::addServer()
 		QVector<QString> slaves;
 		slaves.push_back(server);
 
-		addRemoveSlaves(slaves, AddSlaves);
+		AddNetworkSlaves(slaves);
 
 		m_recentServersModel->add(server);
 	}
@@ -2418,13 +2782,41 @@ void MainWindow::removeServer()
 		QVector<QString> slaves;
 		slaves.push_back(server);
 
-		addRemoveSlaves(slaves, RemoveSlaves);
+		RemoveNetworkSlaves(slaves);
 	}
+}
+
+void MainWindow::resetServer()
+{
+	QString server = ui->lineEdit_server->text();
+
+	if (server.isEmpty())
+		return;
+
+	bool ok;
+	QString password = QInputDialog::getText(this, tr("Reset server session"),
+		tr("Server password (leave empty for no password):"), 
+		QLineEdit::Password, "", &ok);
+
+	if (!ok)
+		return;
+
+	luxResetServer(server.toAscii(), password.toAscii());
+
+	qApp->postEvent(this, new NetworkUpdateTreeEvent());
 }
 
 void MainWindow::updateIntervalChanged(int value)
 {
-	luxSetNetworkServerUpdateInterval(value);
+	if (value < 0)
+		return;
+	
+	setServerUpdateInterval(ui->comboBox_updateInterval->itemText(value).toInt());
+}
+
+void MainWindow::updateIntervalChanged()
+{
+	setServerUpdateInterval(ui->comboBox_updateInterval->lineEdit()->text().toInt());
 }
 
 void MainWindow::networknodeSelectionChanged()
@@ -2440,223 +2832,176 @@ void MainWindow::networknodeSelectionChanged()
 	}
 }
 
-/**
- * Method to add files to the render queue. Normally called by the command line processor
- * but it could be possibly engaged by the API for dynamic updates.
- * It addes the files to the data model, the corresponding View will pick it up automatically.
- */
-bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
+void MainWindow::queueContextMenu(const QPoint& widgetPoint)
 {
-	int row = renderQueueData.rowCount();
-	// Avoid adiing duplicates
-	if (IsFileInQueue(sceneFileName))
-		return false;    
-  
-	QStandardItem* fileName = new QStandardItem(sceneFileName);
-	QStandardItem* status = new QStandardItem(tr("Waiting"));
-	QStandardItem* pass = new QStandardItem("0");
-  
-	if (sceneFileName == m_CurrentFile)
-		status->setText(tr("Rendering"));
-  
-	renderQueueData.setItem(row,0,fileName);
-	renderQueueData.setItem(row,1,status);
-	renderQueueData.setItem(row,2,pass);
+	QModelIndex index = ui->tree_queue->indexAt(widgetPoint);
+	if (index.isValid())
+	{
+		QMenu queueMenu;
 
-	return true;
+		bool isGroup = index.parent() == renderQueue.invisibleRootItem()->index();
+		if (isGroup)
+		{
+			if (renderQueue.itemFromIndex(index)->rowCount())
+				queueMenu.addAction("Render Group");
+			queueMenu.addAction("Remove Group");
+		}
+		else
+		{
+			queueMenu.addAction("Render Scene");
+			queueMenu.addAction("Remove Scene");
+		}
+
+		QAction* selectedAction = queueMenu.exec(ui->tree_queue->viewport()->mapToGlobal(widgetPoint));
+		if (selectedAction != NULL)
+		{
+			if (selectedAction->text().startsWith("Render"))
+			{
+				if (isGroup)
+					index = index.child(0,0);
+
+				if (renderQueue.isRendering() && renderQueue.getCurrentScene() == index && m_guiRenderState == RENDERING)
+					return;
+				else if (renderQueue.isRendering() && renderQueue.getCurrentScene() == index && m_guiRenderState == PAUSED)
+					resumeRender();
+				else
+					renderQueue.renderScene(index);
+			}
+			else if (selectedAction->text().startsWith("Remove"))
+			{
+				renderQueue.remove(index);
+				ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
+			}
+		}
+	}
 }
 
 void MainWindow::addQueueFiles()
 {
-	QStringList files = QFileDialog::getOpenFileNames(this, tr("Select files to add"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
+	QStringList files = QFileDialog::getOpenFileNames(this, tr("Choose scene or queue files to add"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
 
-	if (files.empty())
-		return;
-
-	// scrub filenames, due to a bug in Qt 4.6.2 (at least)
-	// it will return paths with \ instead of / which it should
-	for (int i = 0; i < files.count(); i++) {
-		files[i] = QDir::fromNativeSeparators(files[i]);
-	}
-
-	if (m_guiRenderState == RENDERING && !IsFileInQueue(m_CurrentFile)) {
-		// add current file to queue, since user created one
-		// first ensure it's not in the selected files already
-		if (files.indexOf(m_CurrentFile) < 0)
-			files.insert(0, m_CurrentFile);
-
-		// update haltspp/time
-		overrideHaltSppChanged(ui->spinBox_overrideHaltSpp->value());
-		overrideHaltTimeChanged(ui->spinBox_overrideHaltTime->value());
-		if (ui->checkBox_overrideWriteFlm->isChecked())
-			overrideWriteFlmChanged(true);
-	}
-
-	for (int i = 0; i < files.count(); i++) {
-		addFileToRenderQueue(files[i]);
-	}
-
-	ui->table_queue->resizeColumnsToContents();
-
-	if (m_guiRenderState != RENDERING) {
-		LOG(LUX_INFO,LUX_NOERROR) << ">>> " << files.count() << " files added to the Render Queue. Now rendering...";
-		RenderNextFileInQueue();
-	}
+	if (!files.empty())
+		openFiles(files);
 }
 
 void MainWindow::removeQueueFiles()
 {
- 
- 	QItemSelectionModel* selectionModel = ui->table_queue->selectionModel();
-	QModelIndexList indexes = selectionModel->selectedRows();
-	QModelIndex index;
-	QList<int> rows;
-	int currentFileIndex = -1;
-	// Collect the indexes, we don't want to delete from inside the loop...
-	foreach(index, indexes) {
-		QStandardItem *fname = renderQueueData.item(index.row(), 0);
-		if (fname->text() == m_CurrentFile) {
-			endRenderingSession();
-			changeRenderState(STOPPED);
-			currentFileIndex = index.row();
-		}
-		rows << index.row();
-	}
-  
-	selectionModel->clear();
-	// Delete now
-	int row;
-	foreach(row, rows) {
-		renderQueueData.removeRow(row);
-		if (row == currentFileIndex) {
-			RenderNextFileInQueue();      
-		}
+	QList<QPersistentModelIndex> indexes;
+	foreach(QModelIndex index, ui->tree_queue->selectionModel()->selectedRows())
+		indexes.append(QPersistentModelIndex(index));
+
+	foreach(QPersistentModelIndex index, indexes)
+		renderQueue.remove(index);
+
+	ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
+}
+
+void MainWindow::overrideHaltTimeChanged(int state)
+{
+	ui->timeEdit_overrideHaltTime->setEnabled(state == Qt::Checked);
+
+	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetIntAttribute("film", "haltTime", QTime().secsTo(ui->timeEdit_overrideHaltTime->time()));
+		else
+			luxSetIntAttribute("film", "haltTime", luxGetIntAttributeDefault("film", "haltTime"));
 	}
 }
 
-void MainWindow::overrideHaltSppChanged(int value)
+void MainWindow::overrideHaltProgressChanged(int state)
 {
-	if (value <= 0)
-		value = luxGetIntAttributeDefault("film", "haltSamplesPerPixel");
+	ui->spinBox_overrideHaltProgress->setEnabled(state == Qt::Checked);
 
 	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltProgress->value());
+		else
+			luxSetIntAttribute("film", "haltSamplesPerPixel", luxGetIntAttributeDefault("film", "haltSamplesPerPixel"));
+	}
+}
+
+void MainWindow::overrideHaltThresholdChanged(int state)
+{
+	ui->doubleSpinBox_overrideHaltThreshold->setEnabled(state == Qt::Checked);
+
+	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetFloatAttribute("film", "haltThreshold", 1.0 - ui->doubleSpinBox_overrideHaltThreshold->value() / 100.0);
+		else
+			luxSetFloatAttribute("film", "haltThreshold", luxGetFloatAttributeDefault("film", "haltThreshold"));
+	}
+}
+
+void MainWindow::overrideHaltTimeValueChanged(const QTime& value)
+{
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltTime->checkState() == Qt::Checked)
+		luxSetIntAttribute("film", "haltTime", QTime().secsTo(value));
+}
+
+void MainWindow::overrideHaltProgressValueChanged(int value)
+{
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltProgress->checkState() == Qt::Checked)
 		luxSetIntAttribute("film", "haltSamplesPerPixel", value);
 }
 
-void MainWindow::overrideHaltTimeChanged(int value)
+void MainWindow::overrideHaltThresholdValueChanged(double value)
 {
-	if (value <= 0)
-		value = luxGetIntAttributeDefault("film", "haltTime");
-
-	if (m_guiRenderState == RENDERING)
-		luxSetIntAttribute("film", "haltTime", value);
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltThreshold->checkState() == Qt::Checked)
+		luxSetFloatAttribute("film", "haltThreshold", 1.0 - value / 100.0);
 }
 
 void MainWindow::loopQueueChanged(int state)
 {
 	bool loop = state == Qt::Checked;
 
-	if (loop && !ui->checkBox_overrideWriteFlm->isChecked()) {
+	renderQueue.setRestartWhenFinished(loop);
+
+	if (loop && ui->checkBox_overrideWriteFlm->checkState() != Qt::Checked) {
 		// looping makes little sense without resume films, so just enabled it
-		ui->checkBox_overrideWriteFlm->setChecked(true);
+		ui->checkBox_overrideWriteFlm->setCheckState(Qt::Checked);
+		overrideWriteFlmChanged(true);
 	}
 }
 
-void MainWindow::overrideWriteFlmChanged(bool checked)
+void MainWindow::overrideWriteFlmChanged(int value)
 {
-	if (!checked) {
-		if (QMessageBox::question(this, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+	if (value == Qt::Unchecked) {
+		const int rejectButton = 1;
+		if (customMessageBox(this, QMessageBox::Question, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."),
+			CustomButtonsList()
+			<< qMakePair(tr("Disable FLM"), QMessageBox::AcceptRole)
+			<< qMakePair(tr("Write FLM"), QMessageBox::RejectRole),
+			rejectButton) == rejectButton) {
 			updateWidgetValue(ui->checkBox_overrideWriteFlm, true);
 			return;
 		}
 	}
 
 	if (m_guiRenderState == RENDERING) {
-		luxSetBoolAttribute("film", "writeResumeFlm", checked);
-		if (checked)
+		if (value == Qt::Checked)
+		{
+			luxSetBoolAttribute("film", "writeResumeFlm", true);
 			luxSetBoolAttribute("film", "restartResumeFlm", false);
-		else
+			luxOverrideResumeFLM(qPrintable(renderQueue.getFlmFilename(renderQueue.getCurrentScene())));
+		}
+		else if (value == Qt::Unchecked)
+		{
+			luxSetBoolAttribute("film", "writeResumeFlm", false);
 			luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
-	}
-}
+		}
+		else if (value == Qt::PartiallyChecked)
+		{
+			luxSetBoolAttribute("film", "writeResumeFlm", luxGetBoolAttributeDefault("film", "writeResumeFlm"));
+			luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
 
-bool MainWindow::IsFileInQueue(const QString &filename)
-{  
-  for (int i = 0; i < renderQueueData.rowCount(); i++) {
-		QStandardItem *fname = renderQueueData.item(i, 0);
-
-		if (fname && (fname->text() == filename))
-			return true;
-	}
-
-	return false;
-}
-
-bool MainWindow::IsFileQueued()
-{
-	return renderQueueData.rowCount() > 0;
-}
-
-bool MainWindow::RenderNextFileInQueue()
-{
-	int idx = -1;
-
-	// update current file
-	
-	for (int i = 0; i < renderQueueData.rowCount(); i++) {
-		QStandardItem *fname = renderQueueData.item(i, 0);
-		if (fname->text() == m_CurrentFile) {
-			idx = i;
-			break;
+			QString flmFilename = renderQueue.getFlmFilename(renderQueue.getCurrentScene());
+			if (!flmFilename.isEmpty())
+				luxOverrideResumeFLM(qPrintable(flmFilename));
 		}
 	}
-
-	if (idx >= 0) {
-		QStandardItem *status = renderQueueData.item(idx, 1);
-		status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
-		LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << qPrintable(m_CurrentFileBaseName) << "' done ====";
-	}
-	return RenderNextFileInQueue(++idx);
-}
-
-bool MainWindow::RenderNextFileInQueue(int idx)
-{
-	// render next
-  
-  if (idx >= renderQueueData.rowCount()) {
-		if (ui->checkBox_loopQueue->isChecked()) {
-			ui->table_queue->setColumnHidden(2, false);
-			idx = 0;
-		}
-		else
-			return false;
-	}
-
-	QString filename = renderQueueData.item(idx, 0)->text();
-	QStandardItem *status = renderQueueData.item(idx, 1);
-	QStandardItem *pass = renderQueueData.item(idx, 2);
-  
-  
-	status->setText(tr("Rendering"));
-	pass->setText(QString("%1").arg(pass->text().toInt() + 1));
-
-	ui->table_queue->resizeColumnsToContents();
-
-
-	endRenderingSession();
-
-	if (ui->checkBox_overrideWriteFlm->isChecked())
-		luxOverrideResumeFLM("");
-
-	renderScenefile(filename);
-
-	return true;
-}
-
-void MainWindow::ClearRenderingQueue()
-{
-	renderQueueData.clear();
-	ui->table_queue->setColumnHidden(2, true);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2704,4 +3049,31 @@ void MainWindow::ShowSidePanel(bool checked)
 	ui->outputTabs->setVisible( checked );
 }
 
-
+void MainWindow::setVerbosity(int choice)
+{
+	ui->comboBox_verbosity->setCurrentIndex(choice);
+	switch (choice) {
+		case 0:
+			//default
+			lux::luxLogFilter=LUX_INFO;
+			statusMessage->setText(tr("Log level set to Default"));
+			break;
+		case 1:
+			//verbose
+			lux::luxLogFilter=LUX_DEBUG;
+			statusMessage->setText(tr("Log level set to Verbose"));
+			break;
+		case 2:
+			//quiet
+			lux::luxLogFilter=LUX_WARNING;
+			statusMessage->setText(tr("Log level set to Quiet"));
+			break;
+		case 3:
+			//very quiet
+			lux::luxLogFilter=LUX_ERROR;
+			statusMessage->setText(tr("Log level set to Very Quiet"));
+			break;
+		default:
+			break;
+	}
+}

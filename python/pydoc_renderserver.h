@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,6 +37,9 @@ const char * ds_pylux_RenderServer_getServerPort =
 
 const char * ds_pylux_RenderServer_getServerState =
 "Get the state of this server";
+
+const char * ds_pylux_RenderServer_getServerPass =
+"Get the password for this server";
 
 const char * ds_pylux_RenderServer_start = 
 "Start this server";

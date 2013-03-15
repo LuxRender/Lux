@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,8 +28,8 @@
 
 using namespace lux;
 
-LDSampler::LDData::LDData(const Sampler &sampler, int xPixelStart, int yPixelStart, u_int pixelSamples)
-{
+LDSampler::LDData::LDData(const Sampler &sampler, int xPixelStart, int yPixelStart, u_int pixelSamples) :
+	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0) {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
 	samplePos = pixelSamples - 1;
@@ -56,6 +56,7 @@ LDSampler::LDData::LDData(const Sampler &sampler, int xPixelStart, int yPixelSta
 		xD[i] = new float[sampler.dxD[i]];
 	}
 }
+
 LDSampler::LDData::~LDData()
 {
 	delete[] imageSamples;
@@ -72,8 +73,8 @@ LDSampler::LDData::~LDData()
 
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
-		int ystart, int yend, u_int ps, string pixelsampler)
-	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
+		int ystart, int yend, u_int ps, string pixelsampler, bool useNoise)
+	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)), useNoiseAware(useNoise) {
 	// Initialize PixelSampler
 	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 
@@ -86,6 +87,8 @@ LDSampler::LDSampler(int xstart, int xend,
 	} else
 		pixelSamples = ps;
 	sampPixelPos = 0;
+
+	AddStringConstant(*this, "name", "Name of current sampler", "lowdiscrepancy");
 }
 
 LDSampler::~LDSampler() {
@@ -103,25 +106,51 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	bool haveMoreSamples = true;
 	++(data->samplePos);
 	if (data->samplePos == pixelSamples) {
-		u_int sampPixelPosToUse;
-		// Move to the next pixel
-		{
-			fast_mutex::scoped_lock lock(sampPixelPosMutex);
-			sampPixelPosToUse = sampPixelPos;
-			sampPixelPos = (sampPixelPos + 1) % totalPixels;
+		if (useNoiseAware || film->HasUserSamplingMap()) {
+			// Noise-aware and/or user driven sampler
+
+			// Check if there is a new version of the noise map and/or user-sampling map
+			if (useNoiseAware) {
+				if (film->HasUserSamplingMap()) {
+					film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+				} else
+					film->GetNoiseAwareMap(data->noiseAwareMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+			} else {
+				if (film->HasUserSamplingMap()) {
+					film->GetUserSamplingMap(data->userSamplingMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+				} else {
+					// This should never happen
+					LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in RandomSampler::GetNextSample()";
+				}
+			}
 		}
 
-		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
-			// Dade - we are at a valid checkpoint where we can stop the
-			// rendering. Check if we have enough samples per pixel in the film.
-			if (film->enoughSamplesPerPixel) {
-				// Dade - pixelSampler->renderingDone is shared among all rendering threads
-				pixelSampler->renderingDone = true;
-				haveMoreSamples = false;
+		if ((data->noiseAwareMapVersion == 0) && (data->userSamplingMapVersion == 0)) {
+			// Standard sampler using pixel sampler
+
+			u_int sampPixelPosToUse;
+			// Move to the next pixel
+			{
+				fast_mutex::scoped_lock lock(sampPixelPosMutex);
+				sampPixelPosToUse = sampPixelPos;
+				sampPixelPos = (sampPixelPos + 1) % totalPixels;
 			}
-		} else
-			haveMoreSamples = (!pixelSampler->renderingDone);
+
+			// fetch next pixel from pixelsampler
+			if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
+				// Dade - we are at a valid checkpoint where we can stop the
+				// rendering. Check if we have enough samples per pixel in the film.
+				if (film->enoughSamplesPerPixel) {
+					// Dade - pixelSampler->renderingDone is shared among all rendering threads
+					pixelSampler->renderingDone = true;
+					haveMoreSamples = false;
+				}
+			} else
+				haveMoreSamples = (!pixelSampler->renderingDone);
+		}
 
 		data->samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -159,9 +188,23 @@ bool LDSampler::GetNextSample(Sample *sample) {
 		}
 	}
 
-	// Copy low-discrepancy samples from tables
-	sample->imageX = data->xPos + data->imageSamples[2 * data->samplePos];
-	sample->imageY = data->yPos + data->imageSamples[2 * data->samplePos + 1];
+	if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
+		float uv[2], pdf;
+		data->samplingDistribution2D->SampleContinuous(
+			data->imageSamples[2 * data->samplePos],
+			data->imageSamples[2 * data->samplePos + 1],
+			uv, &pdf);
+		sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+
+		if (film->enoughSamplesPerPixel)
+			haveMoreSamples = false;
+	} else {
+		// Copy low-discrepancy samples from tables
+		sample->imageX = data->xPos + data->imageSamples[2 * data->samplePos];
+		sample->imageY = data->yPos + data->imageSamples[2 * data->samplePos + 1];
+	}
+
 	sample->lensU = data->lensSamples[2 * data->samplePos];
 	sample->lensV = data->lensSamples[2 * data->samplePos + 1];
 	sample->time = data->timeSamples[data->samplePos];
@@ -203,13 +246,20 @@ float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
-Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
+Sampler* LDSampler::CreateSampler(const ParamSet &params, Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
 	int nsamp = params.FindOneInt("pixelsamples", 4);
-	return new LDSampler(xstart, xend, ystart, yend, max(nsamp, 0), pixelsampler);
+
+	bool useNoiseAware = params.FindOneBool("noiseaware", false);
+	if (useNoiseAware) {
+		// Enable Film noise-aware map generation
+		film->EnableNoiseAwareMap();
+	}
+
+	return new LDSampler(xstart, xend, ystart, yend, max(nsamp, 0), pixelsampler, useNoiseAware);
 }
 
 static DynamicLoader::RegisterSampler<LDSampler> r("lowdiscrepancy");

@@ -20,3 +20,4 @@ LUDWIG Thomas <thomas.ludwig.at.gmail.com>
 Amir 'foobarbarian' Mohammadkhani-Aminabadi <amir@mohammadkhani.eu>
 BOUCHARD Guillaume <guillaume.bouchard@liris.cnrs.fr>
 FLUX Omni <omniflux+devel.at.omniflux.com>
+WENZEL Jakob <wenzel@cs.cornell.edu>

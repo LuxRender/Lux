@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -62,6 +62,13 @@ ContributionBuffer::~ContributionBuffer()
 	pool->End(this);
 	// Since End gives a reference to the buffers to the pool,
 	// buffers freeing is going to be handled by the pool
+}
+
+ScopedPoolLock::ScopedPoolLock(ContributionPool* pool) : lock(pool->mainSplattingMutex) {
+}
+
+void ScopedPoolLock::unlock() {
+	lock.unlock();
 }
 
 ContributionPool::ContributionPool(Film *f) : sampleCount(0.f), film(f)
@@ -167,14 +174,6 @@ void ContributionPool::Next(ContributionBuffer::Buffer* volatile *b, float *sc,
 	// release the pool lock
 	pool_lock.unlock();
 
-	// Check if it's time to write
-	// do this here so we don't have to aquire main 
-	// splatting lock again.
-	// Doing it before splatting may not be optimal 
-	// for the first minute or so but shouldn't
-	// matter much after that.
-	film->CheckWriteOuputInterval();
-
 	film->AddSampleCount(count);
 
 	{
@@ -223,12 +222,6 @@ void ContributionPool::Delete()
 	// At this point CFull doesn't hold any buffer
 	for(u_int i = 0; i < CFree.size(); ++i)
 		delete CFree[i];
-}
-
-void ContributionPool::CheckFilmWriteOuputInterval()
-{
-	boost::mutex::scoped_lock splattingLock(mainSplattingMutex);
-	film->CheckWriteOuputInterval();
 }
 
 u_int ContributionPool::GetFilmTileIndexes(const Contribution &contrib, u_int *tileIndex0, u_int *tileIndex1) const {

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "version.h"
+#include "osfunc.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/mutex.hpp>
@@ -109,9 +110,15 @@ extern "C" void luxRemoveServer(const char * name)
 	Context::GetActive()->RemoveServer(string(name));
 }
 
+extern "C" void luxResetServer(const char * name, const char * password)
+{
+	Context::GetActive()->ResetServer(string(name), string(password));
+}
+
 extern "C" unsigned int luxGetServerCount()
 {
-	return Context::GetActive()->GetServerCount();
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxGetServerCount' is deprecated. Use 'luxGetIntAttribute' instead.";
+	return luxGetIntAttribute("render_farm", "slaveNodeCount");
 }
 
 extern "C" unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info,
@@ -497,12 +504,18 @@ extern "C" void luxInit()
 	if (initialized)
 		{LOG(LUX_ERROR,LUX_ILLSTATE)<<"luxInit() has already been called.";}
 	else
+	{
 		Context::SetActive(new Context());
+		Context::GetActive()->Init();
+	}
 
 	FreeImage_Initialise(true);
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	initialized = true;
+
+	// enable floating point exception deping ond FPDEBUG set in core/usfunc.h
+	lux::fpdebug::enable();
 }
 
 bool parseFile(const char *filename) {
@@ -773,7 +786,7 @@ extern "C" bool luxHasAttribute(const char * objectName, const char * attributeN
 	if (object) {
 		try {
 			return object->HasAttribute(attributeName);
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -824,7 +837,7 @@ extern "C" unsigned int luxGetAttributeDescription(const char * objectName, cons
 			dst[length] = 0;
 			return length;
 		}
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -837,7 +850,7 @@ extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char 
 	if (object) {
 		try {
 			return (*object)[attributeName].HasDefaultValue();
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -855,7 +868,7 @@ extern "C" unsigned int luxGetStringAttribute(const char * objectName, const cha
 			dst[length] = 0;
 			return length;
 		}
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -871,7 +884,7 @@ extern "C" unsigned int luxGetStringAttributeDefault(const char * objectName, co
 			dst[length] = 0;
 			return length;
 		}
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -884,7 +897,7 @@ extern "C" void luxSetStringAttribute(const char * objectName, const char * attr
 	if (object) {
 		try {
 			(*object)[attributeName] = std::string(value);
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -898,7 +911,7 @@ extern "C" float luxGetFloatAttribute(const char * objectName, const char * attr
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].FloatValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -911,7 +924,7 @@ extern "C" void luxSetFloatAttribute(const char * objectName, const char * attri
 	if (object) {
 		try {
 			(*object)[attributeName] = value;
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -925,7 +938,7 @@ extern "C" float luxGetFloatAttributeDefault(const char * objectName, const char
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].DefaultFloatValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -938,7 +951,7 @@ extern "C" double luxGetDoubleAttribute(const char * objectName, const char * at
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].DoubleValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -951,7 +964,7 @@ extern "C" void luxSetDoubleAttribute(const char * objectName, const char * attr
 	if (object) {
 		try {
 			(*object)[attributeName] = value;
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -965,7 +978,7 @@ extern "C" double luxGetDoubleAttributeDefault(const char * objectName, const ch
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].DefaultDoubleValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -978,7 +991,7 @@ extern "C" int luxGetIntAttribute(const char * objectName, const char * attribut
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].IntValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -991,7 +1004,7 @@ extern "C" int luxGetIntAttributeDefault(const char * objectName, const char * a
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].DefaultIntValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -1004,7 +1017,7 @@ extern "C" void luxSetIntAttribute(const char * objectName, const char * attribu
 	if (object) {
 		try {
 			(*object)[attributeName] = value;
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -1018,7 +1031,7 @@ extern "C" bool luxGetBoolAttribute(const char * objectName, const char * attrib
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].BoolValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -1031,7 +1044,7 @@ extern "C" bool luxGetBoolAttributeDefault(const char * objectName, const char *
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].DefaultBoolValue();
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error &e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
@@ -1044,7 +1057,7 @@ extern "C" void luxSetBoolAttribute(const char * objectName, const char * attrib
 	if (object) {
 		try {
 			(*object)[attributeName] = value;
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
@@ -1116,12 +1129,14 @@ extern "C" void luxUpdateLogFromNetwork()
 
 extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval)
 {
-	Context::GetActive()->SetNetworkServerUpdateInterval(updateInterval);
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxSetNetworkServerUpdateInterval' is deprecated. Use 'luxSetIntAttribute' instead.";
+	luxSetIntAttribute("render_farm", "pollingInterval", updateInterval);
 }
 
 extern "C" int luxGetNetworkServerUpdateInterval()
 {
-	return Context::GetActive()->GetNetworkServerUpdateInterval();
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxGetNetworkServerUpdateInterval' is deprecated. Use 'luxGetIntAttribute' instead.";
+	return luxGetIntAttribute("render_farm", "pollingInterval");
 }
 
 //error handling
@@ -1251,3 +1266,12 @@ extern "C" const char* luxMagnitudePrefix(double number) {
 	return MagnitudePrefix(number);
 }
 
+extern "C" void luxSetUserSamplingMap(const float *map)
+{
+	Context::GetActive()->SetUserSamplingMap(map);
+}
+
+extern "C" float *luxGetUserSamplingMap()
+{
+	return Context::GetActive()->GetUserSamplingMap();
+}

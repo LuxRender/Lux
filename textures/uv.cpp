@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,35 +32,7 @@ Texture<SWCSpectrum> * UVTexture::CreateSWCSpectrumTexture(const Transform &tex2
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG( LUX_ERROR,LUX_BADTOKEN) << "2D texture mapping '" << type << "' unknown";
-		map = new UVMapping2D;
-	}
-	return new UVTexture(map);
+	return new UVTexture(TextureMapping2D::Create(tex2world, tp));
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<UVTexture> r2("uv");

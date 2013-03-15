@@ -3,7 +3,7 @@
  *   Augmented Reality Project : http://w3.impa.br/~zang/arlux/ 	   *
  *   Visgraf-Impa Lab 2010       http://www.visgraf.impa.br/ 	           *
  *									   *
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt)                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *

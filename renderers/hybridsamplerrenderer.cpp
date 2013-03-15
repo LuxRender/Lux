@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,6 +34,9 @@
 #include "luxrays/core/context.h"
 #include "luxrays/core/device.h"
 #include "luxrays/core/virtualdevice.h"
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+#include "luxrays/core/ocldevice.h"
+#endif
 
 using namespace lux;
 
@@ -64,6 +67,8 @@ SurfaceIntegratorStateBuffer::~SurfaceIntegratorStateBuffer() {
 		integratorState[i]->Free(scene);
 		delete integratorState[i];
 	}
+	// don't delete contribBuffer as references might still be held in the pool
+	delete rayBuffer;
 }
 
 void SurfaceIntegratorStateBuffer::GenerateRays() {
@@ -85,9 +90,6 @@ void SurfaceIntegratorStateBuffer::GenerateRays() {
 			break;
 		}
 	}
-	/*LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " <<
-			(lastStateIndex > firstStateIndex ? (lastStateIndex - firstStateIndex) : (lastStateIndex + integratorState.size() - firstStateIndex)) <<
-			"/" << integratorState.size();*/
 
 	//--------------------------------------------------------------------------
 	// Check if I need to add more SurfaceIntegratorState
@@ -184,7 +186,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 	host->AddDevice(new HRVirtualDeviceDescription(host, "VirtualGPU"));
 
 	// Get the list of devices available
-	std::vector<luxrays::DeviceDescription *> deviceDescs = std::vector<luxrays::DeviceDescription *>(ctx->GetAvailableDeviceDescriptions());
+	std::vector<luxrays::DeviceDescription *> deviceDescs = ctx->GetAvailableDeviceDescriptions();
 
 	// Add all the OpenCL devices
 	for (size_t i = 0; i < deviceDescs.size(); ++i)
@@ -192,31 +194,50 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 
 	bool useNative = false;
 
+	std::vector<luxrays::DeviceDescription *> hwDeviceDescs;
+
+	if (useGPUs) {
+		// Find OpenCL GPU devices
+		hwDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL_GPU, hwDeviceDescs);
+
 #if !defined(LUXRAYS_DISABLE_OPENCL)
-	// Create the virtual device to feed all hardware devices
-	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
-	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
-	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
-
-	if (useGPUs && (hwDeviceDescs.size() >= 1)) {
-		if (hwDeviceDescs.size() == 1) {
-			// Only one GPU available
-			luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
-			if (forceGPUWorkGroupSize > 0)
+		if (forceGPUWorkGroupSize > 0) {
+			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
+				luxrays::OpenCLDeviceDescription *desc = static_cast<luxrays::OpenCLDeviceDescription *>(hwDeviceDescs[i]);
 				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+			}
+		}
+#endif
+	}
+	if (!useGPUs || hwDeviceDescs.size() == 0)
+		useNative = true;
 
+	if (useNative) {
+		if (useGPUs)
+			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
+
+		// Find native devices
+		hwDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, hwDeviceDescs);
+	}
+
+	// Create the virtual device to feed all hardware devices
+	if (hwDeviceDescs.size() >= 1) {
+		if (hwDeviceDescs.size() == 1) {
+			// Only one device available
 			hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
 			virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 			virtualIM2MDevice = NULL;
 		} else {
-			// Multiple GPUs available
+			// Multiple devices available
 
 			// Select the devices to use
 			std::vector<luxrays::DeviceDescription *> selectedDescs;
 			bool haveSelectionString = (deviceSelection.length() > 0);
 			if (haveSelectionString) {
 				if (deviceSelection.length() != hwDeviceDescs.size()) {
-					LOG(LUX_WARNING, LUX_MISSINGDATA) << "OpenCL device selection string has the wrong length, must be " <<
+					LOG(LUX_WARNING, LUX_MISSINGDATA) << "Device selection string has the wrong length, must be " <<
 							hwDeviceDescs.size() << " instead of " << deviceSelection.length() << ", ignored";
 
 					selectedDescs = hwDeviceDescs;
@@ -229,15 +250,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 			} else
 				selectedDescs = hwDeviceDescs;
 
-			if (forceGPUWorkGroupSize > 0) {
-				for (size_t i = 0; i < selectedDescs.size(); ++i) {
-					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)selectedDescs[i];
-					desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
-				}
-			}
-
 			if (selectedDescs.size() == 1) {
-				// Multiple GPUs are available but only one is selected
+				// Multiple devices are available but only one is selected
 				hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, selectedDescs);
 				virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 				virtualIM2MDevice = NULL;
@@ -248,43 +262,20 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 			}
 		}
 
-		// The default QBVH stack size (i.e. 24) is too small for the average
-		// LuxRender scene and the slight slow down caused by a bigger stack
-		// should not be noticiable with hybrid rendering. The default is now 32.
-		for (size_t i = 0; i < hardwareDevices.size(); ++i) {
-			if (hardwareDevices[i]->GetType() == luxrays::DEVICE_TYPE_OPENCL)
-				((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetQBVHMaxStackSize(qbvhStackSize);
-		}
-
-		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
+		LOG(LUX_INFO, LUX_NOERROR) << "Devices used:";
 		for (size_t i = 0; i < hardwareDevices.size(); ++i)
 			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[i]->GetName() << "]";
-	} else
-		// don't want GPU or no hardware available, use native
-		useNative = true;
-#else
-	// only native mode without OpenCL
-	if (useGPUs)
-		LOG(LUX_INFO, LUX_NOERROR) << "GPU assisted rendering requires an OpenCL enabled version of LuxRender, using CPU instead";
-
-	useGPUs = false;
-	useNative = true;
-#endif
-
-	if (useNative) {
-		if (useGPUs)
-			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
-
+	} else {
+		// No device found
 		virtualIM2ODevice = NULL;
 		virtualIM2MDevice = NULL;
-
-		// allocate native threads
-		std::vector<luxrays::DeviceDescription *> nativeDeviceDescs = deviceDescs;
-		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, nativeDeviceDescs);
-
-		nativeDevices = ctx->AddIntersectionDevices(nativeDeviceDescs);
 	}
 
+	// The default QBVH stack size (i.e. 24) is too small for the average
+	// LuxRender scene and the slight slow down caused by a bigger stack
+	for (size_t i = 0; i < hardwareDevices.size(); ++i) {
+		hardwareDevices[i]->SetMaxStackSize(qbvhStackSize);
+	}
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -303,7 +294,7 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread is not empty.");
 
 	delete ctx;
 
@@ -332,8 +323,24 @@ void HybridSamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void HybridSamplerRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
+	vector<HybridInstancePrimitive *> hybridPrims;
 
 	{
 		// Section under mutex
@@ -363,8 +370,6 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		// scene->surfaceIntegrator->CheckLightStrategy() can not been used before
 		// preprocess anymore.
 
-		state = RUN;
-
 		// Initialize the stats
 		rendererStatistics->reset();
 	
@@ -378,41 +383,51 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		RandomGenerator rng(lastUsedSeed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		//----------------------------------------------------------------------
 		// Compile the scene geometries in a LuxRays compatible format
 		//----------------------------------------------------------------------
 
-		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene);
-        ctx->Start();
+		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene, hybridPrims);
+		if (!dataSet)
+			return;
+		ctx->Start();
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
 		scene->SetReady();
 
 		if (scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
+			// now we're ready to run
+			state = RUN;
 			// add a thread
 			CreateRenderThread();
 		}
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
+		
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -430,26 +445,34 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			state = TERMINATE;
 		}
 
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
+
 		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
+		scene->camera()->film->contribPool->Flush();
+		scene->camera()->film->contribPool->Delete();
 	}
 
 	ctx->Stop();
 	delete dataSet;
 	scene->dataSet = NULL;
+
+	// Free memory allocated inside HybridRenderer::PreprocessGeometry()
+	for (u_int i = 0; i < hybridPrims.size(); ++i)
+		delete hybridPrims[i];
+		
 }
 
 void HybridSamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void HybridSamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void HybridSamplerRenderer::Terminate() {
@@ -477,8 +500,8 @@ void HybridSamplerRenderer::CreateRenderThread() {
 			// Add an instance to the LuxRays virtual device
 			idev = virtualIM2MDevice->AddVirtualDevice();
 		} else {
-			// Add a nativethread device
-			idev = nativeDevices[renderThreads.size() % nativeDevices.size()];
+			// No device found
+			return;
 		}
 
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
@@ -514,10 +537,11 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 //------------------------------------------------------------------------------
 
 HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRenderer *r, luxrays::IntersectionDevice * idev) :
-	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.) {
+	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 HybridSamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
@@ -537,7 +561,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
 
 	// initialize the thread's rangen
 	u_long seed;
@@ -546,7 +570,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderer->lastUsedSeed++;
 		seed = renderer->lastUsedSeed;
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 
@@ -585,8 +609,6 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		//----------------------------------------------------------------------
 
-		//const double t1 = luxrays::WallClockTime();
-
 		bool renderIsOver = false;
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
@@ -618,6 +640,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(renderThread->statLock);
 			renderThread->blackSamples += nrContribs;
+			if (nrContribs > 0)
+				++(renderThread->blackSamplePaths);
 			renderThread->samples += nrSamples;
 		}
 
@@ -628,18 +652,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			break;
 		}
 
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "NextState() time: " << int((luxrays::WallClockTime() - t1) * 1000.0) << "ms";
-
 		//----------------------------------------------------------------------
-		// File the RayBuffer with the generated rays
+		// Fill the RayBuffer with the generated rays
 		//----------------------------------------------------------------------
-
-		//const double t2 = luxrays::WallClockTime();
 
 		rayBuffer->Reset();
 		stateBuffer->GenerateRays();
-
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "GenerateRays() time: " << (luxrays::WallClockTime() - t2) * 1000.0 << "ms";
 
 		//----------------------------------------------------------------------
 		// Trace the RayBuffer
@@ -648,13 +666,11 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderThread->iDevice->PushRayBuffer(rayBuffer);
 	}
 
-	scene.camera->film->contribPool->End(contribBuffer);
+	scene.camera()->film->contribPool->End(contribBuffer);
 
 	// Free memory
-	for (size_t i = 0; i < stateBuffers.size(); ++i) {
-		delete stateBuffers[i]->GetRayBuffer();
+	for (size_t i = 0; i < stateBuffers.size(); ++i)
 		delete stateBuffers[i];
-	}
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {

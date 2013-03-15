@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,35 +32,7 @@ RGBIllumSPD BilerpSpectrumTexture::whiteRGBIllum;
 Texture<float>* BilerpFloatTexture::CreateFloatTexture(const Transform &tex2world, const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
-		map = new UVMapping2D;
-	}
-	return new BilerpFloatTexture(map,
+	return new BilerpFloatTexture(TextureMapping2D::Create(tex2world, tp),
 		tp.FindOneFloat("v00", 0.f), tp.FindOneFloat("v01", 1.f),
 		tp.FindOneFloat("v10", 0.f), tp.FindOneFloat("v11", 1.f));
 }
@@ -69,35 +41,7 @@ Texture<SWCSpectrum>* BilerpSpectrumTexture::CreateSWCSpectrumTexture(const Tran
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
-		map = new UVMapping2D;
-	}
-	return new BilerpSpectrumTexture(map,
+	return new BilerpSpectrumTexture(TextureMapping2D::Create(tex2world, tp),
 		tp.FindOneRGBColor("v00", 0.f), tp.FindOneRGBColor("v01", 1.f),
 		tp.FindOneRGBColor("v10", 0.f), tp.FindOneRGBColor("v11", 1.f));
 }
@@ -106,35 +50,7 @@ Texture<FresnelGeneral>* BilerpFresnelTexture::CreateFresnelTexture(const Transf
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
-		map = new UVMapping2D;
-	}
-	return new BilerpFresnelTexture(map,
+	return new BilerpFresnelTexture(TextureMapping2D::Create(tex2world, tp),
 		tp.GetFresnelTexture("v00", 1.f), tp.GetFresnelTexture("v01", 1.5f),
 		tp.GetFresnelTexture("v10", 1.f), tp.GetFresnelTexture("v11", 1.5f));
 }

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -26,6 +26,8 @@
 #include "fresnel.h"
 #include "mc.h"
 #include "sampling.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 using namespace lux;
 
@@ -202,7 +204,10 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 	const float coso = fabsf(CosTheta(wo));
 	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));	
 
-	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(*wiW, ng) / cosWo;
 	if (sideTest > 0.f) {
 		// Reflection
 		if (!(Dot(woW, ng) > 0.f)) {
@@ -235,7 +240,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		*f_ = a * (SWCSpectrum(1.f) - S).Sqrt() * baseF;
+		*f_ = a * Sqrt(SWCSpectrum(1.f) - S) * baseF;
 	} else
 		return false;
 
@@ -268,8 +273,11 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	const float cosi = fabsf(CosTheta(wi));
 	const float coso = fabsf(CosTheta(wo));
 	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));
-	
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
+
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(wiW, ng) / cosWo;
 	if (sideTest > 0.f) {
 		// Reflection
 		// ignore BTDFs
@@ -310,7 +318,7 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		return a * (SWCSpectrum(1.f) - S).Sqrt() * base->F(sw, woW, wiW, reverse, flags);
+		return a * Sqrt(SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
 	} else
 		return SWCSpectrum(0.f);
 }

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,7 @@ public:
 
 	BlenderWoodTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_WOOD) {
+		BlenderTexture3D("BlenderWoodTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_WOOD) {
 		tex.stype = GetWoodType(tp.FindOneString("type", "bands"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));

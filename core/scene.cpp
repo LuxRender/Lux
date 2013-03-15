@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -48,60 +48,51 @@ boost::mutex scene_rand_mutex;
 
 using namespace lux;
 
-void Scene::SaveFLM( const string& filename ) {
-	camera->film->WriteFilm(filename);
-}
-
 void Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
-	camera->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
+	camera()->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }
 
 // Framebuffer Access for GUI
 void Scene::UpdateFramebuffer() {
-    camera->film->updateFrameBuffer();
-
-	// I have to call ContributionPool method here in order
-	// to acquire splattingMutex lock
-	if (camera->film->contribPool && !filmOnly)
-		camera->film->contribPool->CheckFilmWriteOuputInterval();
+    camera()->film->updateFrameBuffer();
 }
 
 unsigned char* Scene::GetFramebuffer() {
-    return camera->film->getFrameBuffer();
+    return camera()->film->getFrameBuffer();
 }
 
 float* Scene::GetFloatFramebuffer() {
-    return camera->film->getFloatFrameBuffer();
+    return camera()->film->getFloatFrameBuffer();
 }
 
 float* Scene::GetAlphaBuffer() {
-    return camera->film->getAlphaBuffer();
+    return camera()->film->getAlphaBuffer();
 }
 
 float* Scene::GetZBuffer() {
-    return camera->film->getZBuffer();
+    return camera()->film->getZBuffer();
 }
 
 // histogram access for GUI
 void Scene::GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options){
-	camera->film->getHistogramImage(outPixels, width, height, options);
+	camera()->film->getHistogramImage(outPixels, width, height, options);
 }
 
 
 // Parameter Access functions
 void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, u_int index) { 
 	if(comp == LUX_FILM)
-		camera->film->SetParameterValue(param, value, index);
+		camera()->film->SetParameterValue(param, value, index);
 }
 double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
-		return camera->film->GetParameterValue(param, index);
+		return camera()->film->GetParameterValue(param, index);
 	else
 		return 0.;
 }
 double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
-		return camera->film->GetDefaultParameterValue(param, index);
+		return camera()->film->GetDefaultParameterValue(param, index);
 	else
 		return 0.;
 }
@@ -109,7 +100,7 @@ void Scene::SetStringParameterValue(luxComponent comp, luxComponentParameters pa
 }
 string Scene::GetStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
-		return camera->film->GetStringParameterValue(param, index);
+		return camera()->film->GetStringParameterValue(param, index);
 	else
 		return "";
 }
@@ -118,19 +109,18 @@ string Scene::GetDefaultStringParameterValue(luxComponent comp, luxComponentPara
 }
 
 int Scene::DisplayInterval() {
-    return camera->film->getldrDisplayInterval();
+    return camera()->film->getldrDisplayInterval();
 }
 
 u_int Scene::FilmXres() {
-    return camera->film->GetXPixelCount();
+    return camera()->film->GetXPixelCount();
 }
 
 u_int Scene::FilmYres() {
-    return camera->film->GetYPixelCount();
+    return camera()->film->GetYPixelCount();
 }
 
 Scene::~Scene() {
-	delete camera;
 	delete sampler;
 	delete surfaceIntegrator;
 	delete volumeIntegrator;
@@ -148,7 +138,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	filmOnly(false)
 {
 	// Scene Constructor Implementation
-	bound = Union(aggregate->WorldBound(), camera->Bounds());
+	bound = Union(aggregate->WorldBound(), camera()->Bounds());
 	if (volumeRegion)
 		bound = Union(bound, volumeRegion->WorldBound());
 
@@ -157,7 +147,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	seedBase = scene_rng();
 	scene_rand_mutex.unlock();
 
-	camera->film->RequestBufferGroups(lightGroups);
+	camera()->film->RequestBufferGroups(lightGroups);
 }
 
 Scene::Scene(Camera *cam) :
@@ -199,7 +189,7 @@ void Scene::arlux_setup(void)
 	Primitive *shp;
 
 	Vector Z;
-	Point cam = camera->CameraToWorld( Point(0.f, 0.f, 0.f) );
+	Point cam = camera()->CameraToWorld * Point(0.f, 0.f, 0.f);
 	for (u_int i=0; i < objects.size(); i++) {
 
 		shp = objects[i].get();

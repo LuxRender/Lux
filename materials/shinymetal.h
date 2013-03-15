@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,8 +37,8 @@ public:
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex, 
 		boost::shared_ptr<Texture<SWCSpectrum> > &kr,
-		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Ks(ks), Kr(kr), nu(u),
-		nv(v), film(flm), filmindex(flmindex) { Sc =sc; }
+		const ParamSet &mp) : Material("ShinyMetal-" + boost::lexical_cast<string>(this), mp),
+		Ks(ks), Kr(kr), nu(u), nv(v), film(flm), filmindex(flmindex) { }
 	virtual ~ShinyMetal() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

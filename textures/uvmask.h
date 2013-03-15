@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,8 +39,9 @@ public:
 	// UVMaskFloatTexture Public Methods
 	UVMaskTexture(TextureMapping2D *m,
 	              boost::shared_ptr<Texture<T> > &_innerTex,
-	              boost::shared_ptr<Texture<T> > &_outerTex)
-	: innerTex(_innerTex), outerTex(_outerTex) { mapping = m; }
+	              boost::shared_ptr<Texture<T> > &_outerTex) :
+		Texture<T>("UVMaskTexture-" + boost::lexical_cast<string>(this)),
+		innerTex(_innerTex), outerTex(_outerTex) { mapping = m; }
 
 	virtual ~UVMaskTexture() { delete mapping; }
 
@@ -111,38 +112,9 @@ Texture<float> * UVMaskTexture<T>::CreateFloatTexture(const Transform &tex2world
                                                       const ParamSet  &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG( LUX_ERROR,LUX_BADTOKEN) << "2D texture mapping '" << type << "' unknown";
-		map = new UVMapping2D;
-	}
-
 	boost::shared_ptr<Texture<float> > innerTex(tp.GetFloatTexture("innertex", 1.f));
 	boost::shared_ptr<Texture<float> > outerTex(tp.GetFloatTexture("outertex", 0.f));
-  return new UVMaskTexture(map, innerTex, outerTex);
+  return new UVMaskTexture(TextureMapping2D::Create(tex2world, tp), innerTex, outerTex);
 }
 
 

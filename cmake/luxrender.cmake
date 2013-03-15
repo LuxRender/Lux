@@ -1,5 +1,5 @@
 ###########################################################################
-#   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 #
+#   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  #
 #                                                                         #
 #   This file is part of Lux.                                             #
 #                                                                         #
@@ -44,8 +44,10 @@ IF(QT4_FOUND)
 		qtgui/noisereductionwidget.cpp
 		qtgui/openexroptionsdialog.cpp
 		qtgui/panewidget.cpp
+		qtgui/queue.cpp
 		qtgui/renderview.cpp
 		qtgui/tonemapwidget.cpp
+		console/commandline.cpp
 		)
 	SOURCE_GROUP("Source Files\\Qt GUI" FILES ${LUXQTGUI_SRCS})
 
@@ -64,10 +66,11 @@ IF(QT4_FOUND)
 		qtgui/noisereductionwidget.hxx
 		qtgui/openexroptionsdialog.hxx
 		qtgui/panewidget.hxx
+		qtgui/queue.hxx
 		qtgui/renderview.hxx
 		qtgui/tonemapwidget.hxx
 		)
-	SOURCE_GROUP("Header Files\\Qt GUI" FILES ${LUXQTGUI_MOC} qtgui/quiutil.h)
+	SOURCE_GROUP("Header Files\\Qt GUI" FILES ${LUXQTGUI_MOC} qtgui/quiutil.h console/commandline.h)
 
 	SET(LUXQTGUI_UIS
 		qtgui/aboutdialog.ui
@@ -102,6 +105,7 @@ IF(QT4_FOUND)
 
 	#ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
+
 	IF(APPLE)
 		IF( NOT OSX_OPTION_XCODE_4.1)
 			SET_TARGET_PROPERTIES(luxrender PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION 4.2) # QT will not play with xcode-4.0 compiler default llvm-gcc-4.2 !

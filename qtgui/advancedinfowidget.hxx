@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,8 +23,8 @@
 #ifndef ADVANCEDINFOWIDGET_H
 #define ADVANCEDINFOWIDGET_H
 
-#include <QtGui/QWidget>
-
+#include <QShowEvent>
+#include <QWidget>
 
 namespace Ui
 {
@@ -36,7 +36,6 @@ class AdvancedInfoWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	AdvancedInfoWidget(QWidget *parent = 0);
 	~AdvancedInfoWidget();
 
@@ -48,8 +47,8 @@ public:
 
 protected:
 	virtual void showEvent(QShowEvent *event);
-private:
 
+private:
 	Ui::AdvancedInfoWidget *ui;
 
 	int m_TM_kernel;
@@ -59,8 +58,6 @@ signals:
 
 private slots:
 
-
 };
 
 #endif // AdvancedInfoWidget_H
-

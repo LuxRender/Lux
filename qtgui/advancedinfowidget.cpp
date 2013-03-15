@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,13 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_advancedinfo.h"
-#include "advancedinfowidget.hxx"
-//#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QString>
+#include <QStringList>
 
-#include <iostream>
-#include <algorithm>
+#include "api.h"
+
+#include "advancedinfowidget.hxx"
+#include "guiutil.h"
+#include "ui_advancedinfo.h"
 
 using namespace std;
 
@@ -74,6 +75,11 @@ void AdvancedInfoWidget::updateWidgetValues()
 		luxGetIntAttribute("film", "yResolution")));
 	info.append("</tr>");
 	info.append("<tr>");
+	info.append(QString("<td>Effective resolution:</td><td>%1x%2</td>").arg(
+		luxGetIntAttribute("film", "xPixelCount")).arg(
+		luxGetIntAttribute("film", "yPixelCount")));
+	info.append("</tr>");
+	info.append("<tr>");
 	info.append(QString("<td>Premult. alpha:</td><td>%1</td>").arg(
 		luxGetBoolAttribute("film", "premultiplyAlpha") ? tr("Yes") : tr("No")));
 	info.append("</tr>");	
@@ -86,8 +92,9 @@ void AdvancedInfoWidget::updateWidgetValues()
 		luxGetBoolAttribute("film", "write_EXR") ? tr("Yes") : tr("No")));
 	info.append("</tr>");
 	info.append("<tr>");
-	info.append(QString("<td>Write PNG:</td><td>%1</td>").arg(
-		luxGetBoolAttribute("film", "write_PNG") ? tr("Yes") : tr("No")));
+	info.append(QString("<td>Write PNG:</td><td>%1, %2</td>").arg(
+		luxGetBoolAttribute("film", "write_PNG") ? tr("Yes") : tr("No")).arg(
+		luxGetBoolAttribute("film", "write_PNG_16bit") ? tr("16bit") : tr("8bit")));
 	info.append("</tr>");
 	info.append("<tr>");
 	info.append(QString("<td>Write FLM:</td><td>%1</td>").arg(
@@ -100,7 +107,8 @@ void AdvancedInfoWidget::updateWidgetValues()
 	ui->textAdvancedInfo->setHtml(info.join("\n"));
 }
 
-void AdvancedInfoWidget::showEvent(QShowEvent *event) {
+void AdvancedInfoWidget::showEvent(QShowEvent *event)
+{
 	updateWidgetValues();
 
 	QWidget::showEvent(event);

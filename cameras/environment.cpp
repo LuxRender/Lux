@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -52,7 +52,7 @@ EnvironmentCamera::EnvironmentCamera(const MotionSystem &world2cam,
 	: Camera(world2cam, hither, yon, sopen, sclose,
 		sdist, film)
 {
-		pos = CameraToWorld(Point(0, 0, 0));
+		pos = CameraToWorld * Point(0, 0, 0);
 }
 
 void EnvironmentCamera::SampleMotion(float time)
@@ -63,7 +63,7 @@ void EnvironmentCamera::SampleMotion(float time)
 	// call base method to sample transform
 	Camera::SampleMotion(time);
 	// then update derivative transforms
-	pos = CameraToWorld(Point(0,0,0));
+	pos = CameraToWorld * Point(0,0,0);
 }
 
 bool EnvironmentCamera::SampleW(MemoryArena &arena,
@@ -75,7 +75,7 @@ bool EnvironmentCamera::SampleW(MemoryArena &arena,
 	const float phi = 2 * M_PI * u1 / film->xResolution;
 	Normal ns(-sinf(theta) * sinf(phi), cosf(theta),
 		-sinf(theta) * cosf(phi));
-	CameraToWorld(ns, &ns);
+	ns *= CameraToWorld;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
@@ -115,7 +115,7 @@ BBox EnvironmentCamera::Bounds() const
 		bound = Union(bound, BBox(pos));
 	}
 
-	bound.Expand(MachineEpsilon::E(bound));
+	bound.Expand(max(1.f, MachineEpsilon::E(bound)));
 
 	return bound;
 }
@@ -125,7 +125,7 @@ bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi,
 {
 	if (!isinf(distance) && (distance < ClipHither || distance > ClipYon))
 		return false;
-	const Vector w = WorldToCamera(wi);
+	const Vector w(Inverse(CameraToWorld) * wi);
 	const float cosTheta = w.y;
 	const float theta = acosf(min(1.f, cosTheta));
 	*y = theta * film->yResolution * INV_PI;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,18 +39,6 @@ using std::cout;
 
 namespace lux
 {
-
-// Matrix Method Definitions
-bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2])
-{
-	float det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
-	if (fabsf(det) < 1e-5)
-		return false;
-	float invDet = 1.0f/det;
-	x[0] = (A[1][1]*B[0] - A[0][1]*B[1]) * invDet;
-	x[1] = (A[0][0]*B[1] - A[1][0]*B[0]) * invDet;
-	return true;
-}
 
 /* string hashing function
  * An algorithm produced by Professor Daniel J. Bernstein and shown first to the world on the usenet newsgroup comp.lang.c. It is one of the most efficient hash functions ever published.
@@ -146,7 +134,7 @@ std::streamsize multibuffer_device::write(const char* s, std::streamsize n)
 				grow();
 		}
 
-	} catch (std::bad_alloc e) {
+	} catch (std::bad_alloc&) {
 		// ignore
 	}
 	return static_cast<std::streamsize>(io::position_to_offset(pos) - start);

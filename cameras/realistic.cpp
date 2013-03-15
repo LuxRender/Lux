@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -64,7 +64,7 @@ RealisticCamera::RealisticCamera(const MotionSystem &world2cam,
     Transform FilmToRaster = 
         Scale(-scale, scale, 1.f) *
         Translate(Vector(-w/2.0f, h/2.0f, 0.f));
-    RasterToFilm = FilmToRaster.GetInverse();
+    RasterToFilm = Inverse(FilmToRaster);
     FilmToCamera = Translate(Vector(0.f, 0.f, -filmDistance - distToBack));
     RasterToCamera =  FilmToCamera * RasterToFilm;
 }   
@@ -73,8 +73,7 @@ RealisticCamera::~RealisticCamera(void) {
 float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
     // Generate raster and back lens samples
     Point Pras(sample.imageX, sample.imageY, 0.f);
-    Point PCamera;
-    RasterToCamera(Pras, &PCamera);
+    Point PCamera(RasterToCamera * Pras);
     float lensU, lensV;
     ConcentricSampleDisk(sample.lensU, sample.lensV, &lensU, &lensV);
     lensU *= backAperture;
@@ -125,7 +124,7 @@ float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
         }
     }
     ray->maxt = (ClipYon - ClipHither) / ray->d.z;
-    CameraToWorld(*ray, ray);
+    *ray *= CameraToWorld;
     return cos4 / filmDist2;
 }
 

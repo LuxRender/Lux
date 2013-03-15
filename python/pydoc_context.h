@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -266,6 +266,9 @@ const char * ds_pylux_Context_removeServer =
 
 const char * ds_pylux_Context_removeThread =
 "Remove a local rendering thread from the current rendering process.";
+
+const char * ds_pylux_Context_resetServer =
+"Reset the state of a remote rendering slave.";
 
 const char * ds_pylux_Context_reverseOrientation =
 "Causes the orientation in the current scope to be reversed left->right or\n"

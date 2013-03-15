@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,7 +37,6 @@ public:
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, float gain,
 		const string &texname, float fov, bool sup);
 	virtual ~ProjectionLight();
-	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene &) const {
@@ -65,7 +64,6 @@ private:
 	float hither, yon;
 	float screenX0, screenX1, screenY0, screenY1, area;
 	float cosTotalWidth;
-	bool support;
 };
 
 }//namespace lux

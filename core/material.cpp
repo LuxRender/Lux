@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -22,6 +22,7 @@
 
 // material.cpp*
 #include "material.h"
+#include "color.h"
 #include "shape.h"
 #include "texture.h"
 #include "paramset.h"
@@ -29,13 +30,15 @@
 using namespace lux;
 
 // Material Method Definitions
-Material::Material(const ParamSet &mp, bool hasBumpMap) {
+Material::Material(const string &name, const ParamSet &mp, bool hasBumpMap) : Queryable(name) {
 	// so we can accurately report unused params if material doesn't support bump mapping
 	if (hasBumpMap) {
 		bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
 		boost::shared_ptr<Texture<float> > bump(mp.GetFloatTexture("bumpmap"));
 		bumpMap = bump;
 	}
+	boost::shared_ptr<Texture<SWCSpectrum> > sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
+	Sc = sc;
 	compParams.tVm = mp.FindOneBool("compo_visible_material", true);
 	compParams.tVl = mp.FindOneBool("compo_visible_emission", true);
 	compParams.tiVm = mp.FindOneBool("compo_visible_indirect_material", true);

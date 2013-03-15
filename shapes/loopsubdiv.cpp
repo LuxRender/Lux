@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -31,7 +31,7 @@
 using namespace lux;
 
 // LoopSubdiv Method Definitions
-LoopSubdiv::LoopSubdiv(u_int shpType, bool proj, Point cam_, u_int nfaces, u_int nvertices, const int *vertexIndices,
+LoopSubdiv::LoopSubdiv(ShapeType shpType, bool proj, Point cam_, u_int nfaces, u_int nvertices, const int *vertexIndices,
 	const Point *P, const float *uv, const Normal *n, u_int nl,
 	const boost::shared_ptr<Texture<float> > &dismap, float dmscale,
 	float dmoffset, bool dmnormalsmooth, bool dmsharpboundary,
@@ -44,9 +44,16 @@ LoopSubdiv::LoopSubdiv(u_int shpType, bool proj, Point cam_, u_int nfaces, u_int
 {
 	shape_type = shpType;
 	proj_text = proj;
-	if (shape_type == 1)
-		proj_text = true;
 	cam = cam_;
+
+	if ( shape_type == ShapeType(AR_SHAPE) ) {
+		proj_text = true;
+		Scale = new float[nvertices];
+		for (u_int i  = 0; i < nvertices; ++i)
+			Scale[i] = -1.f;
+	}
+	else
+		Scale = NULL;
 
 	nLevels = nl;
 	hasUV = (uv != NULL);
@@ -441,7 +448,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
@@ -456,7 +463,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
@@ -471,7 +478,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
@@ -482,7 +489,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				face = face->nextFace(v->P);
 			} while (face != v->startFace);
 		}
-		dl = -(dl * displacementMapScale / nf + displacementMapOffset);
+		dl = (dl * displacementMapScale / nf + displacementMapOffset);
 		// Average the displacement
 		displacement *= dl;
 

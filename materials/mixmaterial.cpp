@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,7 +39,7 @@ BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	float bscale = dgShading.Scale;
 	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, isect.dg.nn,
 		isect.exterior, isect.interior, bcolor, bscale);
-	float amt = amount->Evaluate(sw, dgShading);
+	float amt = Clamp(amount->Evaluate(sw, dgShading), 0.f, 1.f);
 	DifferentialGeometry dgS = dgShading;
 	mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
 	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, isect, dgS));
@@ -62,10 +62,9 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
 		return NULL;
 	}
 
-	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > amount(mp.GetFloatTexture("amount", 0.5f));
 
-	return new MixMaterial(amount, mat1, mat2, mp, Sc);
+	return new MixMaterial(amount, mat1, mat2, mp);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

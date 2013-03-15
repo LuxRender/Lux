@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,12 +35,15 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &kt,
 		boost::shared_ptr<Texture<float> > &sig,
 		bool conserving,
-		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kr(kr), Kt(kt), sigma(sig),
-		energyConserving(conserving) { Sc = sc; }
+		const ParamSet &mp) : Material("MatteTranslucent-" + boost::lexical_cast<string>(this), mp), Kr(kr), Kt(kt), sigma(sig),
+		energyConserving(conserving) { }
 	virtual ~MatteTranslucent() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
+
+	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
+	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

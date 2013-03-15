@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -53,7 +53,7 @@ float PhaseHG(const Vector &w, const Vector &wp, float g) {
 
 float PhaseSchlick(const Vector &w,
                    const Vector &wp, float g) {
-	const float k = g * (1.55f - .55f * g * g);
+	const float k = g * (1.5f - .5f * g * g);
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
@@ -72,7 +72,7 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 		isect->dg.nn = Normal(-ray.d);
 		isect->dg.scattered = true;
 		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
-		isect->WorldToObject = Transform();
+		isect->ObjectToWorld = Transform();
 		isect->primitive = &primitive;
 		isect->material = &material;
 		isect->interior = this;
@@ -95,8 +95,8 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 		*L *= Exp(-Tau(sample.swl, ray));
 	return scatter;
 }
-AggregateRegion::AggregateRegion(const vector<Region *> &r)
-{
+AggregateRegion::AggregateRegion(const vector<Region *> &r) :
+	Region("AggregateRegion-" + boost::lexical_cast<string>(this)) {
 	regions = r;
 	for (u_int i = 0; i < regions.size(); ++i)
 		bound = Union(bound, regions[i]->WorldBound());

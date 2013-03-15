@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,8 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <QTranslator>
 #include <clocale>
+
+//#include <QTranslator>
 
 #include "luxapp.hxx"
 
@@ -37,14 +38,12 @@ int main(int argc, char *argv[])
 	if (translator.load(QString("luxrender_") + locale))
 		application.installTranslator(&translator);
 */
-	application.init();
 
 	// force C locale
 	setlocale(LC_NUMERIC,"C");
-	
-	if (application.mainwin != NULL)
+
+	if (application.mainwin)
 		return application.exec();
 	else
 		return 0;
 }
-

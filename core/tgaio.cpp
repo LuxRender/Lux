@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -60,10 +60,10 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 		header[2] = 3;							// set the data type of the targa (3 = GREYSCALE uncompressed)
 
 	// No cropping data: use directly the cropped size
-	header[13] = static_cast<char>((xPixelCount >> 8) & 0xFF);
-	header[12] = static_cast<char>(xPixelCount & 0xFF);
-	header[15] = static_cast<char>((yPixelCount >> 8) & 0xFF);
-	header[14] = static_cast<char>(yPixelCount & 0xFF);
+	header[13] = static_cast<char>((xResolution >> 8) & 0xFF);
+	header[12] = static_cast<char>(xResolution & 0xFF);
+	header[15] = static_cast<char>((yResolution >> 8) & 0xFF);
+	header[14] = static_cast<char>(yResolution & 0xFF);
 	if(channeltype == 0)
 		header[16] = 8;						// bitdepth for BW
 	else if(channeltype == 2)
@@ -76,8 +76,18 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 		fputc(header[i], tgaFile);
 
 	// write the bytes of data out
+	for (u_int i = 0; i < yPixelStart; ++i) {
+		for (u_int j = 0; j < xResolution; ++j) {
+			for (int k = 0; k < channeltype + 1; ++k)
+				fputc(0, tgaFile);
+		}
+	}
 	for (u_int i = 0;  i < yPixelCount ; ++i) {
 		const u_int line = yPixelCount - i - 1;
+		for (u_int j = 0; j < xPixelStart; ++j) {
+			for (int k = 0; k < channeltype + 1; ++k)
+				fputc(0, tgaFile);
+		}
 		for (u_int j = 0; j < xPixelCount; ++j) {
 			const u_int offset = line * xPixelCount + j;
 			if (channeltype == 0) {
@@ -92,6 +102,16 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 				if(channeltype == 3) //  Alpha
 					fputc(static_cast<unsigned char>(Clamp(256.f * alpha[offset], 0.f, 255.f)), tgaFile);
 			}
+		}
+		for (u_int j = 0; j < xResolution - (xPixelStart + xPixelCount); ++j) {
+			for (int k = 0; k < channeltype + 1; ++k)
+				fputc(0, tgaFile);
+		}
+	}
+	for (u_int i = 0; i < yResolution - (yPixelStart + yPixelCount); ++i) {
+		for (u_int j = 0; j < xResolution; ++j) {
+			for (int k = 0; k < channeltype + 1; ++k)
+				fputc(0, tgaFile);
 		}
 	}
 

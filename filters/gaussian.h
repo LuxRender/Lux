@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,6 +39,8 @@ public:
 		alpha = a;
 		expX = expf(-alpha * xWidth * xWidth);
 		expY = expf(-alpha * yWidth * yWidth);
+
+		AddStringConstant(*this, "type", "Filter type", "gaussian");
 	}
 	virtual ~GaussianFilter() { }
 	virtual float Evaluate(float x, float y) const;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -90,11 +90,10 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 Material* Glass2::CreateMaterial(const Transform &xform,
 	const ParamSet &mp)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	bool archi = mp.FindOneBool("architectural", false);
 	bool disp = mp.FindOneBool("dispersion", false);
 
-	return new Glass2(archi, disp, mp, Sc);
+	return new Glass2(archi, disp, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glass2> r("glass2");

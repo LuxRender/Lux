@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,15 +20,16 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_pane.h"
-#include "panewidget.hxx"
-
 #include <iostream>
+
+#include <QFont>
+
+#include "panewidget.hxx"
+#include "ui_pane.h"
 
 using namespace std;
 
-ClickableLabel::ClickableLabel(const QString& label, QWidget *parent) : QLabel(label,parent) {
-}
+ClickableLabel::ClickableLabel(const QString& label, QWidget *parent) : QLabel(label,parent) { }
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent* event) 
 {
@@ -54,7 +55,6 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 	if (!label.isEmpty())
 		ui->labelPaneName->setText(label);
 		ui->labelPaneName->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
-
 
 #if defined(__APPLE__)
 	ui->frame->setLineWidth(2);
@@ -216,7 +216,7 @@ void PaneWidget::setWidget(QWidget *widget)
 #if defined(__APPLE__)
 	expandlabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
 #endif
-	if (!mainwidget->isEnabled())
+	if (!mainwidget->isEnabledTo(mainwidget->parentWidget()))
 		onofflabel->setPixmap(QPixmap(":/icons/powerofficon.png"));
 	if (expanded)
 		mainwidget->show();

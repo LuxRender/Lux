@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -43,9 +43,9 @@ public:
 	// SkyBSDF Public Methods
 	SkyBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const SkyLight &l, const Transform &WL) :
+		const SkyLight &l, const Transform &LW) :
 		BSDF(dgs, ngeom, exterior, interior), light(l),
-		WorldToLight(WL) { }
+		LightToWorld(LW) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
@@ -62,7 +62,7 @@ public:
 		const float cosi = w.z;
 		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
 			w.z * Vector(dgShading.nn));
-		*wiW = Normalize(WorldToLight.GetInverse()(wi));
+		*wiW = Normalize(LightToWorld * wi);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -83,7 +83,7 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Vector w(Normalize(WorldToLight(-wiW)));
+			const Vector w(Normalize(Inverse(LightToWorld) * -wiW));
 			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
@@ -101,19 +101,19 @@ protected:
 	// SkyBSDF Private Methods
 	virtual ~SkyBSDF() { }
 	const SkyLight &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 };
 class  SkyPortalBSDF : public BSDF  {
 public:
 	// SkyPortalBSDF Public Methods
 	SkyPortalBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const SkyLight &l, const Transform &WL,
+		const SkyLight &l, const Transform &LW,
 		const Point &p,
 		const vector<boost::shared_ptr<Primitive> > &portalList,
 		u_int portal) :
 		BSDF(dgs, ngeom, exterior, interior), light(l),
-		WorldToLight(WL), ps(p), PortalShapes(portalList),
+		LightToWorld(LW), ps(p), PortalShapes(portalList),
 		shapeIndex(portal) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
@@ -134,7 +134,7 @@ public:
 		const float cosi = Dot(*wiW, ng);
 		if (!(cosi > 0.f))
 			return false;
-		const Vector w(Normalize(WorldToLight(-(*wiW))));
+		const Vector w(Normalize(Inverse(LightToWorld) * -(*wiW)));
 		*f_ = SWCSpectrum(cosi);
 		light.GetSkySpectralRadiance(sw, w, f_);
 		*pdf *= DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
@@ -179,7 +179,7 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Vector w(Normalize(WorldToLight(-wiW)));
+			const Vector w(Normalize(Inverse(LightToWorld) * -wiW));
 			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
@@ -197,7 +197,7 @@ protected:
 	// SkyPortalBSDF Private Methods
 	virtual ~SkyPortalBSDF() { }
 	const SkyLight &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 	Point ps;
 	const vector<boost::shared_ptr<Primitive> > &PortalShapes;
 	u_int shapeIndex;
@@ -244,8 +244,7 @@ SkyLight::~SkyLight()
 SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb,
 	float aconst, float bconst, float cconst, float dconst, float econst, bool sup)
-	: Light(light2world, ns) {
-	support = sup;
+	: Light("SkyLight-" + boost::lexical_cast<string>(this), light2world, ns, sup) {
 	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;
@@ -292,6 +291,12 @@ SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	zenith_Y /= PerezBase(perez_Y, 0, thetaS);
 	zenith_x /= PerezBase(perez_x, 0, thetaS);
 	zenith_y /= PerezBase(perez_y, 0, thetaS);
+
+	AddFloatAttribute(*this, "dir.x", "Sky light direction X", &SkyLight::GetDirectionX);
+	AddFloatAttribute(*this, "dir.y", "Sky light direction Y", &SkyLight::GetDirectionY);
+	AddFloatAttribute(*this, "dir.z", "Sky light direction Z", &SkyLight::GetDirectionZ);
+	AddFloatAttribute(*this, "turbidity", "Sky light turbidity", &SkyLight::turbidity);
+	AddFloatAttribute(*this, "gain", "Sun light gain", &SkyLight::skyScale);
 }
 
 float SkyLight::Power(const Scene &scene) const
@@ -341,7 +346,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		if (pdfDirect)
@@ -349,7 +354,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 			(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes, ~0U);
+			v, v, *this, LightToWorld, ps, PortalShapes, ~0U);
 		if (pdf)
 			*pdf = 0.f;
 		if (pdfDirect)
@@ -382,7 +387,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 			*pdfDirect *= AbsDot(r.d, ns) /
 				(DistanceSquared(r.o, ps) * nrPortalShapes);
 	}
-	const Vector wh(Normalize(WorldToLight(r.d)));
+	const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 	GetSkySpectralRadiance(sample.swl, wh, L);
 	*L *= skyScale;
 	return true;
@@ -431,7 +436,7 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal (0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -461,7 +466,7 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal (0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes, shapeIndex);
+			v, v, *this, LightToWorld, ps, PortalShapes, shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
@@ -526,12 +531,12 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes, shapeIndex);
+			v, v, *this, LightToWorld, ps, PortalShapes, shapeIndex);
 		if (pdf)
 			*pdf = 0.f;
 		DifferentialGeometry dgs;

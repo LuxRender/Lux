@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,12 +23,15 @@
 #ifndef GUIUTIL_H
 #define GUIUTIL_H
 
-#include <QString>
-#include <QImage>
-#include <QFontMetrics>
-#include <QMessageBox>
+#include <sstream>
 
-#include "api.h"
+#include <QFontMetrics>
+#include <QImage>
+#include <QList>
+#include <QMessageBox>
+#include <QPair>
+#include <QString>
+#include <QWidget>
 
 template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;
@@ -56,5 +59,23 @@ typedef QList<QPair<QString, QMessageBox::ButtonRole> > CustomButtonsList;
  */
 int customMessageBox(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text, 
 	const CustomButtonsList &buttons, int defaultButton = 0);
+
+class StrBufDialogBox : public std::stringbuf
+{
+public:
+	StrBufDialogBox(QMessageBox::Icon icon) : icon(icon) {}
+	virtual ~StrBufDialogBox() { if (str().size() > 0) sync(); }
+	virtual int sync()
+	{
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setText(str().c_str());
+		msgBox.exec();
+		return 0;
+	}
+
+private:
+	QMessageBox::Icon icon;
+};
 
 #endif //GUIUTIL_H

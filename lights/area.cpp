@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -33,6 +33,7 @@
 #include "sphericalfunction.h"
 #include "sampling.h"
 #include "dynload.h"
+#include "queryable.h"
 
 using namespace lux;
 
@@ -159,8 +160,8 @@ AreaLight::AreaLight(const Transform &light2world,
 	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
 	float e, SampleableSphericalFunction *ssf, u_int ns,
 	const boost::shared_ptr<Primitive> &p)
-	: Light(light2world, ns), Le(le), gain(g), power(pow), efficacy(e),
-	func(ssf)
+	: Light("AreaLight-" + boost::lexical_cast<string>(this), light2world, ns),
+		Le(le), paramGain(g), gain(g), power(pow), efficacy(e), func(ssf)
 {
 	if (p->CanIntersect() && p->CanSample()) {
 		// Create a temporary to increase shared count
@@ -177,22 +178,23 @@ AreaLight::AreaLight(const Transform &light2world,
 		else
 			prim = boost::shared_ptr<Primitive>(new PrimitiveSet(refinedPrims));
 	}
+	support = ( ShapeType(AR_SHAPE) == prim->GetPrimitiveType() );
 	area = prim->Area();
 	Le->SetIlluminant(); // Illuminant must be set before calling Le->Y()
 	const float gainFactor = power * efficacy /
 		(area * M_PI * Le->Y());
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
+
+	AddFloatAttribute(*this, "gain", "AreaLight gain", &AreaLight::paramGain);
+	AddFloatAttribute(*this, "power", "AreaLight power", &AreaLight::power);
+	AddFloatAttribute(*this, "efficacy", "AreaLight efficacy", &AreaLight::efficacy);
+	AddFloatAttribute(*this, "area", "AreaLight area", &AreaLight::area);
 }
 
 AreaLight::~AreaLight()
 {
 	delete func;
-}
-
-bool AreaLight::IsSupport() const
-{
-    return ( ShapeType(AR_SHAPE) == prim->GetPrimitiveType() );
 }
 
 float AreaLight::Power(const Scene &scene) const
@@ -248,22 +250,16 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
 	return true;
 }
-SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
+bool AreaLight::L(const Sample &sample, const Ray &ray,
 	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
-	float *pdfDirect) const
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	if(func) {
 		*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	} else {
-		if (!(Dot(dg.nn, ray.d) < 0.f)) {
-			if (pdf)
-				*pdf = 0.f;
-			if (pdfDirect)
-				*pdfDirect = 0.f;
-			*bsdf = NULL;
-			return SWCSpectrum(0.f);
-		}
+		if (!(Dot(dg.nn, ray.d) < 0.f))
+			return false;
 		*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
 	}
@@ -271,7 +267,8 @@ SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
 		*pdf = prim->Pdf(dg);
 	if (pdfDirect)
 		*pdfDirect = prim->Pdf(ray.o, dg);
-	return Le->Evaluate(sample.swl, dg) * (gain * M_PI) * (*bsdf)->F(sample.swl, Vector(dg.nn), -ray.d, true);
+	*Le *= this->Le->Evaluate(sample.swl, dg) * (gain * M_PI) * (*bsdf)->F(sample.swl, Vector(dg.nn), -ray.d, true);
+	return !Le->Black();
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,

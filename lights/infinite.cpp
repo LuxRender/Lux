@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,9 +39,9 @@ public:
 	// InfiniteBSDF Public Methods
 	InfiniteBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const InfiniteAreaLight &l, const Transform &WL) :
+		const InfiniteAreaLight &l, const Transform &LW) :
 		BSDF(dgs, ngeom, exterior, interior), light(l),
-		WorldToLight(WL) { }
+		LightToWorld(LW) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
@@ -58,7 +58,7 @@ public:
 		const float cosi = w.z;
 		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
 			w.z * Vector(dgShading.nn));
-		*wiW = Normalize(WorldToLight.GetInverse()(wi));
+		*wiW = Normalize(LightToWorld * wi);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -87,7 +87,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(WorldToLight(-wiW));
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -106,19 +106,19 @@ protected:
 	// InfiniteBSDF Private Methods
 	virtual ~InfiniteBSDF() { }
 	const InfiniteAreaLight &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 };
 class  InfinitePortalBSDF : public BSDF  {
 public:
 	// InfinitePortalBSDF Public Methods
 	InfinitePortalBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const InfiniteAreaLight &l, const Transform &WL,
+		const InfiniteAreaLight &l, const Transform &LW,
 		const Point &p,
 		const vector<boost::shared_ptr<Primitive> > &portalList,
 		u_int portal) :
 		BSDF(dgs, ngeom, exterior, interior), light(l),
-		WorldToLight(WL), ps(p), PortalShapes(portalList),
+		LightToWorld(LW), ps(p), PortalShapes(portalList),
 		shapeIndex(portal) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
@@ -159,7 +159,8 @@ public:
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (light.radianceMap != NULL) {
-			const Vector wh = Normalize(WorldToLight(-(*wiW)));
+			const Vector wh(Normalize(Inverse(LightToWorld) *
+				-(*wiW)));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -193,7 +194,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(WorldToLight(-wiW));
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -212,7 +213,7 @@ protected:
 	// InfinitePortalBSDF Private Methods
 	virtual ~InfinitePortalBSDF() { }
 	const InfiniteAreaLight &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 	Point ps;
 	const vector<boost::shared_ptr<Primitive> > &PortalShapes;
 	u_int shapeIndex;
@@ -227,10 +228,13 @@ InfiniteAreaLight::~InfiniteAreaLight()
 
 InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	const RGBColor &l, u_int ns, const string &texmap,
-	EnvironmentMapping *m, float gain, float gamma, bool sup)
-	: Light(light2world, ns), SPDbase(l)
+	EnvironmentMapping *m, float g, float gm, bool sup)
+	: Light("InfiniteAreaLight-" + boost::lexical_cast<string>(this), light2world, ns, sup), SPDbase(l)
 {
-	support = sup;
+	lightColor = l;
+	gain = g;
+	gamma = gm;
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -242,6 +246,12 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
 	}
+
+	AddFloatAttribute(*this, "gain", "InfiniteAreaLight gain", &InfiniteAreaLight::gain);
+	AddFloatAttribute(*this, "gamma", "InfiniteAreaLight gamma", &InfiniteAreaLight::gamma);
+	AddFloatAttribute(*this, "color.r", "InfiniteAreaLight color R", &InfiniteAreaLight::GetColorR);
+	AddFloatAttribute(*this, "color.g", "InfiniteAreaLight color G", &InfiniteAreaLight::GetColorG);
+	AddFloatAttribute(*this, "color.b", "InfiniteAreaLight color B", &InfiniteAreaLight::GetColorB);
 }
 
 float InfiniteAreaLight::Power(const Scene &scene) const
@@ -277,7 +287,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		if (pdfDirect)
@@ -285,7 +295,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 				(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, LightToWorld, ps, PortalShapes,
 			~0U);
 		if (pdf)
 			*pdf = 0.f;
@@ -324,7 +334,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	}
 	*L *= SWCSpectrum(sample.swl, SPDbase);
 	if (radianceMap != NULL) {
-		const Vector wh = Normalize(WorldToLight(r.d));
+		const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
 		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
@@ -375,7 +385,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal (0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -405,7 +415,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal(0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, LightToWorld, ps, PortalShapes,
 			shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -475,12 +485,12 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			v, v, *this, WorldToLight);
+			v, v, *this, LightToWorld);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			v, v, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, LightToWorld, ps, PortalShapes,
 			shapeIndex);
 		if (pdf) {
 			*pdf = 0.f;

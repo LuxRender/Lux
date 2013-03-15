@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -114,7 +114,7 @@ private:
 
 		// Rendering statistics
 		fast_mutex statLock;
-		double samples, blackSamples;
+		double samples, blackSamples, blackSamplePaths;
 	};
 
 	void CreateRenderThread();
@@ -129,7 +129,6 @@ private:
 	// LuxRays virtual device used to feed all HardwareIntersectionDevice
 	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIM2ODevice;
 	luxrays::VirtualM2MHardwareIntersectionDevice *virtualIM2MDevice;
-	vector<luxrays::IntersectionDevice *> nativeDevices;
 	vector<luxrays::IntersectionDevice *> hardwareDevices;
 
 	u_int rayBufferSize;

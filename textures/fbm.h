@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -36,7 +36,8 @@ namespace lux
 class FBmTexture : public Texture<float> {
 public:
 	// FBmTexture Public Methods
-	FBmTexture(int oct, float roughness, TextureMapping3D *map) {
+	FBmTexture(int oct, float roughness, TextureMapping3D *map) :
+		Texture("FBmTexture-" + boost::lexical_cast<string>(this)) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;
@@ -85,6 +86,10 @@ public:
 		*minValue = -*maxValue;
 	}
 
+	int GetOctaves() const { return octaves; }
+	float GetOmega() const { return omega; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
@@ -93,30 +98,5 @@ private:
 	float omega;
 	TextureMapping3D *mapping;
 };
-
-// FBmTexture Method Definitions
-Texture<float> * FBmTexture::CreateFloatTexture(const Transform &tex2world,
-	const ParamSet &tp) {
-	TextureMapping3D *imap;
-	// Read mapping coordinates
-	string coords = tp.FindOneString("coordinates", "global");
-	if (coords == "global")
-		imap = new GlobalMapping3D(tex2world);
-	else if (coords == "local")
-		imap = new LocalMapping3D(tex2world);
-	else if (coords == "uv")
-		imap = new UVMapping3D(tex2world);
-	else if (coords == "globalnormal")
-		imap = new GlobalNormalMapping3D(tex2world);
-	else if (coords == "localnormal")
-		imap = new LocalNormalMapping3D(tex2world);
-	else
-		imap = new GlobalMapping3D(tex2world);
-	// Apply texture specified transformation option for 3D mapping
-	imap->Apply3DTextureMappingOptions(tp);
-
-	return new FBmTexture(tp.FindOneInt("octaves", 8),
-		tp.FindOneFloat("roughness", .5f), imap);
-}
 
 }//namespace lux

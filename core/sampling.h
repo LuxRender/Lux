@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,6 +28,7 @@
 #include "contribution.h"
 #include "spectrumwavelengths.h"
 #include "film.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -61,7 +62,7 @@ public:
 	mutable vector<Contribution> contributions;
 };
 
-class  Sampler {
+class  Sampler : public Queryable {
 public:
 	// Sampler Interface
 	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
@@ -224,7 +225,7 @@ inline void LDShuffleScrambled1D(const RandomGenerator &rng, u_int nSamples,
 inline void LDShuffleScrambled2D(const RandomGenerator &rng, u_int nSamples,
 	u_int nPixel, float *samples)
 {
-	u_int scramble[2] = { rng.uintValue(), rng.uintValue() };
+	u_int scramble[2] = { (u_int) rng.uintValue(), (u_int) rng.uintValue() };
 	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		Sample02(i, scramble, &samples[2*i]);
 	for (u_int i = 0; i < nPixel; ++i)
@@ -244,7 +245,7 @@ inline void HaltonShuffleScrambled1D(const RandomGenerator &rng, u_int nSamples,
 inline void HaltonShuffleScrambled2D(const RandomGenerator &rng, u_int nSamples,
 	u_int nPixel, float *samples)
 {
-	u_int scramble[2] = { rng.uintValue(), rng.uintValue() };
+	u_int scramble[2] = { (u_int) rng.uintValue(), (u_int) rng.uintValue() };
 	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		SampleHalton(i, scramble, &samples[2*i]);
 	for (u_int i = 0; i < nPixel; ++i)

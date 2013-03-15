@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRays.                                         *
  *                                                                         *
@@ -38,6 +38,8 @@ HybridHashGrid::~HybridHashGrid() {
 
 void HybridHashGrid::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
+	if (hitPointsCount <= 0)
+		return;
 	const BBox &hpBBox = hitPoints->GetBBox();
 
 	// Calculate the size of the grid cell

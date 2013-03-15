@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,7 @@
 #ifndef COLORSPACEWIDGET_H
 #define COLORSPACEWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 
 #define TORGB_XWHITE_RANGE 1.0f
 #define TORGB_YWHITE_RANGE 1.0f
@@ -47,7 +47,6 @@ class ColorSpaceWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	ColorSpaceWidget(QWidget *parent = 0);
 	~ColorSpaceWidget();
 
@@ -64,18 +63,15 @@ public:
 	double m_TORGB_temperature;
 
 private:
-
 	Ui::ColorSpaceWidget *ui;
 	
 	int colorspaceToPreset();
 	int whitepointToPreset();
 
-
 signals:
 	void valuesChanged();
 
 private slots:
-
 	// Colorspace slots
 	void setColorSpacePreset (int choice);
 	void setWhitepointPreset (int choice);
@@ -101,8 +97,6 @@ private slots:
 
 	void temperatureChanged (int value);
 	void temperatureChanged (double value);
-
 };
 
 #endif // COLORSPACEWIDGET_H
-

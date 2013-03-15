@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,6 +35,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &a,
 		boost::shared_ptr<Texture<SWCSpectrum> > &s,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g_) :
+		Volume("HomogeneousVolume-"  + boost::lexical_cast<string>(this)),
 		fresnel(fr), sigmaA(a), sigmaS(s), g(g_),
 		primitive(&material, this, this), material(this, g_) { }
 	virtual ~HomogeneousVolume() { }
@@ -70,7 +71,7 @@ public:
 		SWCSpectrum tau;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; i++) {
 			// avoid NaNs by defining zero absorption coefficient as no absorption
-			tau.c[i] = (sigma.c[i] <= 0.f) ? 0.f : sigma.c[i] * rl;
+			tau.c[i] = (sigma.c[i] > 0.f) ? sigma.c[i] * rl : 0.f;
 		}
 		return tau;
 	}
@@ -92,7 +93,7 @@ public:
 			isect->dg.nn = Normal(-ray.d);
 			isect->dg.scattered = true;
 			CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
-			isect->WorldToObject = Transform();
+			isect->ObjectToWorld = Transform();
 			isect->primitive = &primitive;
 			isect->material = &material;
 			isect->interior = this;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -40,7 +40,7 @@ namespace lux
 class HarlequinTexture : public Texture<SWCSpectrum> {
 public:
 	// Harlequin Public Methods
-	HarlequinTexture() {
+	HarlequinTexture() : Texture("HarlequinTexture-" + boost::lexical_cast<string>(this)) {
 		float c[3];
 		for (int i = 0; i < HARLEQUIN_TEXTURE_PALETTE_SIZE; i++) {
 			c[0] = RadicalInverse(i * COLOR_SAMPLES + 1, 2);

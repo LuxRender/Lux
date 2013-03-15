@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -38,8 +38,9 @@ public:
 	// MixTexture Public Methods
 	MixTexture(boost::shared_ptr<Texture<T> > &t1,
 		boost::shared_ptr<Texture<T> > &t2,
-		boost::shared_ptr<Texture<float> > &amt) : tex1(t1), tex2(t2),
-		amount(amt) { }
+		boost::shared_ptr<Texture<float> > &amt) :
+		Texture<T>("MixTexture-" + boost::lexical_cast<string>(this)),
+		tex1(t1), tex2(t2),	amount(amt) { }
 	virtual ~MixTexture() { }
 	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -78,9 +79,15 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<float> *GetAmountTex() const { return amount.get(); }
+	const Texture<T> *GetTex1() const { return tex1.get(); }
+	const Texture<T> *GetTex2() const { return tex2.get(); }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -62,6 +62,8 @@ public:
 
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const;
 	virtual void GetIntersection(const luxrays::RayHit &rayHit,
 		const u_int index, Intersection *isect) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
@@ -74,7 +76,7 @@ public:
 	friend class MeshBaryTriangle;
 	friend class MeshMicroDisplacementTriangle;
 	friend class MeshQuadrilateral;
-	friend class QuadTriangle;
+	friend class QuadTriangle; //Aldo - not used in the original luxrender
 
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation,
 		const ParamSet &params);
@@ -165,8 +167,8 @@ public:
 	virtual float Area() const;
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	virtual bool isDegenerate() const {
@@ -260,8 +262,8 @@ public:
 	virtual float Area() const;
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	virtual bool isDegenerate() const {
@@ -358,8 +360,8 @@ public:
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
 		return Pdf(*dg);
 	}
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	bool isDegenerate() const {

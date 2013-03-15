@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -111,6 +111,7 @@ ERPTSampler::ERPTSampler(u_int totMutations, float rng, Sampler *sampler) :
 	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel),
 	totalMutations(totMutations), range(rng), baseSampler(sampler)
 {
+	AddStringConstant(*this, "name", "Name of current sampler", "erpt");
 }
 
 ERPTSampler::~ERPTSampler() {
@@ -335,7 +336,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	newContributions.clear();
 }
 
-Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* ERPTSampler::CreateSampler(const ParamSet &params, Film *film)
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);

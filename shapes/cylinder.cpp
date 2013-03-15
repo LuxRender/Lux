@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -46,8 +46,7 @@ bool Cylinder::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic cylinder coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y;
 	float B = 2 * (ray.d.x*ray.o.x + ray.d.y*ray.o.y);
@@ -105,12 +104,10 @@ bool Cylinder::Intersect(const Ray &r, float *tHit,
 	Normal dndv((g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
-	*dg = DifferentialGeometry(ObjectToWorld(phit),
-	                           ObjectToWorld(dpdu),
-							   ObjectToWorld(dpdv),
-	                           ObjectToWorld(dndu),
-							   ObjectToWorld(dndv),
-	                           u, v, this);
+	*dg = DifferentialGeometry(ObjectToWorld * phit,
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * dndu, ObjectToWorld * dndv,
+		u, v, this);
 	// Update _tHit_ for quadric intersection
 	*tHit = thit;
 	return true;
@@ -119,8 +116,7 @@ bool Cylinder::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic cylinder coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y;
 	float B = 2 * (ray.d.x*ray.o.x + ray.d.y*ray.o.y);

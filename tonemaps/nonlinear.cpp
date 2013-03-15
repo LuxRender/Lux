@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -27,6 +27,29 @@
 using namespace lux;
 
 // NonLinearOp Method Definitions
+void NonLinearOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const 
+{
+	const u_int numPixels = xRes * yRes;
+	float invY2;
+	if (maxY <= 0.f) {
+		// Compute world adaptation luminance, _Ywa_
+		float Ywa = 0.f;
+		u_int nPixels = 0;
+		for (u_int i = 0; i < xRes * yRes; ++i) {
+			if (xyz[i].Y() <= 0) 
+				continue;
+			Ywa += logf(xyz[i].Y());
+			nPixels++;
+		}
+		Ywa = expf(Ywa / max(1U, nPixels));
+		invY2 = 1.f / (Ywa * Ywa);
+	} else
+		invY2 = 1.f / (maxY * maxY);
+	for (u_int i = 0; i < numPixels; ++i) {
+		const float ys = xyz[i].c[1];
+		xyz[i] *= (1.f + ys * invY2) / (1.f + ys);
+	}
+}
 ToneMap* NonLinearOp::CreateToneMap(const ParamSet &ps) {
 	float maxy = ps.FindOneFloat("maxY", 0.f);
 	return new NonLinearOp(maxy);

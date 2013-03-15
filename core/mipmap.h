@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,6 +29,7 @@
 #include "spectrum.h"
 #include "memory.h"
 #include "error.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -49,9 +50,10 @@ typedef enum {
 	TEXTURE_CLAMP
 } ImageWrap;
 
-class MIPMap {
+class MIPMap : public Queryable {
 public:
 	// MIPMap Public Methods
+	MIPMap(const string &name) : Queryable(name) { }
 	virtual ~MIPMap() { };
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float width = 0.f) const = 0;
@@ -283,6 +285,11 @@ public:
 			delete[] pyramid;
 			pyramid = newPyramid;
 		}
+	}
+
+	virtual const BlockedArray<T> *GetSingleMap() const {
+		// This works even if I have multiple levels
+		return singleMap;
 	}
 
 protected:
@@ -854,7 +861,7 @@ MIPMapFastImpl<T>::~MIPMapFastImpl()
 
 template <class T>
 MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int tres,
-	const T *img, float maxAniso, ImageWrap wm)
+	const T *img, float maxAniso, ImageWrap wm) : MIPMap("MIPMapFastImpl-" + boost::lexical_cast<string>(this))
 {
 	filterType = type;
 	maxAnisotropy = maxAniso;
@@ -1202,8 +1209,8 @@ public:
 	}
 	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float width = 0.f) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
-			width)).Pow(gamma);
+		return Pow(gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
+			width), gamma);
 	}
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float ds0, float dt0, float ds1, float dt1) const {
@@ -1212,8 +1219,8 @@ public:
 	}
 	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float ds0, float dt0, float ds1, float dt1) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
-			ds0, dt0, ds1, dt1)).Pow(gamma);
+		return Pow(gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
+			ds0, dt0, ds1, dt1), gamma);
 	}
 	virtual void GetDifferentials(Channel channel, float s, float t,
 		float *ds, float *dt) const {

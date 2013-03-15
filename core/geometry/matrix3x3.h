@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -24,7 +24,8 @@
 #define LUX_MATRIX3X3_H
 
 #include <boost/limits.hpp>
-#include "geometry/vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 namespace lux
 {

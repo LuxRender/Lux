@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,8 +23,10 @@
 #ifndef LIGHTGROUPWIDGET_H
 #define LIGHTGROUPWIDGET_H
 
-#include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+#include <QColor>
+#include <QEvent>
+#include <QString>
+#include <QWidget>
 
 namespace Ui
 {
@@ -36,7 +38,6 @@ class LightGroupWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	LightGroupWidget(QWidget *parent = 0);
 	~LightGroupWidget();
 
@@ -56,11 +57,9 @@ signals:
 	void valuesChanged();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::LightGroupWidget *ui;
 	
 	QString title;
@@ -79,7 +78,6 @@ private:
 	int ScaleToSliderVal(float scale);
 
 private slots:
-
 	void rgbEnabledChanged(int);
 	void bbEnabledChanged(int);
 
@@ -93,4 +91,3 @@ private slots:
 };
 
 #endif // LIGHTGROUPWIDGET_H
-

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -36,6 +36,7 @@ class ClearVolume : public Volume {
 public:
 	ClearVolume(const boost::shared_ptr<Texture<FresnelGeneral> > &fr,
 		boost::shared_ptr<Texture<SWCSpectrum> > &a) :
+		Volume("ClearVolume-"  + boost::lexical_cast<string>(this)),
 		fresnel(fr), absorption(a) { }
 	virtual ~ClearVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
@@ -70,7 +71,7 @@ public:
 		SWCSpectrum tau;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; i++) {
 			// avoid NaNs by defining zero absorption coefficient as no absorption
-			tau.c[i] = (sigma.c[i] <= 0.f) ? 0.f : sigma.c[i] * rl;
+			tau.c[i] = (sigma.c[i] > 0.f) ? sigma.c[i] * rl : 0.f;
 		}
 		return tau;
 	}
@@ -89,8 +90,13 @@ public:
 			*pdfBack = 1.f;
 		return false;
 	}
+
+	const Texture<FresnelGeneral> *GetFresnelTexture() const { return fresnel.get(); }
+	const Texture<SWCSpectrum> *GetAbsorptionTexture() const { return absorption.get(); }
+	
 	// ClearVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
+
 private:
 	boost::shared_ptr<Texture<FresnelGeneral> > fresnel;
 	boost::shared_ptr<Texture<SWCSpectrum> > absorption;

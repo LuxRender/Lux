@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -38,7 +38,8 @@ class BilerpFloatTexture : public Texture<float> {
 public:
 	// BilerpTexture Public Methods
 	BilerpFloatTexture(TextureMapping2D *m,
-		float t00, float t01, float t10, float t11) {
+		float t00, float t01, float t10, float t11) :
+		Texture("BilerpFloatTexture-" + boost::lexical_cast<string>(this)) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;
@@ -85,7 +86,8 @@ public:
 	// BilerpTexture Public Methods
 	BilerpSpectrumTexture(TextureMapping2D *m,
 		const RGBColor &t00, const RGBColor &t01,
-		const RGBColor &t10, const RGBColor &t11) {
+		const RGBColor &t10, const RGBColor &t11) :
+		Texture("BilerpSpectrumTexture-" + boost::lexical_cast<string>(this)) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;
@@ -142,7 +144,8 @@ public:
 		const boost::shared_ptr<Texture<FresnelGeneral> > &t00,
 		const boost::shared_ptr<Texture<FresnelGeneral> > &t01,
 		const boost::shared_ptr<Texture<FresnelGeneral> > &t10,
-		const boost::shared_ptr<Texture<FresnelGeneral> > &t11) {
+		const boost::shared_ptr<Texture<FresnelGeneral> > &t11) :
+		Texture("BilerpFresnelTexture-" + boost::lexical_cast<string>(this)) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -41,7 +41,7 @@ void FresnelCauchy::Evaluate(const SpectrumWavelengths &sw, float cosi,
 		else
 			cost *= eta * eta;
 		cost = cost.Clamp(0.f, 1.f);
-		cost = (SWCSpectrum(1.f) - cost).Sqrt();
+		cost = Sqrt(SWCSpectrum(1.f) - cost);
 		FrDiel2(fabsf(cosi), cost, cosi > 0.f ? eta : SWCSpectrum(1.f) / eta, f);
 	} else {
 		// Compute indices of refraction for dielectric

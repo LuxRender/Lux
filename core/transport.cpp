@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -287,11 +287,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 				&lightIsect, &ibsdf, NULL, NULL, &Li))
 				lit = light.Le(scene, sample, ray, &lightBsdf,
 					NULL, &lightPdf, &Li);
-			else if (lightIsect.arealight == &light) {
-				Li *= lightIsect.Le(sample, ray, &lightBsdf,
-					NULL, &lightPdf);
-				lit = !Li.Black();
-			}
+			else if (lightIsect.arealight == &light)
+				lit = lightIsect.Le(sample, ray, &lightBsdf,
+					NULL, &lightPdf, &Li);
 			if (lit) {
 				const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 				const float lightPdf2 = lightPdf * d2 /
@@ -443,10 +441,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 						if (rayDepth == 0)
 							Li *= 0.f;
 					}
-					else if (lightIsect.arealight == &light) {
-						Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
-						lit = !Li.Black();
-					}
+					else if (lightIsect.arealight == &light)
+						lit = lightIsect.Le(sample, ray, &lightBsdf,
+							NULL, &lightPdf, &Li);
 					if (lit) {
 						const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 						const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->dgShading.nn);
@@ -509,11 +506,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 					&lightIsect, &ibsdf, NULL, NULL, &Li))
 					lit = light.Le(scene, sample, ray, &lightBsdf,
 						NULL, &lightPdf, &Li);
-				else if (lightIsect.arealight == &light) {
-					Li *= lightIsect.Le(sample, ray, &lightBsdf,
-						NULL, &lightPdf);
-					lit = !Li.Black();
-				}
+				else if (lightIsect.arealight == &light)
+					lit = lightIsect.Le(sample, ray, &lightBsdf,
+						NULL, &lightPdf, &Li);
 				if (lit) {
 					const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 					const float lightPdf2 = lightPdf * d2 /
@@ -632,10 +627,9 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						if (rayDepth == 0)
 							Li *= 0.f;
 					}
-					else if (lightIsect.arealight == &light) {
-						Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
-						lit = !Li.Black();
-					}
+					else if (lightIsect.arealight == &light)
+						lit = lightIsect.Le(sample, ray, &lightBsdf,
+							NULL, &lightPdf, &Li);
 					else if (lightIsect.primitive) {
 						if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
 
@@ -708,11 +702,9 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 					&lightIsect, &ibsdf, NULL, NULL, &Li))
 					lit = light.Le(scene, sample, ray, &lightBsdf,
 						NULL, &lightPdf, &Li);
-				else if (lightIsect.arealight == &light) {
-					Li *= lightIsect.Le(sample, ray, &lightBsdf,
-						NULL, &lightPdf);
-					lit = !Li.Black();
-				}
+				else if (lightIsect.arealight == &light)
+					lit = lightIsect.Le(sample, ray, &lightBsdf,
+						NULL, &lightPdf, &Li);
 				else if (lightIsect.primitive) {
 					if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
 						//Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
@@ -845,10 +837,9 @@ SWCSpectrum CombEstimateDirect(const Scene &scene, const Light &light,
                         if (rayDepth == 0)
                             Li *= 0.f;
                     }
-                    else if (lightIsect.arealight == &light) {
-                        Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
-                        lit = !Li.Black();
-                    }
+		else if (lightIsect.arealight == &light)
+			lit = lightIsect.Le(sample, ray, &lightBsdf,
+				NULL, &lightPdf, &Li);
                     else if (lightIsect.primitive) {
                         if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
 
@@ -921,11 +912,9 @@ SWCSpectrum CombEstimateDirect(const Scene &scene, const Light &light,
                     &lightIsect, &ibsdf, NULL, NULL, &Li))
                     lit = light.Le(scene, sample, ray, &lightBsdf,
                         NULL, &lightPdf, &Li);
-                else if (lightIsect.arealight == &light) {
-                    Li *= lightIsect.Le(sample, ray, &lightBsdf,
-                        NULL, &lightPdf);
-                    lit = !Li.Black();
-                }
+		else if (lightIsect.arealight == &light)
+			lit = lightIsect.Le(sample, ray, &lightBsdf,
+				NULL, &lightPdf, &Li);
                 else if (lightIsect.primitive) {
                     if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
                         //Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));

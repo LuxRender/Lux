@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -105,11 +105,14 @@ protected:
 
 // SunLight Method Definitions
 SunLight::SunLight(const Transform &light2world, const float sunscale,
-	const Vector &dir, float turb , float relSize, u_int ns, bool sup)
-	: Light(light2world, ns) {
-	support = sup;
-	sundir = Normalize(LightToWorld(dir));
+	const Vector &lightDir, float turb , float relS, u_int ns, bool sup)
+	: Light("SunLight-" + boost::lexical_cast<string>(this), light2world, ns, sup) {
+	dir = lightDir;
 	turbidity = turb;
+	relSize = relS;
+	gain = sunscale;
+
+	sundir = Normalize(LightToWorld * lightDir);
 
 	CoordinateSystem(sundir, &x, &y);
 
@@ -173,7 +176,14 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 			tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
-	LSPD->Scale(sunscale);
+	LSPD->Scale(gain);
+
+	AddFloatAttribute(*this, "dir.x", "Sun light direction X", &SunLight::GetDirectionX);
+	AddFloatAttribute(*this, "dir.y", "Sun light direction Y", &SunLight::GetDirectionY);
+	AddFloatAttribute(*this, "dir.z", "Sun light direction Z", &SunLight::GetDirectionZ);
+	AddFloatAttribute(*this, "turbidity", "Sun light turbidity", &SunLight::turbidity);
+	AddFloatAttribute(*this, "relSize", "Sun light relative size", &SunLight::relSize);
+	AddFloatAttribute(*this, "gain", "Sun light gain", &SunLight::gain);
 }
 
 bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,

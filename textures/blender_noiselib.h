@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -46,5 +46,7 @@ void voronoi(float x, float y, float z, float* da, float* pa, float me, int dtyp
 /* newnoise: cellNoise & cellNoiseV (for vector/point/color) */
 float cellNoise(float x, float y, float z);
 void cellNoiseV(float x, float y, float z, float *ca);
+
+float newPerlin(float x, float y, float z);
 
 } // namespace blender

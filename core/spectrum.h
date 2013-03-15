@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -65,6 +65,18 @@ public:
 			c[i] += s2.c[i];
 		return *this;
 	}
+  // Needed for addition of textures
+	SWCSpectrum operator+(Scalar a) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] += a;
+		return ret;
+	}
+  // Needed for addition of textures
+  friend inline
+	SWCSpectrum operator+(Scalar a, const SWCSpectrum &s) {
+		return s + a;
+	}
 	SWCSpectrum operator-(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
@@ -75,6 +87,18 @@ public:
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] -= s2.c[i];
 		return *this;
+	}
+  // Needed for subtraction of textures
+  friend inline
+	SWCSpectrum operator-(Scalar a, const SWCSpectrum &s) {
+		return s - a;
+	}
+  // Needed for subtraction of textures
+	SWCSpectrum operator-(Scalar a) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] -= a;
+		return ret;
 	}
 	SWCSpectrum operator/(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
@@ -136,16 +160,34 @@ public:
 			if (c[i] != 0.f) return false;
 		return true;
 	}
-	SWCSpectrum Sqrt() const {
+    Scalar Max() const {
+        Scalar result = c[0];
+        for (int i = 1; i < WAVELENGTH_SAMPLES; i++)
+            result = std::max(result, c[i]);
+        return result;
+    }
+    Scalar Min() const {
+        Scalar result = c[0];
+        for (int i = 1; i < WAVELENGTH_SAMPLES; i++)
+            result = std::min(result, c[i]);
+        return result;
+    }
+	friend SWCSpectrum Sqrt(const SWCSpectrum &s) {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = sqrtf(c[i]);
+			ret.c[i] = sqrtf(s.c[i]);
 		return ret;
 	}
-	SWCSpectrum Pow(const SWCSpectrum &e) const {
+	friend SWCSpectrum Pow(const SWCSpectrum &s, const SWCSpectrum &e) {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = c[i] > 0.f ? powf(c[i], e.c[i]) : 0.f;
+			ret.c[i] = powf(s.c[i], e.c[i]);
+		return ret;
+	}
+	friend SWCSpectrum Pow(const SWCSpectrum &s, float e) {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = powf(s.c[i], e);
 		return ret;
 	}
 	SWCSpectrum operator-() const {

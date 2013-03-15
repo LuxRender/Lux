@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -73,8 +73,9 @@ BBox MeshBaryTriangle::ObjectBound() const
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
 	const Point &p3 = mesh->p[v[2]];
-	return Union(BBox(mesh->WorldToObject(p1), mesh->WorldToObject(p2)),
-		mesh->WorldToObject(p3));
+	return Union(BBox(Inverse(mesh->ObjectToWorld) * p1,
+		Inverse(mesh->ObjectToWorld) * p2),
+		Inverse(mesh->ObjectToWorld) * p3);
 }
 
 BBox MeshBaryTriangle::WorldBound() const
@@ -87,7 +88,8 @@ BBox MeshBaryTriangle::WorldBound() const
 }
 
 bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_shp_isect) const
-{LOG(LUX_INFO, LUX_NOERROR) << "Mesh Barytriangle intersect ";
+{
+	//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Barytriangle intersect ";
 	Vector e1, e2, s1;
 	// Compute $\VEC{s}_1$
 
@@ -166,7 +168,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this, 0.f, wtext );
 
-	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+	isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
 	isect->dg.iData.baryTriangle.coords[0] = b0;
 	isect->dg.iData.baryTriangle.coords[1] = b1;
@@ -189,7 +191,7 @@ bool MeshBaryTriangle::IntersectP(const Ray &ray, bool null_shp_isect) const
 	const float divisor = Dot(s1, e1);
 
 	//look if shape is a null type
-    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
+	if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	if (divisor == 0.f)
 		return false;
@@ -281,10 +283,10 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]];
 	const Normal ns = Normalize(nsi);
 
-    float lscale = 1.f;
-    if ( mesh->shape_type == ShapeType(AR_SHAPE) )
-	  lscale = dg.iData.baryTriangle.coords[0] * mesh->Scale[v[0]] +
-	    dg.iData.baryTriangle.coords[1] * mesh->Scale[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->Scale[v[2]];
+	float lscale = 1.f;
+	if ( mesh->shape_type == ShapeType(AR_SHAPE) )
+		lscale = dg.iData.baryTriangle.coords[0] * mesh->Scale[v[0]] +
+			dg.iData.baryTriangle.coords[1] * mesh->Scale[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->Scale[v[2]];
 
 	Vector ss, ts;
 	Vector tangent, bitangent;

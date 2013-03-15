@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -36,7 +36,8 @@ using namespace lux;
 Metal2::Metal2(boost::shared_ptr<Texture<FresnelGeneral> > &fr, 
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
-	const ParamSet &mp) : Material(mp), fresnel(fr), nu(u), nv(v)
+	const ParamSet &mp) : Material("Metal2-" + boost::lexical_cast<string>(this), mp),
+	fresnel(fr), nu(u), nv(v)
 {
 }
 

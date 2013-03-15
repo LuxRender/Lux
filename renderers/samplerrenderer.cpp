@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -124,6 +124,21 @@ void SamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SamplerRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -153,26 +168,26 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		sampPos = 0;
 		
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -183,9 +198,15 @@ void SamplerRenderer::Render(Scene *s) {
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
+
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -203,22 +224,25 @@ void SamplerRenderer::Render(Scene *s) {
 			Terminate();
 		}
 
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
+
 		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
+		scene->camera()->film->contribPool->Flush();
+		scene->camera()->film->contribPool->Delete();
 	}
 }
 
 void SamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SamplerRenderer::Terminate() {
@@ -258,11 +282,13 @@ void SamplerRenderer::RemoveRenderThread() {
 // RenderThread methods
 //------------------------------------------------------------------------------
 
+
 SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
-	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
+	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 SamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
@@ -286,14 +312,14 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	sample.contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
-	sample.camera = scene.camera->Clone();
+	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
 
 	sample.rng = &rng;
@@ -340,6 +366,8 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
 			myThread->blackSamples += nContribs;
+			if (nContribs > 0)
+				++(myThread->blackSamplePaths);
 			++(myThread->samples);
 		}
 
@@ -354,10 +382,10 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 #endif
 	}
 
-	scene.camera->film->contribPool->End(sample.contribBuffer);
+	scene.camera()->film->contribPool->End(sample.contribBuffer);
+	// don't delete contribBuffer as references are held in the pool
 	sample.contribBuffer = NULL;
 
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 	sampler->FreeSample(&sample);
 }
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -95,15 +95,17 @@ public:
 		func = new float[n];
 		cdf = new float[n + 1];
 		count = n;
+		invCount = 1.f / count;
 		memcpy(func, f, n * sizeof(float));
 		// funcInt is the sum of all f elements divided by the number
 		// of elements, ie the average value of f over [0;1)
 		ComputeStep1dCDF(func, n, &funcInt, cdf);
-		const float invFuncInt = 1.f / funcInt;
-		// Normalize func to speed up computations
-		for (u_int i = 0; i < count; ++i)
-			func[i] *= invFuncInt;
-		invCount = 1.f / count;
+		if (funcInt > 0.f) {
+			const float invFuncInt = 1.f / funcInt;
+			// Normalize func to speed up computations
+			for (u_int i = 0; i < count; ++i)
+				func[i] *= invFuncInt;
+		}
 	}
 	~Distribution1D() {
 		delete[] func;
@@ -123,17 +125,17 @@ public:
 	 */ 
 	float SampleContinuous(float u, float *pdf, u_int *off = NULL) const {
 		// Find surrounding CDF segments and _offset_
-		if (u >= cdf[count]) {
-			*pdf = func[count - 1];
-			if (off)
-				*off = count - 1;
-			return 1.f;
-		}
 		if (u <= cdf[0]) {
 			*pdf = func[0];
 			if (off)
 				*off = 0;
 			return 0.f;
+		}
+		if (u >= cdf[count]) {
+			*pdf = func[count - 1];
+			if (off)
+				*off = count - 1;
+			return 1.f;
 		}
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
 		u_int offset = ptr - cdf - 1;
@@ -167,17 +169,17 @@ public:
 	 */ 
 	u_int SampleDiscrete(float u, float *pdf, float *du = NULL) const {
 		// Find surrounding CDF segments and _offset_
-		if (u >= cdf[count]) {
-			if (du)
-				*du = 1.f;
-			*pdf = func[count - 1] * invCount;
-			return count - 1;
-		}
 		if (u <= cdf[0]) {
 			if (du)
 				*du = 0.f;
 			*pdf = func[0] * invCount;
 			return 0;
+		}
+		if (u >= cdf[count]) {
+			if (du)
+				*du = 1.f;
+			*pdf = func[count - 1] * invCount;
+			return count - 1;
 		}
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
 		u_int offset = ptr - cdf - 1;

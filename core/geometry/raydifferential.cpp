@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -64,27 +64,27 @@ PartialDifferentialGeometry::PartialDifferentialGeometry(
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-					   float uu, float vv, const void *pr, float scale, const Point &WUV )
+					   float uu, float vv, const Primitive *pr, float scale, const Point &WUV )
 	: PartialDifferentialGeometry(P, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 // Dade - added this costructor as a little optimization if the
 // normalized normal is already available
@@ -92,53 +92,53 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr, float scale, const Point &WUV)
+		float uu, float vv, const Primitive *pr, float scale, const Point &WUV)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		const Vector &T, const Vector &BiT, float BiTsign,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(T), bitangent(BiT), btsign(BiTsign) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		const Vector &T, const Vector &BiT, float BiTsign,
-		float uu, float vv, const void *pr, float scale, const Point &WUV)
+		float uu, float vv, const Primitive *pr, float scale, const Point &WUV)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(T), bitangent(BiT), btsign(BiTsign), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }

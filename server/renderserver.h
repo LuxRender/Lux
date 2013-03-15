@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt)                  *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -90,11 +90,9 @@ public:
 // Dade - network rendering server
 class LUX_EXPORT RenderServer {
 public:
-	static const int DEFAULT_TCP_PORT = 18018;
-
 	enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
 
-	RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
+	RenderServer(int threadCount, const std::string &serverPassword, int tcpPort = luxGetIntAttribute("render_farm", "defaultTcpPort"), bool writeFlmFile = false);
 	~RenderServer();
 
 	void start();
@@ -105,6 +103,10 @@ public:
 	ServerState getServerState() const { return  state; }
 	void setServerState(ServerState newState) {
 		state = newState;
+	}
+
+	std::string getServerPass() const {
+		return serverPass;
 	}
 
 	boost::uuids::uuid getCurrentSID() const {
@@ -140,7 +142,7 @@ public:
 
 	void errorHandler(int code, int severity, const char *msg);
 
-	boost::mutex errorMessageLock;
+	boost::mutex errorMessageMutex;
 	vector<ErrorMessage> errorMessages;
 
 	friend class NetworkRenderServerThread;
@@ -150,6 +152,7 @@ private:
 	int tcpPort;
 	bool writeFlmFile;
 	ServerState state;
+	std::string serverPass;
 	boost::uuids::uuid currentSID;
 	NetworkRenderServerThread *serverThread;
 };

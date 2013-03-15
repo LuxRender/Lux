@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -143,6 +143,8 @@ void ImageData::data_scale()
 MIPMap *ImageData::createMIPMap(ImageTextureFilterType filterType,
 	float maxAniso, ImageWrap wrapMode, float gain, float gamma)
 {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Defining a mipmap with " << noChannels_ << " channels of type " << pixel_type_;
+
 	MIPMap *mipmap = NULL;
 
 	// Dade - added support for 1 channel maps

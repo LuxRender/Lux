@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,6 +32,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/noncopyable.hpp>
 
 using boost::uint16_t;
 
@@ -109,8 +110,19 @@ private:
 	ContributionPool *pool;
 };
 
+class ScopedPoolLock : public boost::noncopyable {
+public:
+	ScopedPoolLock(ContributionPool* pool);
+
+	void unlock();
+
+private:
+	boost::mutex::scoped_lock lock;
+};
+
 class ContributionPool {
 	friend class ContributionBuffer;
+	friend class ScopedPoolLock;
 public:
 
 	ContributionPool(Film *f);

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,13 +20,17 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_gamma.h"
-#include "gammawidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QSettings>
+#include <QVariant>
 
 #include "api.h"
+
+#include "gammawidget.hxx"
 #include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_gamma.h"
 
 GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {
@@ -37,60 +41,58 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
 	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
 
-
 	ui->combo_CRF_List->addItem(tr("External..."));
 
-	addPreset("Advantix 100CD", "Advantix_100CD");
-	addPreset("Advantix 200CD", "Advantix_200CD");
-	addPreset("Advantix 400CD", "Advantix_400CD");
-	addPreset("Agfachrome ctpecisa 200CD", "Agfachrome_ctpecisa_200CD");
-	addPreset("Agfachrome ctprecisa 100CD", "Agfachrome_ctprecisa_100CD");
-	addPreset("Agfachrome rsx2 050CD", "Agfachrome_rsx2_050CD");
-	addPreset("Agfachrome rsx2 100CD", "Agfachrome_rsx2_100CD");
-	addPreset("Agfachrome rsx2 200CD", "Agfachrome_rsx2_200CD");
-	addPreset("Agfacolor futura 100CD", "Agfacolor_futura_100CD");
-	addPreset("Agfacolor futura 200CD", "Agfacolor_futura_200CD");
-	addPreset("Agfacolor futura 400CD", "Agfacolor_futura_400CD");
-	addPreset("Agfacolor futuraII 100CD", "Agfacolor_futuraII_100CD");
-	addPreset("Agfacolor futuraII 200CD", "Agfacolor_futuraII_200CD");
-	addPreset("Agfacolor futuraII 400CD", "Agfacolor_futuraII_400CD");
-	addPreset("Agfacolor hdc 100 plusCD", "Agfacolor_hdc_100_plusCD");
-	addPreset("Agfacolor hdc 200 plusCD", "Agfacolor_hdc_200_plusCD");
-	addPreset("Agfacolor hdc 400 plusCD", "Agfacolor_hdc_400_plusCD");
-	addPreset("Agfacolor optimaII 100CD", "Agfacolor_optimaII_100CD");
-	addPreset("Agfacolor optimaII 200CD", "Agfacolor_optimaII_200CD");
-	addPreset("Agfacolor ultra 050 CD", "Agfacolor_ultra_050_CD");
-	addPreset("Agfacolor vista 100CD", "Agfacolor_vista_100CD");
-	addPreset("Agfacolor vista 200CD", "Agfacolor_vista_200CD");
-	addPreset("Agfacolor vista 400CD", "Agfacolor_vista_400CD");
-	addPreset("Agfacolor vista 800CD", "Agfacolor_vista_800CD");
-	addPreset("B&W - Agfapan apx 025CD", "Agfapan_apx_025CD");
-	addPreset("B&W - Agfapan apx 100CD", "Agfapan_apx_100CD");
-	addPreset("B&W - Agfapan apx 400CD", "Agfapan_apx_400CD");
-	addPreset("Ektachrome 100 plusCD", "Ektachrome_100_plusCD");
-	addPreset("Ektachrome 100CD", "Ektachrome_100CD");
-	addPreset("Ektachrome 320TCD", "Ektachrome_320TCD");
-	addPreset("Ektachrome 400XCD", "Ektachrome_400XCD");
-	addPreset("Ektachrome 64CD", "Ektachrome_64CD");
-	addPreset("Ektachrome 64TCD", "Ektachrome_64TCD");
-	addPreset("Ektachrome E100SCD", "Ektachrome_E100SCD");
-	addPreset("F125CD", "F125CD");
-	addPreset("F250CD", "F250CD");
-	addPreset("F400CD", "F400CD");
-	addPreset("FCICD", "FCICD");
-	addPreset("Gold 100CD", "Gold_100CD");
-	addPreset("Gold 200CD", "Gold_200CD");
-	addPreset("Kodachrome 200CD", "Kodachrome_200CD");
-	addPreset("Kodachrome 25CD", "Kodachrome_25CD");
-	addPreset("Kodachrome 64CD", "Kodachrome_64CD");
-	addPreset("Max Zoom 800CD", "Max_Zoom_800CD");
-	addPreset("Portra 100TCD", "Portra_100TCD");
-	addPreset("Portra 160NCCD", "Portra_160NCCD");
-	addPreset("Portra 160VCCD", "Portra_160VCCD");
-	addPreset("Portra 400NCCD", "Portra_400NCCD");
-	addPreset("Portra 400VCCD", "Portra_400VCCD");
-	addPreset("Portra 800CD", "Portra_800CD");
-
+	addPreset("Advantix 100", "Advantix_100CD");
+	addPreset("Advantix 200", "Advantix_200CD");
+	addPreset("Advantix 400", "Advantix_400CD");
+	addPreset("Agfachrome CTPrecisa 200", "Agfachrome_ctpecisa_200CD");
+	addPreset("Agfachrome CTPrecisa 100", "Agfachrome_ctprecisa_100CD");
+	addPreset("Agfachrome rsx2 050", "Agfachrome_rsx2_050CD");
+	addPreset("Agfachrome rsx2 100", "Agfachrome_rsx2_100CD");
+	addPreset("Agfachrome rsx2 200", "Agfachrome_rsx2_200CD");
+	addPreset("Agfacolor Futura 100", "Agfacolor_futura_100CD");
+	addPreset("Agfacolor Futura 200", "Agfacolor_futura_200CD");
+	addPreset("Agfacolor Futura 400", "Agfacolor_futura_400CD");
+	addPreset("Agfacolor Futura II 100", "Agfacolor_futuraII_100CD");
+	addPreset("Agfacolor Futura II 200", "Agfacolor_futuraII_200CD");
+	addPreset("Agfacolor Futura II 400", "Agfacolor_futuraII_400CD");
+	addPreset("Agfacolor HDC 100 Plus", "Agfacolor_hdc_100_plusCD");
+	addPreset("Agfacolor HDC 200 Plus", "Agfacolor_hdc_200_plusCD");
+	addPreset("Agfacolor HDC 400 Plus", "Agfacolor_hdc_400_plusCD");
+	addPreset("Agfacolor Optima II 100", "Agfacolor_optimaII_100CD");
+	addPreset("Agfacolor Optima II 200", "Agfacolor_optimaII_200CD");
+	addPreset("Agfacolor Ultra 050", "Agfacolor_ultra_050_CD");
+	addPreset("Agfacolor Vista 100", "Agfacolor_vista_100CD");
+	addPreset("Agfacolor Vista 200", "Agfacolor_vista_200CD");
+	addPreset("Agfacolor Vista 400", "Agfacolor_vista_400CD");
+	addPreset("Agfacolor Vista 800", "Agfacolor_vista_800CD");
+	addPreset("Agfapan APX 025 (B&W)", "Agfapan_apx_025CD");
+	addPreset("Agfapan APX 100 (B&W)", "Agfapan_apx_100CD");
+	addPreset("Agfapan APX 400 (B&W)", "Agfapan_apx_400CD");
+	addPreset("Ektachrome 100 Plus (Color Rev.)", "Ektachrome_100_plusCD");
+	addPreset("Ektachrome 100 (Color Rev.)", "Ektachrome_100CD");
+	addPreset("Ektachrome 320T (Color Rev.)", "Ektachrome_320TCD");
+	addPreset("Ektachrome 400X (Color Rev.)", "Ektachrome_400XCD");
+	addPreset("Ektachrome 64 (Color Rev.)", "Ektachrome_64CD");
+	addPreset("Ektachrome 64T (Color Rev.)", "Ektachrome_64TCD");
+	addPreset("Ektachrome E100S", "Ektachrome_E100SCD");
+	addPreset("Fujifilm Cine F-125", "F125CD");
+	addPreset("Fujifilm Cine F-250", "F250CD");
+	addPreset("Fujifilm Cine F-400", "F400CD");
+	addPreset("Fujifilm Cine FCI", "FCICD");
+	addPreset("Kodak Gold 100", "Gold_100CD");
+	addPreset("Kodak Gold 200", "Gold_200CD");
+	addPreset("Kodachrome 200", "Kodachrome_200CD");
+	addPreset("Kodachrome 25", "Kodachrome_25CD");
+	addPreset("Kodachrome 64", "Kodachrome_64CD");
+	addPreset("Kodak Max Zoom 800", "Max_Zoom_800CD");
+	addPreset("Kodak Portra 100T", "Portra_100TCD");
+	addPreset("Kodak Portra 160NC", "Portra_160NCCD");
+	addPreset("Kodak Portra 160VC", "Portra_160VCCD");
+	addPreset("Kodak Portra 400NC", "Portra_400NCCD");
+	addPreset("Kodak Portra 400VC", "Portra_400VCCD");
+	addPreset("Kodak Portra 800", "Portra_800CD");
 }
 
 GammaWidget::~GammaWidget()
@@ -168,7 +170,6 @@ void GammaWidget::gammaChanged (double value)
 	emit valuesChanged ();
 }
  
-
 void GammaWidget::CRFChanged(int value)
 {
 	if (value == Qt::Checked)
@@ -236,9 +237,8 @@ void GammaWidget::deactivateCRF()
 
 void GammaWidget::loadCRF()
 {
-	
 	m_CRF_file = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("Camera Response Files (*.crf *.txt)"));
-    
+
 	if(!m_CRF_file.isEmpty()) {
 		QFileInfo info(m_CRF_file);
 		m_lastOpendir = info.absolutePath();
@@ -326,7 +326,3 @@ void GammaWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-
-

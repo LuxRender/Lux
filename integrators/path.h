@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -45,6 +45,8 @@ public:
 private:
 	void Terminate(const Scene &scene, const u_int bufferId,
 			const float alpha = 1.f);
+	bool TerminatePath(const Scene &scene, const u_int bufferId,
+			const float alpha = 1.f);
 
 	PathStateType GetState() const {
 		return (PathStateType)pathState;
@@ -57,6 +59,7 @@ private:
 #define PATHSTATE_FLAGS_SPECULARBOUNCE (1<<0)
 #define PATHSTATE_FLAGS_SPECULAR (1<<1)
 #define PATHSTATE_FLAGS_SCATTERED (1<<2)
+#define PATHSTATE_FLAGS_TERMINATE (1<<3)
 
 	bool GetSpecularBounce() const {
 		return (flags & PATHSTATE_FLAGS_SPECULARBOUNCE) != 0;
@@ -82,6 +85,14 @@ private:
 		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & ~PATHSTATE_FLAGS_SCATTERED);
 	}
 
+	bool GetTerminate() const {
+		return (flags & PATHSTATE_FLAGS_TERMINATE) != 0;
+	}
+
+	void SetTerminate() {
+		flags = flags | PATHSTATE_FLAGS_TERMINATE;
+	}
+
 	// NOTE: the size of this class is extremely important for the total
 	// amount of memory required for hybrid rendering.
 
@@ -104,6 +115,7 @@ private:
 	SWCSpectrum *Ld;
 	float *Vd;
 	u_int *LdGroup;
+	float *lightPdfd, *bsdfPdfd;
 
 	// Direct light sampling rays
 	Ray *shadowRay;
@@ -114,6 +126,7 @@ private:
 	Point lastBounce;
 
 	u_short pathLength;
+	u_short vertexIndex;
 	// Use Get/SetState to access this
 	u_short pathState;
 	u_short tracedShadowRayCount;
@@ -134,9 +147,10 @@ public:
 
 	// PathIntegrator Public Methods
 	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
-		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
+		bufferId(0), hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
+		sampleOffset(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
+		AddIntAttribute(*this, "maxDepth", "Path max. depth", &PathIntegrator::GetMaxDepth);
 	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
@@ -147,13 +161,6 @@ public:
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy(const Scene &scene) const {
-		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
-			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) &&
-			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_AUTOMATIC)) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The LightsSamplingStrategy must be ONE_UNIFORM or ALL_UNIFORM or AUTO.";
-			return false;
-		}
-
 		return true;
 	}
 	virtual SurfaceIntegratorState *NewState(const Scene &scene,
@@ -167,7 +174,12 @@ public:
 
 	friend class PathState;
 
+	u_int bufferId;
+
 private:
+	// Used by Queryable interface
+	u_int GetMaxDepth() { return maxDepth; }
+
 	// Used by DataParallel methods
 	void BuildShadowRays(const Scene &scene, PathState *pathState, BSDF *bsdf);
 
@@ -178,11 +190,11 @@ private:
 	u_int maxDepth;
 	float continueProbability;
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset;
 
 	// Used only for HybridSampler
 	u_int hybridRendererLightSampleOffset;
-	LightsSamplingStrategy::LightStrategyType hybridRendererLightStrategy;
+	u_int samplingCount;
 
 	bool includeEnvironment, enableDirectLightSampling;
 };

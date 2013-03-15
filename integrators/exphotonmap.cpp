@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -139,7 +139,7 @@ void ExPhotonIntegrator::Preprocess(const RandomGenerator &rng,
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 
@@ -215,9 +215,11 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 		const Normal &ng = isect.dg.nn;
 
 		// Compute emitted light if ray hit an area light source
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
+			SWCSpectrum Ll(1.f);
 			BSDF *ibsdf;
-			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+				L += Ll;
 		}
 
 		// Compute direct lighting
@@ -374,9 +376,11 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
 		
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
+			SWCSpectrum Ll(1.f);
 			BSDF *ibsdf;
-			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+				L += Ll;
 		}
 
 		if (pathLength == maxDepth) {

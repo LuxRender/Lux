@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -28,6 +28,9 @@
 #include "memory.h"
 
 using namespace lux;
+
+namespace lux
+{
 
 Scalar SWCSpectrum::Y(const SpectrumWavelengths &sw) const {
 	Scalar y = 0.f;
@@ -114,3 +117,18 @@ SWCSpectrum::SWCSpectrum(const SpectrumWavelengths &sw, const RGBColor &s) {
 	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
 		c[j] = min.c[j] + med.c[j] + max.c[j];
 }
+
+std::ostream &operator<<(std::ostream &stream, const SWCSpectrum &spectrum)
+{
+	stream << "SWCSpectrum({";
+	for(unsigned i = 0; i < WAVELENGTH_SAMPLES; ++i)
+	{
+		stream << spectrum.c[i];
+		if(i + 1 < WAVELENGTH_SAMPLES)
+			stream << ", ";
+	}
+
+	stream << "})";
+	return stream;
+}
+} //namespace lux

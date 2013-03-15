@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -22,7 +22,8 @@
 
 // quaternion.cpp*
 #include "quaternion.h"
-#include "geometry/matrix4x4.h"
+#include "luxrays/core/geometry/matrix4x4.h"
+using luxrays::Matrix4x4;
 
 #include <cstring>
 using std::memset;
@@ -70,18 +71,18 @@ void orthoNormalize(float m[4][4])
 }
 
 // construct a unit quaternion from a rotation matrix
-Quaternion::Quaternion(const boost::shared_ptr<Matrix4x4> m) {
+Quaternion::Quaternion(const Matrix4x4 &m) {
 	float ortho[4][4];
-	memcpy(ortho, m->m, sizeof(float) * 16);
+	memcpy(ortho, m.m, sizeof(float) * 16);
 	orthoNormalize(ortho);
 
 	const float trace = ortho[0][0] + ortho[1][1] + ortho[2][2] + 1.f;
 
 	if (trace > 1e-6f) {
 		const float s = sqrtf(trace) * 2.f;
-		v.x = ( ortho[1][2] - ortho[2][1] ) / s;
-		v.y = ( ortho[2][0] - ortho[0][2] ) / s;
-		v.z = ( ortho[0][1] - ortho[1][0] ) / s;
+		v.x = (ortho[1][2] - ortho[2][1]) / s;
+		v.y = (ortho[2][0] - ortho[0][2]) / s;
+		v.z = (ortho[0][1] - ortho[1][0]) / s;
 		w = 0.25f * s;
 	} else {
 		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {

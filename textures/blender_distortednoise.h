@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,7 +34,7 @@ public:
 
 	BlenderDistortedNoiseTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_DISTNOISE) {
+		BlenderTexture3D("BlenderDistortedNoiseTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_DISTNOISE) {
 		tex.noisebasis2 = GetNoiseBasis(tp.FindOneString("type",
 			"blender_original"));
 		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",

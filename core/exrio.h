@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,10 +29,14 @@
 namespace lux
 {
 
+// Write a generic EXR
 void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<RGBColor> &pixels,
         vector<float> &alpha, u_int xRes, u_int yRes,
         u_int totalXRes, u_int totalYRes,
         u_int xOffset, u_int yOffset, vector<float> &zbuf);
+
+// Write a single channel float EXR
+void WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *map);
 
 }//namespace lux
 

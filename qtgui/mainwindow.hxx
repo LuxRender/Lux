@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,54 +23,49 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <boost/thread.hpp>
-
-#include <QtGui/QMainWindow>
-#include <QtGui/QProgressBar>
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QtGui/QMessageBox>
-#include <QtGui/QFileDialog>
-#include <QtGui/QSlider>
-#include <QtGui/QSpinBox>
-#include <QtGui/QDoubleSpinBox>
-#include <QtGui/QCheckBox>
-#include <QtGui/QFrame>
-#include <QtGui/QHBoxLayout>
-#include <QSpacerItem>
-#include <QTimer>
-#include <QEvent>
-#include <QGraphicsPixmapItem>
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QSizePolicy>
-#include <QMatrix>
-#include <QPoint>
-#include <QDesktopServices>
-#include <QUrl>
-#include <QClipboard>
-#include <QVector>
-#include <QSettings>
-#include <QCursor>
 #include <QAbstractListModel>
+#include <QAction>
+#include <QCheckBox>
+#include <QCloseEvent>
+#include <QDoubleSpinBox>
+#include <QEvent>
+#include <QFileInfo>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
 #include <QList>
-#include <QCompleter>
+#include <QMainWindow>
+#include <QMap>
+#include <QModelIndex>
+#include <QPersistentModelIndex>
+#include <QPoint>
+#include <QProgressBar>
+#include <QProgressDialog>
+#include <QRegExp>
+#include <QSlider>
+#include <QSpacerItem>
+#include <QSpinBox>
+#include <QString>
+#include <QStringList>
+#include <QThread>
+#include <QTime>
+#include <QTimer>
 #include <QVariant>
-#include <QtGui/QTabBar>
-#include <QtGui/QProgressDialog>
-#include <QtGui/QStandardItemModel>
+#include <QVector>
 
 #include "api.h"
-#include "renderview.hxx"
-#include "panewidget.hxx"
-#include "lightgroupwidget.hxx"
-#include "tonemapwidget.hxx"
-#include "lenseffectswidget.hxx"
-#include "colorspacewidget.hxx"
-#include "gammawidget.hxx"
-#include "noisereductionwidget.hxx"
-#include "histogramwidget.hxx"
+
 #include "advancedinfowidget.hxx"
+#include "colorspacewidget.hxx"
+#include "lenseffectswidget.hxx"
+#include "gammawidget.hxx"
+#include "histogramwidget.hxx"
+#include "noisereductionwidget.hxx"
+#include "queue.hxx"
+#include "panewidget.hxx"
+#include "renderview.hxx"
+#include "tonemapwidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 
@@ -81,7 +76,6 @@
 #define LG_SCALE_LOG_MAX 4.f
 #define LG_TEMPERATURE_MIN 1000.f
 #define LG_TEMPERATURE_MAX 10000.f
-
 
 enum LuxGuiRenderState
 {
@@ -141,8 +135,7 @@ public:
 	QMRUListModel() : QAbstractListModel(), maxCount(0) { }
 	QMRUListModel(int count, QObject *parent = 0) : QAbstractListModel(parent), maxCount(count)  { }
 	QMRUListModel(const QMRUListModel<T> &other) 
-		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) {
-	}
+		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) { }
 
 	int count() const {
 		return maxCount;
@@ -235,10 +228,8 @@ public:
 	void updateStatistics();
 	void showRenderresolution();
 	void showZoomfactor();
-	void renderScenefile(const QString& sceneFilename, const QString& flmFilename = "");
-	void renderNewScenefile(const QString& sceneFilename, const QString& flmFilename = "");
-	void openQueueFile(const QString& fileName);
 	void changeRenderState (LuxGuiRenderState state);
+	void beginRenderingSession(const QPersistentModelIndex& sceneIndex);
 	void endRenderingSession(bool abort = true);
 	
 	void updateTonemapWidgetValues ();
@@ -251,24 +242,35 @@ public:
 	
 	bool m_auto_tonemap;
 
-	void loadFile(const QString &fileName);
-	bool addFileToRenderQueue(const QString &sceneFileName);
-	bool RenderNextFileInQueue();
+	void AddNetworkSlaves(const QVector<QString> &slaves);
+	void RemoveNetworkSlaves(const QVector<QString> &slaves);
+
+	void setServerUpdateInterval(int interval);
+	void setFixedSeed();
+
+	bool renderScene(const QPersistentModelIndex& sceneIndex);
+	bool renderNextScene();
+	void clearQueue();
+
+	void openOneQueueFile(const QString &file);
+	void openOneSceneFile(const QString &file);
+	void openFiles(const QStringList& files, bool clearQueueFirst = false);
+	void loadFile(const QString& fileName);
 
 protected:
-	
 	int getTabIndex(int tabID);
 
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
+	void updateQueueList();
+	void updateRecentFiles(const QString& fileName);
 	void updateRecentFileActions();
 	void createActions();
 	void closeEvent(QCloseEvent *event);
 
 private:
-	
-	Ui::MainWindow *thorizontalLayout_5;
+	Ui::MainWindow *thorizontalLayout_5, *thorizontalLayout_log;
 	
 	QLabel *resinfoLabel;
 	QLabel *zoominfoLabel; 
@@ -288,7 +290,6 @@ private:
 
 	RenderView *renderView;
 	QString m_CurrentFile;
-	QString m_CurrentFileBaseName;
 
 	enum { NumPanes = 6 };
 
@@ -312,14 +313,72 @@ private:
 
 	int m_numThreads;
 	bool m_copyLog2Console;
+	bool m_fixedSeed;
 
-	double m_samplesSec;
-	
+	QRegExp reUpdateInterval;
+
 	LuxGuiRenderState m_guiRenderState;
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
-	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread, *m_networkAddRemoveSlavesThread;
+	class FlmLoadThread : public QThread {
+	public:
+		FlmLoadThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~FlmLoadThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_flmloadThread;
+	class FlmSaveThread : public QThread {
+	public:
+		FlmSaveThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~FlmSaveThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_flmsaveThread;
+	class BatchProcessThread : public QThread {
+	public:
+		BatchProcessThread(MainWindow *mw, const QString &id,
+			const QString &od, const QString &oe, bool alg, bool ah) :
+			mainWindow(mw), inDir(id), outDir(od), outExtension(oe),
+			allLightGroups(alg), asHDR(ah) { }
+		virtual ~BatchProcessThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString inDir, outDir, outExtension;
+		bool allLightGroups, asHDR;
+	} *m_batchProcessThread;
+	class UpdateThread : public QThread {
+	public:
+		UpdateThread(MainWindow *mw) : mainWindow(mw) { }
+		virtual ~UpdateThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+	} *m_updateThread;
+	class EngineThread : public QThread {
+	public:
+		EngineThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~EngineThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_engineThread;
+	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
+	class NetworkAddRemoveSlavesThread : public QThread {
+	public:
+		NetworkAddRemoveSlavesThread(MainWindow *mw,
+			const QVector<QString> &s, ChangeSlavesAction a) :
+			mainWindow(mw), slaves(s), action(a) { }
+		virtual ~NetworkAddRemoveSlavesThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QVector<QString> slaves;
+		ChangeSlavesAction action;
+	} *m_networkAddRemoveSlavesThread;
 
 	bool openExrHalfFloats, openExrDepthBuffer;
 	int openExrCompressionType;
@@ -335,23 +394,12 @@ private:
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	static QWidget *instance;
 	
-	void engineThread(QString filename);
-	void updateThread();
-	void flmLoadThread(QString filename);
-	void flmSaveThread(QString filename);
-	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
-
 	enum { MaxRecentServers = 20 };
 	QStringMRUListModel *m_recentServersModel;
 
-	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
-	void networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action);
-
 	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
 
-	QVector<QString> savedNetworkSlaves;
-	void saveNetworkSlaves();
-
+	QMap<QString, int> networkSlaves;
 
 	bool event (QEvent * event);
 
@@ -372,21 +420,23 @@ private:
 	void WriteSettings();
 
 	// The Data Model for the Render Queue
-	QStandardItemModel renderQueueData;
-	bool IsFileInQueue(const QString &filename);
-	bool IsFileQueued();
-	bool RenderNextFileInQueue(int idx);
-	void ClearRenderingQueue();
-	QStringList renderQueueList;
+	Queue renderQueue;
 
 public slots:
-
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
 	void indicateActivity (bool active = true);
+	void setVerbosity(int choice);
+	void userSamplingAddPen();
+	void userSamplingSubPen();
+	void userSamplingPenSize(int size);
+	void userSamplingPenStrength(int size);
+	void userSamplingMapOpacity(int size);
+	void userSamplingApply();
+	void userSamplingUndo();
+	void userSamplingReset();
 
 private slots:
-
 	void exitAppSave ();
 	void exitApp ();
 	void openFile ();
@@ -406,10 +456,13 @@ private slots:
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);
+	void outputTabChanged (int);
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
+	void showAlphaChanged (bool);
 	void overlayStatsChanged (bool);
+	void showUserSamplingMapChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
@@ -431,18 +484,27 @@ private slots:
 
 	void autoEnabledChanged (int value);
 	void overrideDisplayIntervalChanged(int value);
+	void overrideWriteIntervalChanged(int value);
 
 	void addServer();
 	void removeServer();
+	void resetServer();
 	void updateIntervalChanged(int value);
+	void updateIntervalChanged();
 	void networknodeSelectionChanged();
 
-	void addQueueFiles();  
+	void queueContextMenu(const QPoint&);
+	void addQueueFiles();
 	void removeQueueFiles();
-	void overrideHaltSppChanged(int value);
-	void overrideHaltTimeChanged(int value);
 	void loopQueueChanged(int state);
-	void overrideWriteFlmChanged(bool checked);
+	void overrideWriteFlmChanged(int value);
+
+	void overrideHaltTimeChanged(int state);
+	void overrideHaltProgressChanged(int state);
+	void overrideHaltThresholdChanged(int state);
+	void overrideHaltTimeValueChanged(const QTime& value);
+	void overrideHaltProgressValueChanged(int value);
+	void overrideHaltThresholdValueChanged(double value);
 
 	void copyToClipboard ();
 

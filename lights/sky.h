@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,6 @@ public:
 		Vector sd, float turb, float aconst, float bconst,
 		float cconst, float dconst, float econst, bool sup);
 	virtual ~SkyLight();
-	virtual bool IsSupport() const { return support; }
 	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
@@ -56,7 +55,11 @@ public:
 		const ParamSet &paramSet);
 
 private:
-	bool support;
+	// Used by Queryable interface
+	float GetDirectionX() { return sundir.x; }
+	float GetDirectionY() { return sundir.y; }
+	float GetDirectionZ() { return sundir.z; }
+
 	// internal methods
 	Vector GetSunPosition() const;
 	void SunThetaPhi(float &theta, float &phi) const;

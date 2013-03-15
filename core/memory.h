@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,6 +39,7 @@
 #  define memalign(a,b) malloc(b)
 #endif
 
+#include <vector>
 #include <boost/serialization/split_member.hpp>
 #include <boost/cstdint.hpp>
 using boost::int8_t;
@@ -276,11 +277,11 @@ private:
 	size_t curBlockPos, blockSize, beginBlockPos, endBlockPos;
 
 	unsigned int currentBlockIdx, beginBlockIdx, endBlockIdx;
-	vector<int8_t *> blocks;
+	std::vector<int8_t *> blocks;
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
-template<class T, int logBlockSize> class BlockedArray {
+template<class T, int logBlockSize = 2> class BlockedArray {
 public:
 	friend class boost::serialization::access;
 	// BlockedArray Public Methods
@@ -292,6 +293,11 @@ public:
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
+		if (!data) {
+			uRes = 0;
+			vRes = 0;
+			return;
+		}
 		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T(b.data[i]);
 		if (d) {
@@ -307,6 +313,11 @@ public:
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
+		if (!data) {
+			uRes = 0;
+			vRes = 0;
+			return;
+		}
 		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T();
 		if (d) {
@@ -314,6 +325,12 @@ public:
 				for (size_t u = 0; u < nu; ++u)
 					(*this)(u, v) = d[v * uRes + u];
 			}
+		}
+	}
+	void Fill(const T d) {
+		for (size_t v = 0; v < vRes; ++v) {
+			for (size_t u = 0; u < uRes; ++u)
+				(*this)(u, v) = d;
 		}
 	}
 	size_t BlockSize() const { return 1 << logBlockSize; }

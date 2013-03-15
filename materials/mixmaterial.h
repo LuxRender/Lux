@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,12 +34,16 @@ public:
 	MixMaterial(boost::shared_ptr<Texture<float> > &a,
 		boost::shared_ptr<Material> &m1,
 		boost::shared_ptr<Material> &m2,
-		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp, false), amount(a),
-		mat1(m1), mat2(m2) { Sc = sc; }
+		const ParamSet &mp) : Material("MixMaterial-" + boost::lexical_cast<string>(this), mp, false),
+		amount(a), mat1(m1), mat2(m2) { }
 	virtual ~MixMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
+
+	Texture<float> *GetAmmountTexture() { return amount.get(); }
+	Material *GetMaterial1() { return mat1.get(); }
+	Material *GetMaterial2() { return mat2.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,28 +23,40 @@
 #ifndef RENDERVIEW_H
 #define RENDERVIEW_H
 
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QApplication>
-#include <QEvent>
+#include <algorithm>
+
+#include <QGraphicsItemGroup>
 #include <QGraphicsPixmapItem>
-#include <QWheelEvent>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QImage>
 #include <QMouseEvent>
-#include <QMatrix>
-#include <QPoint>
-#include <QClipboard>
+#include <QResizeEvent>
+#include <QWheelEvent>
+#include <QWidget>
 
 class RenderView : public QGraphicsView
 {
 	Q_OBJECT
 
 public:
-
 	RenderView(QWidget *parent = 0);
 	~RenderView ();
 
-	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
-	void setOverlayStatistics (bool value = true) { overlayStats = value; };
+	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; }
+	void setOverlayStatistics (bool value = true) { overlayStats = value; }
+	void setShowAlpha (bool value = true) { showAlpha = value; }
+	void setShowUserSamplingMap(bool value = true);
+
+	void setUserSamplingPen(const bool addType);
+	void setUserSamplingPenSize(const int size);
+	void setUserSamplingPenSprayIntensity(const float i);
+	void setUserSamplingMapOpacity(const float v);
+
+	void applyUserSampling();
+	void undoUserSampling();
+	void resetUserSampling();
+
 	void reload ();
 	void setLogoMode ();
 	int getZoomFactor ();
@@ -53,26 +65,47 @@ public:
 	void copyToClipboard ();
 	float origh;
 	float origw;
-private:
 
+private:
 	bool zoomEnabled;
 	float zoomfactor;
-	QPoint currentpos;
 
 	bool overlayStats;
-
+	bool showAlpha;
+	bool showUserSamplingMap;
+	
 	QGraphicsScene *renderscene;
 	QGraphicsPixmapItem *luxlogo;
 	QGraphicsPixmapItem *luxfb;
 
+	// For user driven sampling
+	float *userSamplingMap;
+	QGraphicsPixmapItem *userSamplingPixmap;
+	QImage *userSamplingMapImage;
+	QGraphicsItemGroup *penItemGroup;
+	bool userSamplingAddPenType;
+	bool userSamplingPenPressed;
+	int userSamplingPenX, userSamplingPenY;
+	int userSamplingPenSize;
+	float userSamplingPenSprayIntensity;
+	float userSamplingMapOpacity;
+
+	void addUserSamplingPen();
+	void removeUserSamplingPen();
+
+	void updateUserSamplingPixmap();
+	void updateUserSamplingPixmap(int x, int y, int width, int height);
+
+	void drawPenOnUserSamplingMap(const int x, const int y);
+
 	void wheelEvent (QWheelEvent *event);
 	void mousePressEvent (QMouseEvent *event);
+	void mouseReleaseEvent (QMouseEvent *event);
+	void mouseMoveEvent (QMouseEvent *event);
 	void resizeEvent(QResizeEvent *event);
 
 signals:
-
 	void viewChanged ();
-
 };
 
 #endif // RENDERVIEW_H

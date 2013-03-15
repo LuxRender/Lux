@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,24 +20,31 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <vector>
 
-#include "guiutil.h"
-
-#include <QFileInfo>
+#include <QAbstractButton>
+#include <QChar>
+#include <QColor>
 #include <QDateTime>
-#include <QTextLayout>
+#include <QFileInfo>
+#include <QFont>
 #include <QPainter>
 #include <QPushButton>
+#include <QRectF>
+#include <QTextLayout>
+#include <QTextLine>
+#include <QTextOption>
+
+#include "api.h"
+
+#include "guiutil.h"
 
 using std::min;
 using std::max;
 
 int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound, const float slider_resolution)
 {
-
 	if (value <= 0)
 		return 0;
 
@@ -45,20 +52,20 @@ int ValueToLogSliderVal(float value, const float logLowerBound, const float logU
 
 	const int val = static_cast<int>((logvalue - logLowerBound) / 
 		(logUpperBound - logLowerBound) * slider_resolution);
+
 	return val;
 }
 
 float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound, const float slider_resolution)
 {
-
 	float logvalue = (float)sliderval * (logUpperBound - logLowerBound) / 
 		slider_resolution + logLowerBound;
 
 	return powf(10.f, logvalue);
 }
 
-QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags) {
-
+QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags)
+{
 	const QString filename = "/" + QFileInfo(text).fileName();
 	const QString path = QFileInfo(text).absolutePath();
 
@@ -71,13 +78,15 @@ QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, i
 	return fm.elidedText(path, Qt::ElideMiddle, width - fwidth, flags) + filename;
 }
 
-QString getStringAttribute(const char *objectName, const char *attributeName) {
+QString getStringAttribute(const char *objectName, const char *attributeName)
+{
 	std::vector<char> buf(1 << 16, '\0');
 	luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
 	return QString::fromUtf8(&buf[0]);
 }
 
-QString getAttributeDescription(const char *objectName, const char *attributeName) {
+QString getAttributeDescription(const char *objectName, const char *attributeName)
+{
 	std::vector<char> buf(1 << 16, '\0');
 	luxGetAttributeDescription(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
 	return QString::fromUtf8(&buf[0]);
@@ -92,7 +101,17 @@ void overlayStatistics(QImage *image)
 
 	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
 	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
-	stats += "|Statistics: " + getStringAttribute("renderer_statistics_formatted", "_recommended_string") + " ";
+
+	QString rendererStats = getStringAttribute("renderer_statistics_formatted", "_recommended_string");
+	// fallback statistics
+	if (rendererStats.isEmpty())	// if no renderer stats available
+	{
+		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
+
+		rendererStats = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp));
+	}
+	stats += "|Statistics: " + rendererStats + " ";
 
 	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
 	// between segments
@@ -155,8 +174,8 @@ void overlayStatistics(QImage *image)
 QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 {
 	// Get width, height and pixel buffer
-	int w = luxGetIntAttribute("film", "xPixelCount");
-	int h = luxGetIntAttribute("film", "yPixelCount");
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
 

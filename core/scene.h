@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -27,6 +27,7 @@
 #include "api.h"
 #include "primitive.h"
 #include "transport.h"
+#include "camera.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/noncopyable.hpp>
@@ -115,7 +116,6 @@ public:
 	float* GetFloatFramebuffer();
 	float* GetAlphaBuffer();
 	float* GetZBuffer();
-	void SaveFLM(const string& filename);
 	void SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 	//histogram access
@@ -149,7 +149,7 @@ public:
 	boost::shared_ptr<Primitive> aggregate;
 	vector<Light *> lights;
 	vector<string> lightGroups;
-	Camera *camera;
+	SceneCamera camera;
 	Region *volumeRegion;
 	SurfaceIntegrator *surfaceIntegrator;
 	VolumeIntegrator *volumeIntegrator;

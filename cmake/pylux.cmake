@@ -1,5 +1,5 @@
 ###########################################################################
-#   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 #
+#   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  #
 #                                                                         #
 #   This file is part of Lux.                                             #
 #                                                                         #
@@ -24,8 +24,8 @@
 IF(APPLE)
 	IF(OSX_OPTION_PYLUX)
 		# use Blender python libs for static compiling !
-		SET(PYTHON_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py32_uni_intel/libbf_python_ext.a ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py32_uni_intel/libbf_python.a)
-		SET(PYTHON_INCLUDE_PATH ${OSX_DEPENDENCY_ROOT}/include/Python3.2)
+		SET(PYTHON_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py33_uni_intel/libbf_python_ext.a ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py33_uni_intel/libbf_python.a)
+		SET(PYTHON_INCLUDE_PATH ${OSX_DEPENDENCY_ROOT}/include/Python3.3m)
 		SET(PYTHONLIBS_FOUND ON)
 	ELSE(OSX_OPTION_PYLUX)
 		# compile pylux for genral purpose against Python framework
@@ -69,6 +69,7 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 	ADD_LIBRARY(pylux MODULE python/binding.cpp)
 	IF(APPLE)
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
+		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO) # exclude pylux from LTO, breaks compiling with xcode 4.4 and benefit is neglectible
 		add_dependencies(pylux luxShared) # explicitly say that the target depends on corelib build first
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${Boost_LIBRARIES})
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_EXECUTABLE_PREFIX "") # just not set prefix instead of renaming later
@@ -81,23 +82,12 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 
 		TARGET_LINK_LIBRARIES(pylux ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		
-		IF(CYGWIN)
-			ADD_CUSTOM_COMMAND(
-				TARGET pylux POST_BUILD
-				COMMAND mv cygpylux.dll pylux.dll
-			)
-		ELSEIF(MSVC)
+		IF(MSVC)
 			# Output .pyd files for direct blender plugin usage
-			SET_TARGET_PROPERTIES(pylux
-				PROPERTIES
-				SUFFIX ".pyd"
-			)
-		ELSE(CYGWIN AND NOT WIN32)
-			ADD_CUSTOM_COMMAND(
-				TARGET pylux POST_BUILD
-				COMMAND mv libpylux.so pylux.so
-			)
-		ENDIF(CYGWIN)
+			SET_TARGET_PROPERTIES(pylux PROPERTIES SUFFIX ".pyd")
+		ELSE(MSVC)
+			SET_TARGET_PROPERTIES(pylux PROPERTIES PREFIX "")
+		ENDIF(MSVC)
 
 		IF (NOT WIN32 OR CYGWIN)
 			ADD_CUSTOM_COMMAND(

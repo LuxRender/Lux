@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,8 +23,10 @@
 // igi.cpp*
 #include "lux.h"
 #include "transport.h"
-#include "geometry/point.h"
-#include "geometry/normal.h"
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
 #include "spectrumwavelengths.h"
 
 namespace lux

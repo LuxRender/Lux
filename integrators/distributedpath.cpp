@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -138,7 +138,7 @@ void DistributedPath::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
 void DistributedPath::Reject(const SpectrumWavelengths &sw,
@@ -263,12 +263,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				*alpha = bsdf->compParams->A;
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tVl && includeEmit &&
-				isect.arealight) {
+			if(bsdf->compParams->tVl && includeEmit) {
 				BSDF *ibsdf;
-				const SWCSpectrum Le(isect.Le(sample, ray,
-					&ibsdf, NULL, NULL));
-				if (!Le.Black()) {
+				SWCSpectrum Le(1.f);
+				if (isect.Le(sample, ray, &ibsdf, NULL, NULL,
+					&Le)) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
 				}
@@ -283,12 +282,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		} else {
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tiVl && includeEmit &&
-				isect.arealight) {
+			if(bsdf->compParams->tiVl && includeEmit) {
 				BSDF *ibsdf;
-				const SWCSpectrum Le(isect.Le(sample, ray,
-					&ibsdf, NULL, NULL));
-				if (!Le.Black()) {
+				SWCSpectrum Le(1.f);
+				if (isect.Le(sample, ray, &ibsdf, NULL, NULL,
+					&Le)) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
 				}

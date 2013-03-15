@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,8 @@
 #ifndef NOISEREDUCTIONWIDGET_H
 #define NOISEREDUCTIONWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QEvent>
+#include <QWidget>
 
 #define GREYC_AMPLITUDE_RANGE 200.0f
 #define GREYC_SHARPNESS_RANGE 2.0f
@@ -45,7 +46,6 @@ class NoiseReductionWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	NoiseReductionWidget(QWidget *parent = 0);
 	~NoiseReductionWidget();
 
@@ -69,15 +69,12 @@ signals:
 	void valuesChanged();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::NoiseReductionWidget *ui;
 
 private slots:
-
 	void regularizationEnabledChanged(int value);
 	void fastApproximationEnabledChanged(int value);
 	void chiuEnabledChanged(int value);
@@ -103,8 +100,6 @@ private slots:
 	void setInterpolType(int value);
 	void chiuRadiusChanged(int value);
 	void chiuRadiusChanged(double value);
-
 };
 
 #endif // NOISEREDUCTIONWIDGET_H
-

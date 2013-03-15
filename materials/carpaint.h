@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -45,8 +45,7 @@ public:
 		boost::shared_ptr<Texture<float> > &m1,
 		boost::shared_ptr<Texture<float> > &m2,
 		boost::shared_ptr<Texture<float> > &m3,
-		const ParamSet &mp,
-		boost::shared_ptr<Texture<SWCSpectrum> > &sc);
+		const ParamSet &mp);
 	virtual ~CarPaint() { }
 
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

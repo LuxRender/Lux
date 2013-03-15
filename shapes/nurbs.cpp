@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -179,22 +179,22 @@ BBox NURBS::WorldBound() const {
 	if (!isHomogeneous) {
 		// Compute world-space bound of non-homogeneous NURBS
 		float *pp = P;
-		Point pt = ObjectToWorld(Point(pp[0], pp[1], pp[2]));
+		Point pt(ObjectToWorld * Point(pp[0], pp[1], pp[2]));
 		BBox bound = pt;
 		for (u_int i = 0; i < nu*nv; ++i, pp += 3) {
-			pt = ObjectToWorld(Point(pp[0], pp[1], pp[2]));
+			pt = ObjectToWorld * Point(pp[0], pp[1], pp[2]);
 			bound = Union(bound, pt);
 		}
 		return bound;
 	} else {
 		// Compute world-space bound of homogeneous NURBS
 		float *pp = P;
-		Point pt = ObjectToWorld(Point(pp[0]/pp[3],
-			pp[1]/pp[3], pp[2]/pp[3]));
+		Point pt(ObjectToWorld * Point(pp[0] / pp[3],
+			pp[1] / pp[3], pp[2] / pp[3]));
 		BBox bound = pt;
 		for (u_int i = 0; i < nu*nv; ++i, pp += 4) {
-			pt = ObjectToWorld(Point(pp[0]/pp[3],
-				pp[1]/pp[3], pp[2]/pp[3]));
+			pt = ObjectToWorld * Point(pp[0] / pp[3],
+				pp[1] / pp[3], pp[2] / pp[3]);
 			bound = Union(bound, pt);
 		}
 		return bound;

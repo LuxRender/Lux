@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -44,12 +44,28 @@ using std::sort;
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/version.hpp>
+
+#include "luxrays/core/utils.h"
+#include "memory.h"
+
+// boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011
+// https://svn.boost.org/trac/boost/ticket/6940
+// glibc > 1.16 includes a TIME_UTC macro, so boost renamed to TIME_UTC_
+//
+// This hook allows to build with boost < 1.50 and glibc < 1.16
+//
+#if (BOOST_VERSION < 105000)
+#define TIME_UTC_ TIME_UTC
+#endif
 
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isnan(a) (_isnan(a))
 #  define isinf(f) (!_finite((f)))
+#  if !defined(isnan)
+#    define isnan(a) (_isnan(a))
+#  endif
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
@@ -63,6 +79,26 @@ using std::sort;
 #  pragma warning (disable: 4355) // 'this' used in base member initializer list
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
+
+#include <boost/cstdint.hpp>
+using boost::int8_t;
+using boost::int16_t;
+using boost::int32_t;
+using boost::int64_t;
+using boost::uint8_t;
+using boost::uint16_t;
+using boost::uint32_t;
+using boost::uint64_t;
+
+inline float atanhf(float x) {
+	// if outside of domain, return NaN
+	// not 100% correct but should be good for now
+	if(x <= -1.f || x >= 1.f) 
+		return sqrtf(-1.f); 
+  
+	return logf((1.f + x) / (1.f - x)) / 2.f;
+}
+
 
 namespace w32util
 {
@@ -119,22 +155,32 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 
 // Global Forward Declarations
 class Timer;
-class MemoryArena;
-template<class T, int logBlockSize = 2> class BlockedArray;
+
+namespace luxrays {
+  class BBox;
+  class MachineEpsilon;
+  class Matrix4x4;
+  class Normal;
+  class Point;
+  class Ray;
+  class Transform;
+  class Vector;
+}
 
 namespace lux
 {
   enum ShapeType { LUX_SHAPE, AR_SHAPE, ENV_SHAPE };
-  class Matrix4x4;
   class ParamSet;
   template <class T> struct ParamSetItem;
-  class Vector;
-  class Point;
-  class Normal;
-  class Ray;
+  using luxrays::BBox;
+  using luxrays::MachineEpsilon;
+  using luxrays::Matrix4x4;
+  using luxrays::Normal;
+  using luxrays::Point;
+  using luxrays::Ray;
+  using luxrays::Transform;
+  using luxrays::Vector;
   class RayDifferential;
-  class BBox;
-  class Transform;
   class DifferentialGeometry;
   class Renderer;
   class Scene;
@@ -213,7 +259,6 @@ namespace lux
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;
-  class MachineEpsilon;
   class SampleableSphericalFunction;
 
   class Context;
@@ -221,8 +266,6 @@ namespace lux
 // Global Function Declarations
   //string hashing function
   unsigned int DJBHash(const std::string& str);
-
-  bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
   // accepts platform-specific filenames and performs fallback
   ImageData *ReadImage(const string &name);

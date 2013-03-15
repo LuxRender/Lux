@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -190,10 +190,10 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	: mesh(m), idx(&(mesh->quadVertexIndex[4 * n]))
 {
 	// LordCrc - check for problematic quads
-	const Point &p0 = mesh->WorldToObject(mesh->p[idx[0]]);
-	const Point &p1 = mesh->WorldToObject(mesh->p[idx[1]]);
-	const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
-	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
+	const Point &p0 = Inverse(mesh->ObjectToWorld) * mesh->p[idx[0]];
+	const Point &p1 = Inverse(mesh->ObjectToWorld) * mesh->p[idx[1]];
+	const Point &p2 = Inverse(mesh->ObjectToWorld) * mesh->p[idx[2]];
+	const Point &p3 = Inverse(mesh->ObjectToWorld) * mesh->p[idx[3]];
 
 	// assume convex and planar check is performed before
 	if (IsDegenerate(p0, p1, p2, p3)) {
@@ -252,8 +252,10 @@ BBox MeshQuadrilateral::ObjectBound() const {
 	const Point &p2 = mesh->p[idx[2]];
 	const Point &p3 = mesh->p[idx[3]];
 
-	return Union(BBox(mesh->WorldToObject(p0), mesh->WorldToObject(p1)),
-		BBox(mesh->WorldToObject(p2), mesh->WorldToObject(p3)));
+	return Union(BBox(Inverse(mesh->ObjectToWorld) * p0,
+		Inverse(mesh->ObjectToWorld) * p1),
+		BBox(Inverse(mesh->ObjectToWorld) * p2,
+		Inverse(mesh->ObjectToWorld) * p3));
 }
 
 BBox MeshQuadrilateral::WorldBound() const {
@@ -421,7 +423,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Mesh Quadrilateral intersect ";
 			Normal(0, 0, 0), Normal(0, 0, 0),
 			u, v, this, 0.f, wtext);
 		isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
-		isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+		isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 			mesh->GetExterior(), mesh->GetInterior());
 		ray.maxt = t;
 	}
@@ -471,7 +473,7 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
-	Normal ns(Normalize(mesh->ObjectToWorld(
+	Normal ns(Normalize(mesh->ObjectToWorld * (
 		((1.0f - dg.u) * (1.0f - dg.v)) * mesh->n[idx[0]] +
 		(dg.u * (1.0f - dg.v)) * mesh->n[idx[1]] +
 		(dg.u * dg.v) * mesh->n[idx[2]] +
@@ -541,8 +543,8 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 			InvA[1][0] * dn01.y + InvA[1][1] * dn02.y + InvA[1][2] * dn03.y,
 			InvA[1][0] * dn01.z + InvA[1][1] * dn02.z + InvA[1][2] * dn03.z);
 
-		dndu = obj2world(dndu);
-		dndv = obj2world(dndv);
+		dndu *= obj2world;
+		dndv *= obj2world;
 	}
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts, dndu, dndv,

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -83,7 +83,7 @@ public:
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual void AddSample(const Sample &sample);
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 
 	u_int totalMutations;
 	float pMicro, range;

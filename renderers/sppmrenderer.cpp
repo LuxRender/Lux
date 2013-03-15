@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -139,6 +139,21 @@ void SPPMRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SPPMRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -175,7 +190,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		rng = new RandomGenerator(seed);
 
@@ -185,14 +200,14 @@ void SPPMRenderer::Render(Scene *s) {
 		scene->volumeIntegrator->Preprocess(*rng, *scene);
 
 		// Told each Buffer how to scale things
-		for(u_int bg = 0; bg < scene->camera->film->GetNumBufferGroups(); ++bg)
+		for(u_int bg = 0; bg < scene->camera()->film->GetNumBufferGroups(); ++bg)
 		{
-			PerScreenNormalizedBufferScaled * buffer= dynamic_cast<PerScreenNormalizedBufferScaled *>(scene->camera->film->GetBufferGroup(bg).getBuffer(sppmi->bufferPhotonId));
+			PerScreenNormalizedBufferScaled * buffer= dynamic_cast<PerScreenNormalizedBufferScaled *>(scene->camera()->film->GetBufferGroup(bg).getBuffer(sppmi->bufferPhotonId));
 			buffer->scaleUpdate = new ScaleUpdaterSPPM(this);
 		}
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		size_t threadCount = boost::thread::hardware_concurrency();
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
@@ -205,7 +220,7 @@ void SPPMRenderer::Render(Scene *s) {
 		uniformCount = 1.f;
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		Context::GetActive()->SceneReady();
 	}
@@ -213,23 +228,31 @@ void SPPMRenderer::Render(Scene *s) {
 	// Add the first thread // TODO: why
 	scheduler->AddThread(new RenderThread(this));
 
+	// thread for checking write interval
+	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
+
 	RenderMain(scene);
 
 	scheduler->Done();
+
+	// stop write interval checking
+	writeIntervalThread.interrupt();
+	// possibly wait for writing to finish
+	writeIntervalThread.join();
 }
 
 void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
 	scheduler->Pause();
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
 	scheduler->Resume();
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SPPMRenderer::Terminate() {
@@ -288,7 +311,7 @@ void SPPMRenderer::RenderThread::Init() {
 	}
 
 	// Initialize the photon sample
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	sample.contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
 	// The RNG might be used when initializing the sampler data below
 	sample.rng = threadRng;
 //	sample.camera = scene.camera->Clone(); // Unneeded for photons
@@ -308,8 +331,8 @@ void SPPMRenderer::RenderThread::Init() {
 	sampler->InitSample(&sample);
 
 	// initialise the eye sample
-	eyeSample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
-	eyeSample.camera = scene.camera->Clone();
+	eyeSample.contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
+	eyeSample.camera = scene.camera()->Clone();
 	eyeSample.realTime = 0.f;
 	eyeSample.rng = threadRng;
 
@@ -325,7 +348,7 @@ void SPPMRenderer::TracePhotons(scheduling::Range *range)
 	sample.wavelengths = hitPoints->GetWavelengthSample();
 	sample.time = hitPoints->GetTimeSample();
 	sample.swl.Sample(sample.wavelengths);
-	sample.realTime = scene->camera->GetTime(sample.time);
+	sample.realTime = scene->camera()->GetTime(sample.time);
 //		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
 
 	//--------------------------------------------------------------
@@ -366,7 +389,9 @@ void SPPMRenderer::RenderMain(Scene *scene)
 	hitPoints->Init();
 
 	// Trace rays: The main loop
-	while (!scene->camera->film->enoughSamplesPerPixel && state != TERMINATE) {
+	while (!scene->camera()->film->enoughSamplesPerPixel &&
+		(scene->camera()->film->haltSamplesPerPixel <= .0f || hitPoints->GetPassCount() < scene->camera()->film->haltSamplesPerPixel) &&
+		state != TERMINATE) {
 		hitPoints->UpdatePointsInformation();
 
 		hitPoints->RefreshAccel(scheduler);
@@ -397,16 +422,14 @@ void SPPMRenderer::RenderMain(Scene *scene)
 void SPPMRenderer::RenderThread::End() {
 	Scene &scene = *renderer->scene;
 
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	scene.camera->film->contribPool->End(eyeSample.contribBuffer);
+	scene.camera()->film->contribPool->End(sample.contribBuffer);
+	scene.camera()->film->contribPool->End(eyeSample.contribBuffer);
 	sample.contribBuffer = NULL;
 	eyeSample.contribBuffer = NULL;
 
 	sampler->FreeSample(&sample);
 	renderer->hitPoints->eyeSampler->FreeSample(&eyeSample);
 
-	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
-	//delete eyeSample.camera; //FIXME deleting the camera clone would delete the film!
 	delete sampler;
 }
 
@@ -417,7 +440,7 @@ Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 float SPPMRenderer::GetScaleFactor(const double scale) const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass() * scale * scale);
+		return uniformCount / (sppmi->photonPerPass / scene->camera()->film->GetSamplePerPass() * scale * scale);
 	} else
 		return 1.0 / scale;
 }

@@ -1,5 +1,5 @@
 ###########################################################################
-#   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 #
+#   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  #
 #                                                                         #
 #   This file is part of Lux.                                             #
 #                                                                         #
@@ -42,7 +42,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 	"${LUX_CMAKE_DIR}"
 	"${LUX_CMAKE_DIR}/SpecializedConfig"
 )
-option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" ON)
+option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
 
 # Dade - uncomment to obtain verbose building output
@@ -57,10 +57,6 @@ IF (NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE Release)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
-
-IF (LUXRAYS_DISABLE_OPENCL)
-	ADD_DEFINITIONS("-DLUXRAYS_DISABLE_OPENCL")
-ENDIF()
 
 #############################################################################
 #############################################################################
@@ -85,7 +81,9 @@ IF(APPLE)
 		set(OSX_OPTION_XCODE_4.1 OFF)
 	endif()
 	execute_process(COMMAND uname -r OUTPUT_VARIABLE MAC_SYS)
-	if (${MAC_SYS} MATCHES 11)
+	if (${MAC_SYS} MATCHES 12)
+		set(OSX_SYSTEM 10.8 (MountainLion))
+	elseif (${MAC_SYS} MATCHES 11)
 		set(OSX_SYSTEM 10.7 (Lion))
 	elseif(${MAC_SYS} MATCHES 10)
 		set(OSX_SYSTEM 10.6 (SnowLeopard))
@@ -106,30 +104,24 @@ IF(APPLE)
 			set(HAS_SSE 3)		
 		endif()
 	endif()
-
+	
 	########## OSX_OPTIONS ###########
 	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
 	option(OSX_OPTION_CLANG "Build with CLANG compiler ( XCODE4 )" ON)
 	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" OFF)
 	option(OSX_OPTION_USE_MAX_SSE "Build with highest SSE available on machine ( SSE_${HAS_SSE} )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
-	option(OSX_OPTION_LION "BUILD for OSX 10.7, else 10.6 would be deployment-target" OFF)
 	###################################
-	if(OSX_OPTION_LION)
-		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
-		if(${XCODE_VERSION} VERSION_LESS 4.3)
-			SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.7.sdk)
-		else()
-			SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk)
-		endif()			
-	else(OSX_OPTION_LION)
-		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
-		if(${XCODE_VERSION} VERSION_LESS 4.3)
-			SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
-		else()
-			SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk)
-		endif()	
-	endif(OSX_OPTION_LION)
+
+	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6) # keep this @ 10.6 to archieve bw-compatibility by weak-linking !
+
+	if(${XCODE_VERSION} VERSION_LESS 4.3)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
+	elseif(${XCODE_VERSION} VERSION_GREATER 4.3)
+		set(CMAKE_XCODE_ATTRIBUTE_SDKROOT macosx10.8) # xcode 4.4-style
+	else()
+		SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk)
+	endif()			
 
 	if(OSX_OPTION_USE_MAX_SSE)
 		if(HAS_SSE MATCHES 4.2)
@@ -406,7 +398,7 @@ ELSE(APPLE)
 	SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 ENDIF(APPLE)
-SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
+SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${SLG_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
 
 #############################################################################
 #############################################################################
@@ -457,8 +449,8 @@ ELSE(APPLE)
 	INSTALL(TARGETS luxShared DESTINATION lib${LIB_SUFFIX})
 
 	#Install Desktop files
-	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
-	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/luxrender.svg DESTINATION share/pixmaps/)
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/luxrender.desktop DESTINATION share/applications/)
 
 	#Source package target
 	ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
@@ -511,7 +503,7 @@ IF(APPLE)
 	ENDIF(OSX_OPTION_PYLUX)
 	MESSAGE(STATUS "USE_BEST_SSE_OPTIMIZATION : " ${OSX_OPTION_USE_MAX_SSE})
 	MESSAGE(STATUS "ALWAYS_BUILD_UNIVERSAL : " ${OSX_OPTION_UNIVERSAL})
-	IF(NOT OSX_OPTION_USE_MAX_SSE AND NOT OSX_OPTION_LTO AND NOT OSX_OPTION_LION AND ${CMAKE_BUILD_TYPE} MATCHES Release)
+	IF(NOT OSX_OPTION_USE_MAX_SSE AND NOT OSX_OPTION_LTO AND ${CMAKE_BUILD_TYPE} MATCHES Release)
 		MESSAGE(STATUS "COMPATIBILITY INFO : BUILD IS CONFIGURED DISTRIBUTION SAFE")
 	ELSE()
 		MESSAGE(STATUS "COMPATIBILITY INFO : BUILD SETTINGS DO NOT SUPPORT ALL INTEL-MACS")

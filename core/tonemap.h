@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -33,7 +33,7 @@ class ToneMap {
 public:
 	// ToneMap Interface
 	virtual ~ToneMap() { }
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const = 0;
+	virtual void Map(vector<XYZColor> &xyz,	u_int xRes, u_int yRes, float maxDisplayY) const = 0;
 };
 
 }

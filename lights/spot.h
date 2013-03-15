@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,7 +37,6 @@ public:
 		float gain, float power, float efficacy,
 		float width, float fall, bool sup);
 	virtual ~SpotLight();
-	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene &) const {
@@ -60,7 +59,6 @@ private:
 	Point lightPos;
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	float gain;
-	bool support;
 };
 
 }//namespace lux

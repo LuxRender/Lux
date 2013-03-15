@@ -89,7 +89,7 @@ public:
 				return true;
 		return false;
 	}
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const
@@ -258,7 +258,7 @@ public:
 		isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, triangle, 0.f, wtext);
 
-		isect->Set(triangle->mesh->WorldToObject, triangle,
+		isect->Set(triangle->mesh->ObjectToWorld, triangle,
 			triangle->mesh->GetMaterial(),
 			triangle->mesh->GetExterior(),
 			triangle->mesh->GetInterior());

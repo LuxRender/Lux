@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -52,7 +52,7 @@ void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 }
@@ -82,10 +82,10 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 		Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L[isect.arealight->group] += isect.Le(sample, ray,
-				&ibsdf, NULL, NULL);
+		SWCSpectrum Ll(1.f);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll)) {
+			L[isect.arealight->group] += Ll;
 			++nContribs;
 		}
 

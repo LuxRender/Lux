@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,9 +23,11 @@
 #ifndef PANEWIDGET_H
 #define PANEWIDGET_H
 
-#include <QtGui/QWidget>
-#include <QtGui/QPixmap>
-#include <QtGui/QLabel>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPixmap>
+#include <QString>
+#include <QWidget>
 
 namespace Ui
 {
@@ -38,18 +40,14 @@ class ClickableLabel : public QLabel
     Q_OBJECT
 
 public:
-
 	ClickableLabel(const QString& label = "", QWidget *parent = 0);
 	~ClickableLabel() {};
 
 protected:
-
 	void mouseReleaseEvent(QMouseEvent* event);
 
 signals:
-
 	void clicked();
-
 };
 
 enum SoloState
@@ -64,7 +62,6 @@ class PaneWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "", bool onoffbutton=false, bool solobutton=false);
 	~PaneWidget();
 
@@ -90,7 +87,6 @@ public:
 	inline void SetIndex( int Index ) { m_Index = Index; }
 
 private:
-
 	Ui::PaneWidget *ui;
 
 	QWidget *mainwidget;
@@ -102,7 +98,6 @@ private:
 	bool expanded;
 
 signals:
-
 	void valuesChanged();
 
 	void turnedOn();
@@ -111,12 +106,9 @@ signals:
 	void signalLightGroupSolo(int index);
 
 private slots:
-
 	void expandClicked();
 	void onoffClicked();
 	void soloClicked();
-  
 };
 
 #endif // PANEWIDGET_H
-

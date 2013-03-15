@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -75,7 +75,6 @@ BSDF *Glossy::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 }
 Material* Glossy::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
@@ -84,7 +83,7 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
 
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, mp, Sc);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");

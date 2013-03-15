@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,10 +29,13 @@
 #include "memory.h"
 #include "queryable.h"
 #include "bsh.h"
+#include "mcdistribution.h"
 
-#include <boost/serialization/split_member.hpp>
+#include "slg/utils/convtest/convtest.h"
+
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/shared_array.hpp>
 
 namespace lux {
 
@@ -100,35 +103,33 @@ struct FloatPixel {
 	float V, weightSum;
 };
 
-
 class Buffer {
 public:
-	Buffer(u_int x, u_int y) : xPixelCount(x), yPixelCount(y) {
-		pixels = new BlockedArray<Pixel>(x, y);
+	Buffer(u_int x, u_int y) : pixels(x, y) {
+		xPixelCount = pixels.uSize();
+		yPixelCount = pixels.vSize();
 	}
 
-	virtual ~Buffer() {
-		delete pixels; 
-	}
+	virtual ~Buffer() { }
 
 	void Add(u_int x, u_int y, XYZColor L, float alpha, float wt) {
-		Pixel &pixel = (*pixels)(x, y);
+		Pixel &pixel = pixels(x, y);
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
 		pixel.weightSum += wt;
 	}
 
-	void Set(u_int x, u_int y, XYZColor L, float alpha) {
-		Pixel &pixel = (*pixels)(x, y);
+	void Set(u_int x, u_int y, XYZColor L, float alpha, float wt = 1.f) {
+		Pixel &pixel = pixels(x, y);
 		pixel.L = L;
 		pixel.alpha = alpha;
-		pixel.weightSum = 1.f;
+		pixel.weightSum = wt;
 	}
 
 	void Clear() {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
+				Pixel &pixel = pixels(x, y);
 				pixel.L.c[0] = 0.0f;
 				pixel.L.c[1] = 0.0f;
 				pixel.L.c[2] = 0.0f;
@@ -141,7 +142,7 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const = 0;
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const = 0;
 	u_int xPixelCount, yPixelCount;
-	BlockedArray<Pixel> *pixels;
+	BlockedArray<Pixel> pixels;
 	float scaleFactor;
 	bool isFramebuffer;
 };
@@ -156,14 +157,14 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				color[offset] = pixel.L;
 				alpha[offset] = pixel.alpha;
 			}
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		*color = pixel.L;
 		*alpha = pixel.alpha;
 		return pixel.weightSum;
@@ -180,7 +181,7 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				if (pixel.weightSum == 0.f) {
 					color[offset] = XYZColor(0.f);
 					alpha[offset] = 0.f;
@@ -193,7 +194,7 @@ public:
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
 			*alpha = 0.f;
@@ -208,22 +209,18 @@ public:
 // Per pixel normalized floating point buffer
 class PerPixelNormalizedFloatBuffer {
 public:
-	PerPixelNormalizedFloatBuffer(u_int x, u_int y) {
-		floatpixels = new BlockedArray<FloatPixel>(x, y);
-	}
+	PerPixelNormalizedFloatBuffer(u_int x, u_int y) : floatpixels(x, y) { }
 
-	~PerPixelNormalizedFloatBuffer() {
-		delete floatpixels;
-	}
+	~PerPixelNormalizedFloatBuffer() { }
 
 	void Add(u_int x, u_int y, float value, float wt) {
-		FloatPixel &fpixel = (*floatpixels)(x, y);
+		FloatPixel &fpixel = floatpixels(x, y);
 		fpixel.V += value;
 		fpixel.weightSum += wt;
 	}
 
 	void Set(u_int x, u_int y, float value, float wt) {
-		FloatPixel &fpixel = (*floatpixels)(x, y);
+		FloatPixel &fpixel = floatpixels(x, y);
 		fpixel.V = value;
 		fpixel.weightSum = 1.f;
 	}
@@ -245,14 +242,13 @@ public:
 	}
 	*/
 	float GetData(u_int x, u_int y) const {
-		const FloatPixel &pixel = (*floatpixels)(x, y);
+		const FloatPixel &pixel = floatpixels(x, y);
 		if (pixel.weightSum == 0.f) {
 			return 0.f;
 		}
 		return pixel.V / pixel.weightSum;
 	} 
-private:
-	BlockedArray<FloatPixel> *floatpixels;
+	BlockedArray<FloatPixel> floatpixels;
 };
 
 // Per screen normalized XYZColor buffer
@@ -267,7 +263,7 @@ public:
 		const float inv = static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				color[offset] = pixel.L * inv;
 				if (pixel.weightSum > 0.f)
 					alpha[offset] = pixel.alpha / pixel.weightSum;
@@ -277,7 +273,7 @@ public:
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum > 0.f) {
 			*color = pixel.L * static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
 			*alpha = pixel.alpha;
@@ -306,7 +302,7 @@ public:
 		scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				if (pixel.weightSum > 0.f) {
 					color[offset] = pixel.L * scale;
 					alpha[offset] = pixel.alpha;
@@ -321,7 +317,7 @@ public:
 		if(x == 0 && y == 0 && scaleUpdate != NULL)
 			scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum > 0.f) {
 			*color = pixel.L * static_cast<float>(scale);
 			*alpha = pixel.alpha;
@@ -356,26 +352,7 @@ public:
 			delete *buffer;
 	}
 
-	void CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y) {
-		for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
-			switch ((*config).type) {
-			case BUF_TYPE_PER_PIXEL:
-				buffers.push_back(new PerPixelNormalizedBuffer(x, y));
-				break;
-			case BUF_TYPE_PER_SCREEN:
-				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
-				break;
-			case BUF_TYPE_PER_SCREEN_SCALED:
-				buffers.push_back(new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples));
-				break;
-			case BUF_TYPE_RAW:
-				buffers.push_back(new RawBuffer(x, y));
-				break;
-			default:
-				assert(0);
-			}
-		}
-	}
+	void CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y);
 
 	Buffer *getBuffer(u_int index) const {
 		return buffers[index];
@@ -448,7 +425,69 @@ private:
 	boost::mutex m_mutex;
 };
 
-// SamplePoint
+//------------------------------------------------------------------------------
+// Used to compute variance
+//------------------------------------------------------------------------------
+
+struct VariancePixel {
+	VariancePixel() : Sn(0.f), mean(0.f), weightSum(0.f) { }
+
+	float Sn, mean, weightSum;
+};
+
+class VarianceBuffer {
+public:
+	VarianceBuffer(u_int x, u_int y) : pixels(x, y) {
+	}
+
+	~VarianceBuffer() { }
+
+	void Add(u_int x, u_int y, XYZColor L, float wt) {
+		if (wt == 0.f)
+			return;
+
+		VariancePixel &pixel = pixels(x, y);
+
+		const float v = L.Y();
+		const float newWeightSum = pixel.weightSum + wt;
+
+		// Incremental computation of weighted mean:
+		// mean_n = mean_n-1 + (weight_n / weightSum_n)(x_n − mean_n−1 )
+		const float newMean = pixel.mean + (wt / newWeightSum) * (v - pixel.mean);
+
+		// Incremental computation of weighted variance:
+		//  S_n = S_n−1 + weight_n (x_n − mean_n−1)(x_n − mean_n)
+		//  Var = S_n / weightSum_n
+		const float newSn = pixel.Sn + wt * (v - pixel.mean) * (v - newMean);
+
+		pixel.Sn = newSn;
+		pixel.mean = newMean;
+		pixel.weightSum = newWeightSum;
+	}
+
+	void Clear() {
+		for (u_int y = 0; y < pixels.vSize(); ++y) {
+			for (u_int x = 0; x < pixels.uSize(); ++x) {
+				VariancePixel &pixel = pixels(x, y);
+				pixel.Sn = 0.f;
+				pixel.mean = 0.f;
+				pixel.weightSum = 0.f;
+			}
+		}
+	}
+
+	float GetVariance(u_int x, u_int y) const {
+		const VariancePixel &pixel = pixels(x, y);
+
+		// Var = S_n / weightSum_n
+		if (pixel.weightSum > 0.f)
+			return fabs(pixel.Sn / pixel.weightSum);
+		else
+			return -1.f; // -1 means a pixel that have yet to be sampled
+	}
+
+	BlockedArray<VariancePixel> pixels;
+};
 
 //------------------------------------------------------------------------------
 // Filter Look Up Table
@@ -564,7 +603,8 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
-		int haltspp, int halttime, bool debugmode, int outlierk, int tilecount);
+		int haltspp, int halttime, float haltthreshold, bool debugmode, int outlierk,
+		int tilecount, const string &samplingmapfilename);
 
 	virtual ~Film();
 
@@ -580,22 +620,25 @@ public:
 	 * @param num_contribs Number of contributions in the contribs array
 	 * @param tileIndex Index of the tile the contributions should be added to
 	 */
-	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
+	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
+		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
-	virtual void AddSampleCount(float count);
+	virtual void AddSampleNoFiltering(const Contribution *contrib);
+	virtual void AddSampleCount(const double count);
+	virtual void SetSampleCount(const double count) { numberOfLocalSamples = count; }
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
+
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
 	}
 	virtual void WriteImage(ImageType type) = 0;
-	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
-	// Dade - method useful for transmitting the samples to a client
-	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
-		bool useCompression = true, bool directWrite = false);
-	virtual double UpdateFilm(std::basic_istream<char> &stream);
-	virtual void WriteResumeFilm(const string &filename);
+
+	virtual bool WriteFilmToFile(const string &filename);
+	virtual bool WriteFilmToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, bool directWrite = false);
+	virtual double MergeFilmFromFile(const std::string& filename);
+	virtual double MergeFilmFromStream(std::basic_istream<char> &stream);
 	virtual bool LoadResumeFilm(const string &filename);
-	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
 	virtual void RequestBufferGroups(const vector<string> &bg);
 	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
@@ -648,6 +691,21 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	virtual void EnableNoiseAwareMap();
+	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
+	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
+	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
+	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	virtual float *GetUserSamplingMap();
+	virtual void SetUserSamplingMap(const float *map);
+
+	// Return noise-aware map * user sampling map
+	virtual const bool GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
+		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib);
+
 	/*
 	 * Accessor for samplePerPass
 	 * It is only used by SPPM and may disappears once the Buffer API allows for
@@ -660,12 +718,18 @@ public:
 		return samplePerPass;
 	}
 
+	const Filter *GetFilter() const { return filter; }
+	ColorSystem GetColorSpace() const { return colorSpace; }
+
 protected:
-	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	bool WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
-	void RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
+	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
+	void UpdateSamplingMap();
+	void UpdateConvergenceInfo(const float *frameBuffer);
+	void GenerateNoiseAwareMap();
 
 public:
 	// Film Public Data
@@ -713,6 +777,32 @@ protected: // Put it here for better data alignment
 
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
+
+	boost::mutex write_mutex; // WriteImage/ConvergenceTest (i.e. image pipeline) synchronization
+
+	// Enabled by haltthreshold
+	slg::ConvergenceTest *convTest;
+
+	// May be enabled by the sampler
+	VarianceBuffer *varianceBuffer; // Used to build the noise map
+	// Using boost::shared_array in order to have a garbage collector-like
+	// behavior (i.e. the map is really de-allocated only when all reference are
+	// gone)
+	boost::shared_array<float> noiseAwareMap;
+	u_int noiseAwareMapVersion;
+	boost::shared_ptr<Distribution2D> noiseAwareDistribution2D;
+
+	// May be enabled by the user
+	string userSamplingMapFileName;
+	boost::shared_array<float> userSamplingMap;
+	u_int userSamplingMapVersion;
+	boost::shared_ptr<Distribution2D> userSamplingDistribution2D;
+	
+	// Noise-aware map * user sampling map
+	boost::shared_array<float> samplingMap;
+	boost::shared_ptr<Distribution2D> samplingDistribution2D;
+	boost::mutex samplingMapMutex;
+
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
 
@@ -739,11 +829,20 @@ public:
 	int haltSamplesPerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
+	// Convergence threshold to reach before to stop the rendering
+	float haltThreshold;
+	float haltThresholdComplete;
 
 	Histogram *histogram;
 	bool enoughSamplesPerPixel; // At the end to get better data alignment
 
 private:
+	// Used by Query interface
+	float GetCropWindow0() { return cropWindow[0]; }
+	float GetCropWindow1() { return cropWindow[1]; }
+	float GetCropWindow2() { return cropWindow[2]; }
+	float GetCropWindow3() { return cropWindow[3]; }
+
 	// Gets a reference to the appropriate outlier row data for a given position and tile index.
 	std::vector<OutlierAccel>& GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd);
 	
@@ -751,8 +850,7 @@ private:
 };
 
 // Image Pipeline Declarations
-void ApplyImagingPipeline(vector<XYZColor> &pixels,
-	u_int xResolution, u_int yResolution, 
+void ApplyImagingPipeline(vector<XYZColor> &pixels, u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,10 @@ namespace lux
 class ConstantFloatTexture : public Texture<float> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFloatTexture(float v) : value(v) { }
+	ConstantFloatTexture(float v) :
+		Texture("ConstantFloatTexture-" + boost::lexical_cast<string>(this)), value(v) {
+			AddFloatAttribute(*this, "value", "ConstantFloatTexture value", &ConstantFloatTexture::value);
+		}
 	virtual ~ConstantFloatTexture() { }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
@@ -56,8 +59,14 @@ private:
 class ConstantRGBColorTexture : public Texture<SWCSpectrum> {
 public:
 	// ConstantTexture Public Methods
-	ConstantRGBColorTexture(const RGBColor &s) : color(s) {
+	ConstantRGBColorTexture(const RGBColor &s) :
+		Texture("ConstantRGBColorTexture-" + boost::lexical_cast<string>(this)),
+		color(s) {
 		RGBSPD = new RGBReflSPD(color);
+
+		AddFloatAttribute(*this, "color.r", "ConstantRGBColorTexture color R", &ConstantRGBColorTexture::GetColorR);
+		AddFloatAttribute(*this, "color.g", "ConstantRGBColorTexture color G", &ConstantRGBColorTexture::GetColorG);
+		AddFloatAttribute(*this, "color.b", "ConstantRGBColorTexture color B", &ConstantRGBColorTexture::GetColorB);
 	}
 	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
@@ -73,7 +82,15 @@ public:
 		delete RGBSPD;
 		RGBSPD = new RGBIllumSPD(color);
 	}
+
+	SPD *GetRGBSPD() { return RGBSPD; }
+
 private:
+	// Used by Query interface
+	float GetColorR() { return color.c[0]; }
+	float GetColorG() { return color.c[1]; }
+	float GetColorB() { return color.c[2]; }
+
 	SPD* RGBSPD;
 	RGBColor color;
 };
@@ -82,7 +99,10 @@ class ConstantFresnelTexture : public Texture<FresnelGeneral> {
 public:
 	// ConstantTexture Public Methods
 	ConstantFresnelTexture(float v) :
-		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) { }
+		Texture("ConstantFresnelTexture-" + boost::lexical_cast<string>(this)),
+		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) {
+		AddFloatAttribute(*this, "value", "ConstantFresnelTexture value", &ConstantFresnelTexture::val);
+	}
 	virtual ~ConstantFresnelTexture() { }
 	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

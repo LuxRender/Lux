@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -36,6 +36,7 @@ class SellmeierTexture : public Texture<FresnelGeneral> {
 public:
 	// SellmeierTexture Public Methods
 	SellmeierTexture(float a_, u_int n, const float *b_, const float *c_) :
+		Texture("SellmeierTexture-" + boost::lexical_cast<string>(this)),
 		b(b_, b_ + n), c(c_, c_ + n), a(a_) {
 		// Sellmeier expects wavelength in µm but we have it in nm
 		for (u_int i = 0; i < n; ++i)
@@ -58,7 +59,7 @@ public:
 		SWCSpectrum ior2(a);
 		for (u_int i = 0; i < b.size(); ++i)
 			ior2 += b[i] * w2 / (w2 - SWCSpectrum(c[i]));
-		return FresnelGeneral(DIELECTRIC_FRESNEL, ior2.Sqrt(),
+		return FresnelGeneral(DIELECTRIC_FRESNEL, Sqrt(ior2),
 			SWCSpectrum(0.f));
 	}
 	virtual float Y() const { return index; }

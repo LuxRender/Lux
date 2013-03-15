@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,8 @@
 #ifndef LENSEFFECTSWIDGET_H
 #define LENSEFFECTSWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QEvent>
+#include <QWidget>
 
 #define BLOOMRADIUS_RANGE 1.0f
 #define BLOOMWEIGHT_RANGE 1.0f
@@ -48,7 +49,6 @@ class LensEffectsWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	LensEffectsWidget(QWidget *parent = 0);
 	~LensEffectsWidget();
 
@@ -65,11 +65,9 @@ signals:
 	void forceUpdate();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::LensEffectsWidget *ui;
 
 	double m_bloomradius, m_bloomweight;
@@ -85,7 +83,6 @@ private:
 	double m_Glare_threshold;
 
 private slots:
-
 	// Lens effects slots
 	void gaussianAmountChanged (int value);
 	void gaussianAmountChanged (double value);
@@ -108,8 +105,6 @@ private slots:
 	void glareThresholdSpinBoxChanged (double value);
 	void computeGlareLayer ();
 	void deleteGlareLayer ();
-
 };
 
 #endif // LENSEFFECTSWIDGET_H
-

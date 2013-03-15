@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -91,7 +91,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	BufferOutputConfig config = BUF_FRAMEBUFFER;
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, config, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, config, "eye");
 
 	if (scene.lights.size() == 0)
 		return;
@@ -222,11 +222,10 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L += pathThroughput * isect.Le(sample, ray, &ibsdf,
-				NULL, NULL);
-		}
+		SWCSpectrum Ll(pathThroughput);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+			L += Ll;
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
 			float lightPos[2], bsdfPos[2];

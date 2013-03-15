@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -47,7 +47,7 @@ BBox Sphere::ObjectBound() const
 bool Sphere::Intersect(const Ray &r, Intersection *isect, bool null_shp_isect) const
 {
 	// Transform _Ray_ to object space
-	const Ray ray(WorldToObject(r));
+	const Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic sphere coefficients
 	const float radius2 = radius * radius;
 	const float A = ray.d.LengthSquared();
@@ -88,7 +88,7 @@ bool Sphere::Intersect(const Ray &r, Intersection *isect, bool null_shp_isect) c
 	r.maxt = tHit;
 	// Find parametric representation of sphere hit
 	const float u = phi / phiMax;
-	const float theta = acosf(pHit.z / radius);
+	const float theta = acosf(Clamp(pHit.z / radius, -1.f, 1.f));
 	const float v = (theta - thetaMin) / (thetaMax - thetaMin);
 	// Compute sphere \dpdu and \dpdv
 	const float Z = zMax - zMin;
@@ -97,14 +97,14 @@ bool Sphere::Intersect(const Ray &r, Intersection *isect, bool null_shp_isect) c
 	const Vector dpdu(factor * pHit.x, factor * pHit.y, Z);
 	const Vector dpdv(-phiMax * pHit.y, phiMax * pHit.x, 0.f);
 	// Initialize _DifferentialGeometry_ from parametric information
-	isect->dg = DifferentialGeometry(ObjectToWorld(pHit),
-		Normalize(ObjectToWorld(Normal(pHit.x, pHit.y, pHit.z))),
-		ObjectToWorld(dpdu), ObjectToWorld(dpdv),
-		ObjectToWorld(Normal(dpdu / radius)),
-		ObjectToWorld(Normal(dpdv / radius)),
+	isect->dg = DifferentialGeometry(ObjectToWorld * pHit,
+		Normalize(ObjectToWorld * Normal(pHit.x, pHit.y, pHit.z)),
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * Normal(dpdu / radius),
+		ObjectToWorld * Normal(dpdv / radius),
 		u, v, this);
 	isect->dg.AdjustNormal(reverseOrientation, transformSwapsHandedness);
-	isect->Set(WorldToObject, this, GetMaterial(),
+	isect->Set(ObjectToWorld, this, GetMaterial(),
 		GetExterior(), GetInterior());
 	return true;
 }
@@ -113,8 +113,7 @@ bool Sphere::IntersectP(const Ray &r, bool null_shp_isect) const
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic sphere coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y +
 	          ray.d.z*ray.d.z;

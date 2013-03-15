@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -119,5 +119,12 @@ SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, const Vector &wo,
 		ret.AddWeighted(weights[i], bsdfs[i]->rho(sw, wo, flags));
 	ret /= totalWeight;
 	return ret;
+}
+
+float MixBSDF::ApplyTransform(const Transform &transform)
+{
+	for (u_int i = 0; i < nBSDFs; ++i)
+		bsdfs[i]->ApplyTransform(transform);
+	return this->BSDF::ApplyTransform(transform);
 }
 

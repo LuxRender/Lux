@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,24 +32,26 @@
 using namespace lux;
 
 // Camera Method Definitions
-Camera::~Camera() {
-	delete film;
-}
-Camera::Camera(const MotionSystem &w2c,
-               float hither, float yon,
-			   float sopen, float sclose, int sdist, Film *f) 
-			   : Queryable("camera"), CameraMotion(w2c) {
-	WorldToCamera = CameraMotion.Sample(sopen);
-	CameraToWorld = WorldToCamera.GetInverse();
+Camera::Camera(const MotionSystem &w2c, float hither, float yon,
+	float sopen, float sclose, int sdist, Film *f) : CameraMotion(w2c)
+{
+	CameraToWorld = Inverse(CameraMotion.Sample(sopen));
 	ClipHither = hither;
 	ClipYon = yon;
 	ShutterOpen = sopen;
 	ShutterClose = sclose;
 	ShutterDistribution = sdist;
 	film = f;
+}
 
-	AddFloatAttribute(*this, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
-	AddFloatAttribute(*this, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);
+void Camera::AddAttributes(Queryable *q) const
+{
+/*	AddFloatAttribute(*q, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
+	AddFloatAttribute(*q, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);*/
+	AddFloatConstant(*q, "ShutterOpen", "Time when shutter opens", ShutterOpen);
+	AddFloatConstant(*q, "ShutterClose", "Time when shutter closes", ShutterClose);
+	AddFloatConstant(*q, "ClipHither", "Near clip plane", ClipHither);
+	AddFloatConstant(*q, "ClipYon", "Far clip plane", ClipYon);
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,
@@ -109,8 +111,7 @@ void Camera::SampleMotion(float time) {
 	if (CameraMotion.IsStatic())
 		return;
 
-	WorldToCamera = CameraMotion.Sample(time);
-	CameraToWorld = WorldToCamera.GetInverse();
+	CameraToWorld = Inverse(CameraMotion.Sample(time));
 }
 
 float Camera::GetTime(float u1) const {
@@ -134,31 +135,40 @@ float Camera::GetTime(float u1) const {
 }
 
 ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
-		const Transform &proj, const float Screen[4],
+		const Transform &proj, const float screen[4],
 		float hither, float yon, float sopen,
 		float sclose, int sdist, float lensr, float focald, Film *f)
 	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
+	ScreenWindow[0] = screen[0];
+	ScreenWindow[1] = screen[1];
+	ScreenWindow[2] = screen[2];
+	ScreenWindow[3] = screen[3];
+
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;
 	// Compute projective camera transformations
-	CameraToScreen = proj;
-	WorldToScreen = CameraToScreen * WorldToCamera;
+	ScreenToCamera = Inverse(proj);
+	ScreenToWorld = CameraToWorld * ScreenToCamera;
 	// Compute projective camera screen transformations
-	ScreenToRaster = Scale(float(film->xResolution),
-	                       float(film->yResolution), 1.f) *
-		  Scale(1.f / (Screen[1] - Screen[0]),
-				1.f / (Screen[2] - Screen[3]), 1.f) *
-		 Translate(Vector(-Screen[0], -Screen[3], 0.f));
-	RasterToScreen = ScreenToRaster.GetInverse();
-	CameraToRaster = ScreenToRaster * CameraToScreen;
-	RasterToCamera = CameraToRaster.GetInverse();
-	WorldToRaster = ScreenToRaster * WorldToScreen;
-	RasterToWorld = WorldToRaster.GetInverse();
-
-	AddFloatAttribute(*this, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
-	AddFloatAttribute(*this, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);
+	RasterToScreen = Translate(Vector(ScreenWindow[0], ScreenWindow[3], 0.f)) *
+		Scale(ScreenWindow[1] - ScreenWindow[0], ScreenWindow[2] - ScreenWindow[3], 1.f) *
+		Scale(1.f / film->xResolution, 1.f / film->yResolution, 1.f);
+	RasterToCamera = ScreenToCamera * RasterToScreen;
+	RasterToWorld = ScreenToWorld * RasterToScreen;
 }
+
+void ProjectiveCamera::AddAttributes(Queryable *q) const
+{
+	Camera::AddAttributes(q);
+	AddFloatConstant(*q, "LensRadius", "Lens radius", LensRadius);
+	AddFloatConstant(*q, "FocalDistance", "Focal distance", FocalDistance);
+	AddFloatConstant(*q, "ScreenWindow.0", "Screen window 0", ScreenWindow[0]);
+	AddFloatConstant(*q, "ScreenWindow.1", "Screen window 1", ScreenWindow[1]);
+	AddFloatConstant(*q, "ScreenWindow.2", "Screen window 2", ScreenWindow[2]);
+	AddFloatConstant(*q, "ScreenWindow.3", "Screen window 3", ScreenWindow[3]);
+}
+
 void ProjectiveCamera::SampleMotion(float time) {
 
 	if (CameraMotion.IsStatic())
@@ -167,7 +177,18 @@ void ProjectiveCamera::SampleMotion(float time) {
 	// call base method to sample transform
 	Camera::SampleMotion(time);
 	// then update derivative transforms
-	WorldToScreen = CameraToScreen * WorldToCamera;
-	WorldToRaster = CameraToRaster * WorldToCamera;
-	RasterToWorld = WorldToRaster.GetInverse();
+	ScreenToWorld = CameraToWorld * ScreenToCamera;
+	RasterToCamera = ScreenToCamera * RasterToScreen;
+	RasterToWorld = ScreenToWorld * RasterToScreen;
+}
+
+SceneCamera::SceneCamera(Camera *cam) : Queryable("camera"), camera(cam)
+{
+	camera->AddAttributes(this);
+}
+
+SceneCamera::~SceneCamera()
+{
+	delete camera->film;
+	delete camera;
 }

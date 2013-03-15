@@ -56,7 +56,7 @@ void ARDirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 }
@@ -88,10 +88,10 @@ u_int ARDirectLightingIntegrator::LiInternal(const Scene &scene,
 		Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L[isect.arealight->group] += isect.Le(sample, ray,
-				&ibsdf, NULL, NULL);
+		SWCSpectrum Ll(1.f);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll)) {
+			L[isect.arealight->group] += Ll;
 			++nContribs;
 		}
 
@@ -100,7 +100,7 @@ u_int ARDirectLightingIntegrator::LiInternal(const Scene &scene,
 		const Normal &n = bsdf->dgShading.nn;
 		if (isect.primitive) { 
 
-            surf_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
+		surf_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
 			if ( !surf_IsSup ) path_t = true; 
 			// Compute direct lighting for suport materials
 			if (nLights > 0) {

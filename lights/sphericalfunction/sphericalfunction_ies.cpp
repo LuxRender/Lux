@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -88,10 +88,16 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 			}
 		}
 		if (horizAngles.back() != 360.) {
-			LOG(LUX_ERROR, LUX_UNIMPLEMENT) <<
-				"unsupported horizontal angles in IES file";
-			initDummy();
-			return;
+ 			if ((360. - horizAngles.back()) !=
+				(horizAngles.back() - horizAngles[horizAngles.size() - 2])) {
+				LOG(LUX_ERROR, LUX_UNIMPLEMENT) <<
+					"unsupported horizontal angles in IES file";
+				initDummy();
+				return;
+			}
+			horizAngles.push_back(360.);
+			vector<double> tmpVals = values[0];
+			values.push_back(tmpVals);
 		}
 	} else {
 		LOG(LUX_ERROR, LUX_BADFILE) <<

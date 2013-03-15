@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,12 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_noisereduction.h"
-#include "noisereductionwidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFont>
 
 #include "api.h"
+
+#include "mainwindow.hxx"
+#include "noisereductionwidget.hxx"
+#include "ui_noisereduction.h"
 
 NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), ui(new Ui::NoiseReductionWidget)
 {
@@ -66,7 +67,6 @@ NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), u
 	ui->groupBox_integration->setFont(QFont  ("Lucida Grande", 11));
 	ui->tab_filter->setFont(QFont  ("Lucida Grande", 11));
 #endif
-
 }
 
 NoiseReductionWidget::~NoiseReductionWidget()
@@ -193,8 +193,6 @@ void NoiseReductionWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED, m_Chiu_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_INCLUDECENTER, m_Chiu_includecenter);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS, m_Chiu_radius);
-	
-
 }
 
 void NoiseReductionWidget::regularizationEnabledChanged(int value)
@@ -460,4 +458,3 @@ void NoiseReductionWidget::chiuRadiusChanged(double value)
 	if (m_Chiu_enabled)
 		emit valuesChanged();
 }
-
