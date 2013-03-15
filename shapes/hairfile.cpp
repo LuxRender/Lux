@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <boost/foreach.hpp>
+
 #include "hairfile.h"
 #include "sphere.h"
 #include "dynload.h"
@@ -57,9 +59,15 @@ BBox HairFile::ObjectBound() const {
 
 void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const cyHairFileHeader &header = hairFile->GetHeader();
-
 	if (header.hair_count == 0)
 		return;
+
+	if (refinedHairs.size() > 0) {
+		refined.reserve(refined.size() + refinedHairs.size());
+		for (u_int i = 0; i < refinedHairs.size(); ++i)
+			refined.push_back(refinedHairs[i]);
+		return;
+	}
 
 	const float *points = hairFile->GetPointsArray();
 	const float *thickness = hairFile->GetThicknessArray();
@@ -135,9 +143,14 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			paramSet.AddInt("indices", &meshTris[0], meshTris.size());
 			paramSet.AddFloat("uv", &meshUVs[0], meshUVs.size());
 			paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
-			refined.reserve(meshTris.size() / 3);
-			refined.push_back(MakeShape("trianglemesh",
-					ObjectToWorld, reverseOrientation, paramSet));
+
+			boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
+					ObjectToWorld, reverseOrientation, paramSet);
+
+			refined.reserve(refined.size() + meshTris.size() / 3);	
+			refined.push_back(shape);
+			refinedHairs.reserve(meshTris.size() / 3);
+			refinedHairs.push_back(shape);
 		}
 	} else {
 		// There are not segments so it must be a particle file. The Shape
@@ -151,6 +164,28 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			refined.push_back(shape);
 		}
 	}
+}
+
+void HairFile::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+	// Refine the primitive
+	vector<boost::shared_ptr<Shape> > refined;
+	Refine(refined);
+
+	// Tesselate all generated primitives
+	for (u_int i = 0; i < refined.size(); ++i)
+		refined[i]->Tesselate(meshList, primitiveList);
+}
+
+void HairFile::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+	// Refine the primitive
+	vector<boost::shared_ptr<Shape> > refined;
+	Refine(refined);
+
+	// Tesselate all generated primitives
+	for (u_int i = 0; i < refined.size(); ++i)
+		refined[i]->ExtTesselate(meshList, primitiveList);
 }
 
 Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
