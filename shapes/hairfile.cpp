@@ -28,8 +28,14 @@
 
 using namespace lux;
 
-HairFile::HairFile(const Transform &o2w, bool ro, const string &name,
+HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
+	hasCameraPosition = (cameraPos != NULL);
+	if (hasCameraPosition) {
+		// Transform the camera position in local coordinate
+		cameraPosition = Inverse(ObjectToWorld) * (*cameraPos);
+	}
+
 	hairFile = hair;
 }
 
@@ -99,7 +105,17 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			for (int j = 0; j < segmentSize - 1; ++j) {
 				const Vector z = Normalize(hairPoints[j + 1] - hairPoints[j]);
 				Vector x, y;
-				CoordinateSystem(z, &x, &y);
+				// Check if I have to face the ribbon in a specific direction
+				if (hasCameraPosition) {
+					y = Normalize(cameraPosition - hairPoints[j]);
+
+					if (AbsDot(z, y) < 1.f - 0.05f) {
+						x = Normalize(Cross(z, y));
+						y = Normalize(Cross(x, z));
+					} else
+						CoordinateSystem(z, &x, &y);
+				} else
+					CoordinateSystem(z, &x, &y);
 				const float radius = ((thickness) ? thickness[i] : header.d_thickness) * .5f;
 
 				const Point p0 = hairPoints[j] + radius * x;
@@ -153,7 +169,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			refinedHairs.push_back(shape);
 		}
 	} else {
-		// There are not segments so it must be a particle file. The Shape
+		// There are not segments so it must be a particles file. The Shape
 		// is refined as a set of spheres.
 		for (u_int i = 0; i < header.hair_count; ++i) {
 			const unsigned int index = i * 3;
@@ -191,6 +207,8 @@ void HairFile::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
 Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
 	string name = params.FindOneString("name", "'hairfile'");
 	const string filename = AdjustFilename(params.FindOneString("filename", "none"));
+	u_int nItems;
+	const Point *cameraPos = params.FindPoint("camerapos", &nItems);
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -199,7 +217,7 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		return NULL;
 	}
 
-	return new HairFile(o2w, reverseOrientation, name, hairFile);
+	return new HairFile(o2w, reverseOrientation, name, cameraPos, hairFile);
 }
 
 static DynamicLoader::RegisterShape<HairFile> r("hairfile");

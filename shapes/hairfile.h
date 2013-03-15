@@ -31,7 +31,7 @@ namespace lux
 
 class HairFile : public Shape {
 public:
-	HairFile(const Transform &o2w, bool ro, const string &name,
+	HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 		boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
@@ -50,7 +50,11 @@ public:
 		const ParamSet &params);
 
 protected:
+	bool hasCameraPosition;
+	Point cameraPosition;
+
 	boost::shared_ptr<cyHairFile> hairFile;
+
 	// I need to keep alive refined Shapes for Tesselate() and ExtTesselate() methods
 	mutable vector<boost::shared_ptr<Shape> > refinedHairs;
 };
