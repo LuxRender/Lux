@@ -63,7 +63,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 
 	const float *points = hairFile->GetPointsArray();
 	const float *thickness = hairFile->GetThicknessArray();
-	for (u_int i = 0; i < header.hair_count; ++i) {
+	for (u_int i = 0; i < header.point_count; ++i) {
 		const unsigned int index = i * 3;
 		const Vector vert(points[index], points[index + 1], points[index + 2]);
 		const float radius = ((thickness) ? thickness[i] : header.d_thickness);
