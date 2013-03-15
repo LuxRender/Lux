@@ -43,13 +43,13 @@ BBox HairFile::ObjectBound() const {
 	const float *points = hairFile->GetPointsArray();
 	const float *thickness = hairFile->GetThicknessArray();
 
-	for (u_int i = 0; i < header.hair_count; ++i) {
+	for (u_int i = 0; i < header.point_count; ++i) {
 		const unsigned int index = i * 3;
 		const Point p(points[index], points[index + 1], points[index + 2]);
 		BBox pointBBox(p);
 
-		const float size = (thickness) ? thickness[i] : header.d_thickness;
-		pointBBox.Expand(size);
+		const float radius = ((thickness) ? thickness[i] : header.d_thickness) * .5f;
+		pointBBox.Expand(radius);
 
 		objectBound = Union(objectBound, pointBBox);
 	}
@@ -73,7 +73,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const float *thickness = hairFile->GetThicknessArray();
 	const u_short *segments = hairFile->GetSegmentsArray();
 
-	if (segments) {
+	if (segments || (header.d_segments > 0)) {
 		u_int pointIndex = 0;
 
 		vector<Point> hairPoints;
@@ -82,7 +82,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		vector<float> meshUVs;
 		for (u_int i = 0; i < header.hair_count; ++i) {
 			// segmentSize must be a signed 
-			const int segmentSize = segments[i];
+			const int segmentSize = segments ? segments[i] : header.d_segments;
 			if (segmentSize == 0)
 				continue;
 
