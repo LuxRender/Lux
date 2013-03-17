@@ -41,9 +41,9 @@ public:
 
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
-	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+	virtual void ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
 
 	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
@@ -55,7 +55,7 @@ protected:
 
 	boost::shared_ptr<cyHairFile> hairFile;
 
-	// I need to keep alive refined Shapes for Tesselate() and ExtTesselate() methods
+	// I need to keep alive refined Shapes for Tessellate() and ExtTessellate() methods
 	mutable vector<boost::shared_ptr<Shape> > refinedHairs;
 };
 

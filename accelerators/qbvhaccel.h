@@ -390,7 +390,7 @@ protected:
 	/**
 	   The primitive associated with each triangle. indexed by the number of quad
 	   and the number of triangle in the quad (thus, there might be holes).
-	   no need to be a tesselated primitive, the intersection
+	   no need to be a tessellated primitive, the intersection
 	   test will be redone for the nearest triangle found, to
 	   fill the Intersection structure.
 	*/

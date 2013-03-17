@@ -56,9 +56,9 @@ public:
 		const boost::shared_ptr<Primitive> &thisPtr);
 	virtual bool CanSample() const { return false; }
 
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
-	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+	virtual void ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
 	virtual void GetIntersection(const luxrays::RayHit &rayHit,
 		const u_int index, Intersection *isect) const;

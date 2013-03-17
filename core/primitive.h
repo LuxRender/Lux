@@ -151,27 +151,27 @@ public:
 		return Pdf(dg);
 	}
 	/**
-	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tesselation is not supported.
+	 * Add a tessellated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tessellation is not supported.
 	 * @param meshList      The vector where the mesh.
-	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tessellated in the corresponding mesh.
 	 */
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tesselation";
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tessellation";
 	}
 	/**
-	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tesselation is not supported.
+	 * Add a tessellated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tessellation is not supported.
 	 * @param meshList      The vector where the mesh.
-	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tessellated in the corresponding mesh.
 	 */
-	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+	virtual void ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support ExtTesselate";
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support ExtTessellate";
 	}
 	/**
-	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit
+	 * This must be implemented if Tessellate() is supported. Translate a LuxRays hit
 	 * in a LuxRender Intersection.
 	 * @param dataSet LuxRays DataSet used to trace the ray.
 	 * @param rayHit Intersection hit point information.
@@ -284,21 +284,21 @@ public:
 
 	AreaLight *GetAreaLight() const { return areaLight; }
 
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
 
-		prim->Tesselate(meshList, &plist);
+		prim->Tessellate(meshList, &plist);
 
 		for (u_int i = 0; i < plist.size(); ++i)
 			primitiveList->push_back(this);
 	}
 
-	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+	virtual void ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
 
-		prim->ExtTesselate(meshList, &plist);
+		prim->ExtTessellate(meshList, &plist);
 
 		for (u_int i = 0; i < plist.size(); ++i)
 			primitiveList->push_back(this);

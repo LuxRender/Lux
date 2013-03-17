@@ -1345,7 +1345,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << ToClassName(prim);
 
 	vector<luxrays::ExtTriangleMesh *> meshList;
-	prim->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
+	prim->ExtTessellate(&meshList, &scene->tessellatedPrimitives);
 
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 		if (!(*mesh)->HasNormals()) {
@@ -1367,7 +1367,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 }
 
 void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+	LOG(LUX_INFO, LUX_NOERROR) << "Tessellating " << scene->primitives.size() << " primitives";
 
 	// To keep track of all primitive mesh lists
 	map<const Primitive *, vector<luxrays::ExtTriangleMesh *> > primMeshLists;

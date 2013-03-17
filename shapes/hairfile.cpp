@@ -182,26 +182,26 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	}
 }
 
-void HairFile::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+void HairFile::Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 	// Refine the primitive
 	vector<boost::shared_ptr<Shape> > refined;
 	Refine(refined);
 
-	// Tesselate all generated primitives
+	// Tessellate all generated primitives
 	for (u_int i = 0; i < refined.size(); ++i)
-		refined[i]->Tesselate(meshList, primitiveList);
+		refined[i]->Tessellate(meshList, primitiveList);
 }
 
-void HairFile::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+void HairFile::ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 	// Refine the primitive
 	vector<boost::shared_ptr<Shape> > refined;
 	Refine(refined);
 
-	// Tesselate all generated primitives
+	// Tessellate all generated primitives
 	for (u_int i = 0; i < refined.size(); ++i)
-		refined[i]->ExtTesselate(meshList, primitiveList);
+		refined[i]->ExtTessellate(meshList, primitiveList);
 }
 
 Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {

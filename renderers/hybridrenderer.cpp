@@ -110,19 +110,19 @@ static void PreprocessPrimitive(const Primitive *prim, Scene *scene,
 		vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) {
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << typeid(*prim).name();
 
-	prim->Tesselate(meshList, primitiveList);
+	prim->Tessellate(meshList, primitiveList);
 }
 
 luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scene *scene,
 			vector<HybridInstancePrimitive *> &hybridPrims) {
 	// Compile the scene geometries in a LuxRays compatible format
 
-	LOG(LUX_INFO,LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+	LOG(LUX_INFO,LUX_NOERROR) << "Tessellating " << scene->primitives.size() << " primitives";
 
 	vector<luxrays::Mesh *> meshList;
 	// To keep track of all primitive mesh lists
 	map<const Primitive *, vector<luxrays::TriangleMesh *> > primMeshLists;
-	map<const Primitive *, vector<const Primitive *> > primTesselatedLists;
+	map<const Primitive *, vector<const Primitive *> > primTessellatedLists;
 	// To keep track of the allocated instances
 	vector<luxrays::InstanceTriangleMesh *> instList;
 
@@ -140,16 +140,16 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 				const Primitive *instancedSource = instanceSources[i].get();
 
 				vector<luxrays::TriangleMesh *> primMeshList;
-				vector<const Primitive *> primTesselatedList;
+				vector<const Primitive *> primTessellatedList;
 				// Check if I have already defined one of the original primitive
 				if (primMeshLists.count(instancedSource) < 1) {
 					// I have to define the instanced primitive
-					PreprocessPrimitive(instancedSource, scene, &primMeshList, &primTesselatedList);
+					PreprocessPrimitive(instancedSource, scene, &primMeshList, &primTessellatedList);
 					primMeshLists[instancedSource] = primMeshList;
-					primTesselatedLists[instancedSource] = primTesselatedList;
+					primTessellatedLists[instancedSource] = primTessellatedList;
 				} else {
 					primMeshList = primMeshLists[instancedSource];
-					primTesselatedList = primTesselatedLists[instancedSource];
+					primTessellatedList = primTessellatedLists[instancedSource];
 				}
 
 				if (primMeshList.size() == 0)
@@ -161,23 +161,23 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 					meshList.push_back(itm);
 					instList.push_back(itm);
 
-					HybridInstancePrimitive *hip = new HybridInstancePrimitive(instance, primTesselatedList[i]);
-					scene->tesselatedPrimitives.push_back(hip);
+					HybridInstancePrimitive *hip = new HybridInstancePrimitive(instance, primTessellatedList[i]);
+					scene->tessellatedPrimitives.push_back(hip);
 					hybridPrims.push_back(hip);
 				}
 			}
 		} else {
 			vector<luxrays::TriangleMesh *> primMeshList;
-			vector<const Primitive *> primTesselatedList;
+			vector<const Primitive *> primTessellatedList;
 			// Check if I have already defined one of the original primitive
 			if (primMeshLists.count(prim) < 1) {
 				// I have to define the instanced primitive
-				PreprocessPrimitive(prim, scene, &primMeshList, &primTesselatedList);
+				PreprocessPrimitive(prim, scene, &primMeshList, &primTessellatedList);
 				primMeshLists[prim] = primMeshList;
-				primTesselatedLists[prim] = primTesselatedList;
+				primTessellatedLists[prim] = primTessellatedList;
 			} else {
 				primMeshList = primMeshLists[prim];
-				primTesselatedList = primTesselatedLists[prim];
+				primTessellatedList = primTessellatedLists[prim];
 			}
 
 			if (primMeshList.size() == 0)
@@ -185,7 +185,7 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 
 			for (u_int i = 0; i < primMeshList.size(); ++i) {
 				meshList.push_back(primMeshList[i]);
-				scene->tesselatedPrimitives.push_back(primTesselatedList[i]);
+				scene->tessellatedPrimitives.push_back(primTessellatedList[i]);
 			}
 		}
 	}
