@@ -28,8 +28,165 @@
 
 using namespace lux;
 
+//------------------------------------------------------------------------------
+// CatmullRomCurve class definition
+//------------------------------------------------------------------------------
+
+class CatmullRomCurve {
+public:
+	CatmullRomCurve() {
+	}
+	~CatmullRomCurve() {
+	}
+
+	void AddPoint(const Point &p, const float size) {
+		points.push_back(p);
+		sizes.push_back(size);
+	}
+
+	void AdaptiveTessellate(const u_int maxDepth, const float error, vector<float> &values) {
+		values.push_back(0.f);
+		AdaptiveTessellate(0, maxDepth, error, values, 0.f, 1.f);
+		values.push_back(1.f);
+
+		std::sort(values.begin(), values.end());
+	}
+
+	Point EvaluatePoint(const float t) {
+		int pointsCount = (int)points.size();
+		int segment = Floor2Int((pointsCount - 1) * t);
+		segment = max(segment, 0);
+		segment = min(segment, pointsCount - 2);
+
+		const float ct = t * (pointsCount - 1) - segment;
+
+		if (segment == 0)
+			return CatmullRomSpline(points[0], points[0], points[1], points[2], ct);
+		if (segment == pointsCount - 2)
+			return CatmullRomSpline(points[pointsCount - 3], points[pointsCount - 2], points[pointsCount - 1], points[pointsCount - 1], ct);
+
+		return CatmullRomSpline(points[segment - 1], points[segment], points[segment + 1], points[segment + 2], ct);
+	}
+
+	float EvaluateSize(const float t) {
+		int pointsCount = (int)sizes.size();
+		int segment = Floor2Int((pointsCount - 1) * t);
+		segment = max(segment, 0);
+		segment = min(segment, pointsCount - 2);
+
+		const float ct = t * (pointsCount - 1) - segment;
+
+		if (segment == 0)
+			return CatmullRomSpline(sizes[0], sizes[0], sizes[1], sizes[2], ct);
+		if (segment == pointsCount - 2)
+			return CatmullRomSpline(sizes[pointsCount - 3], sizes[pointsCount - 2], sizes[pointsCount - 1], sizes[pointsCount - 1], ct);
+
+		return CatmullRomSpline(sizes[segment - 1], sizes[segment], sizes[segment + 1], sizes[segment + 2], ct);
+	}
+
+private:
+	bool AdaptiveTessellate(const u_int depth, const u_int maxDepth, const float error,
+			vector<float> &values, const float t0, const float t1) {
+		if (depth >= maxDepth)
+			return false;
+
+		const float tmid = (t0 + t1) * .5f;
+
+		const Point p0 = EvaluateSize(t0);
+		const Point pmid = EvaluatePoint(tmid);
+		const Point p1 = EvaluatePoint(t1);
+
+		const Vector vmid = pmid - p0;
+		const Vector v = p1 - p0;
+
+		// Check if the vectors are nearly parallel
+		if (AbsDot(Normalize(vmid), Normalize(v)) < 1.f - 0.05f) {
+			// Tessellate left side too
+			const bool leftSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
+			const bool rightSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, tmid, t1);
+
+			if (leftSide || rightSide)
+				values.push_back(tmid);
+
+			return false;
+		}
+
+		//----------------------------------------------------------------------
+		// Curve flatness check
+		//----------------------------------------------------------------------
+
+		// Calculate the distance between vmid and the segment
+		const float distance = Cross(v, vmid).Length() / vmid.Length();
+
+		// Check if the distance normalized with the segment length is
+		// over the required error
+		const float segmentLength = (p1 - p0).Length();
+		if (distance / segmentLength > error) {
+			// Tessellate left side too
+			AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
+			
+			values.push_back(tmid);
+
+			// Tessellate right side too
+			AdaptiveTessellate(depth + 1, maxDepth, error, values, tmid, t1);
+
+			return true;
+		}
+		
+		//----------------------------------------------------------------------
+		// Curve size check
+		//----------------------------------------------------------------------
+
+		const float s0 = EvaluateSize(t0);
+		const float smid = EvaluateSize(tmid);
+		const float s1 = EvaluateSize(t1);
+
+		const float expectedSize = (s0 + s1) * .5f;
+		if (fabsf(expectedSize - smid) > error) {
+			// Tessellate left side too
+			AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
+			
+			values.push_back(tmid);
+
+			// Tessellate right side too
+			AdaptiveTessellate(depth + 1, maxDepth, error, values, tmid, t1);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	float CatmullRomSpline(const float a, const float b, const float c, const float d, const float t) {
+		const float t1 = (c - a) * 0.5f;
+		const float t2 = (d - b) * 0.5f;
+
+		const float h1 = +2 * t * t * t - 3 * t * t + 1;
+		const float h2 = -2 * t * t * t + 3 * t * t;
+		const float h3 = t * t * t - 2 * t * t + t;
+		const float h4 = t * t * t - t * t;
+
+		return b * h1 + c * h2 + t1 * h3 + t2 * h4;
+	}
+
+	Point CatmullRomSpline(const Point a, const Point b, const Point c, const Point d, const float t) {
+		return Point(
+				CatmullRomSpline(a.x, b.x, c.x, d.x, t),
+				CatmullRomSpline(a.y, b.y, c.y, d.y, t),
+				CatmullRomSpline(a.z, b.z, c.z, d.z, t));
+	}
+
+	vector<Point> points;
+	vector<float> sizes;
+};
+
+//------------------------------------------------------------------------------
+// HairFile methods
+//------------------------------------------------------------------------------
+
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
-		const string &aType, boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
+		const string &aType,  const TessellationType tType, const u_int rAdaptiveMaxDepth,
+		const float rAdaptiveError, boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
 	if (hasCameraPosition) {
 		// Transform the camera position in local coordinate
@@ -37,6 +194,9 @@ HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Poin
 	}
 
 	accelType = aType;
+	tesselType = tType;
+	ribbonAdaptiveMaxDepth = rAdaptiveMaxDepth;
+	ribbonAdaptiveError = rAdaptiveError;
 	hairFile = hair;
 }
 
@@ -64,7 +224,7 @@ BBox HairFile::ObjectBound() const {
 	return objectBound;
 }
 
-void HairFile::TessellateRibbon(const vector<Point> &hairPoints, const vector<float> &hairSize,
+void HairFile::TessellateRibbon(const vector<Point> &hairPoints, const vector<float> &hairSizes,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs) const {
 	// Create the mesh vertices
@@ -90,8 +250,8 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints, const vector<fl
 		} else
 			CoordinateSystem(z, &x, &y);
 
-		const Point p0 = hairPoints[i] + hairSize[i] * x;
-		const Point p1 = hairPoints[i] - hairSize[i] * x;
+		const Point p0 = hairPoints[i] + hairSizes[i] * x;
+		const Point p1 = hairPoints[i] - hairSizes[i] * x;
 		meshVerts.push_back(p0);
 		meshNorms.push_back(Normal());
 		meshVerts.push_back(p1);
@@ -135,6 +295,28 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints, const vector<fl
 	}
 }
 
+void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints, const vector<float> &hairSizes,
+		vector<Point> &meshVerts, vector<Normal> &meshNorms,
+		vector<int> &meshTris, vector<float> &meshUVs) const {
+	// Interpolate the hair segments
+	CatmullRomCurve curve;
+	for (int i = 0; i < (int)hairPoints.size(); ++i)
+		curve.AddPoint(hairPoints[i], hairSizes[i]);
+
+	// Tessellate the curve
+	vector<float> values;
+	curve.AdaptiveTessellate(ribbonAdaptiveMaxDepth, ribbonAdaptiveError, values);
+
+	// Create the ribbon
+	vector<Point> tesselPoints;
+	vector<float> tesselSizes;
+	for (u_int i = 0; i < values.size(); ++i) {
+		tesselPoints.push_back(curve.EvaluatePoint(values[i]));
+		tesselSizes.push_back(curve.EvaluateSize(values[i]));
+	}
+	TessellateRibbon(tesselPoints, tesselSizes, meshVerts, meshNorms, meshTris, meshUVs);
+}
+
 void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const cyHairFileHeader &header = hairFile->GetHeader();
 	if (header.hair_count == 0)
@@ -158,7 +340,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		u_int pointIndex = 0;
 
 		vector<Point> hairPoints;
-		vector<float> hairSize;
+		vector<float> hairSizes;
 
 		vector<Point> meshVerts;
 		vector<Normal> meshNorms;
@@ -172,14 +354,23 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 
 			// Collect the segment points and size
 			hairPoints.clear();
-			for (int j = 0; j < segmentSize; ++j) {
+			for (int j = 0; j <= segmentSize; ++j) {
 				hairPoints.push_back(Point(points[pointIndex], points[pointIndex + 1], points[pointIndex + 2]));
-				hairSize.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
+				hairSizes.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
 
 				pointIndex += 3;
 			}
 
-			TessellateRibbon(hairPoints, hairSize, meshVerts, meshNorms, meshTris, meshUVs);
+			switch (tesselType) {
+				case TESSEL_RIBBON:
+					TessellateRibbon(hairPoints, hairSizes, meshVerts, meshNorms, meshTris, meshUVs);
+					break;
+				case TESSEL_RIBBON_ADAPTIVE:
+					TessellateRibbonAdaptive(hairPoints, hairSizes, meshVerts, meshNorms, meshTris, meshUVs);
+					break;
+				default:
+					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
+			}
 		}
 
 		// Normalize normals
@@ -248,6 +439,19 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 	u_int nItems;
 	const Point *cameraPos = params.FindPoint("camerapos", &nItems);
 	const string accelType = params.FindOneString("acceltype", "qbvh");
+	const string tessellationTypeStr = params.FindOneString("tesseltype", "ribbon");
+	TessellationType tessellationType;
+	if (tessellationTypeStr == "ribbon")
+		tessellationType = TESSEL_RIBBON;
+	else if (tessellationTypeStr == "ribbonadaptive")
+		tessellationType = TESSEL_RIBBON_ADAPTIVE;
+	else {
+		SHAPE_LOG(name, LUX_WARNING, LUX_BADTOKEN) << "Tessellation type  '" << tessellationTypeStr << "' unknown. Using \"ribbon\".";
+		tessellationType = TESSEL_RIBBON;
+	}
+
+	const u_int ribbonAdaptiveMaxDepth = max(0, params.FindOneInt("ribbonadaptive_maxdepth", 8));
+	const float ribbonAdaptiveError = params.FindOneFloat("ribbonadaptive_error", 0.1f);
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -256,7 +460,8 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		return NULL;
 	}
 
-	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, hairFile);
+	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, tessellationType,
+		ribbonAdaptiveMaxDepth, ribbonAdaptiveError, hairFile);
 }
 
 static DynamicLoader::RegisterShape<HairFile> r("hairfile");
