@@ -32,7 +32,7 @@ namespace lux
 class HairFile : public Shape {
 public:
 	HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
-		boost::shared_ptr<cyHairFile> &hairFile);
+			const string &accelType, boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
 	virtual BBox ObjectBound() const;
@@ -56,6 +56,7 @@ protected:
 
 	bool hasCameraPosition;
 	Point cameraPosition;
+	string accelType;
 
 	boost::shared_ptr<cyHairFile> hairFile;
 

@@ -29,13 +29,14 @@
 using namespace lux;
 
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
-		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
+		const string &aType, boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
 	if (hasCameraPosition) {
 		// Transform the camera position in local coordinate
 		cameraPosition = Inverse(ObjectToWorld) * (*cameraPos);
 	}
 
+	accelType = aType;
 	hairFile = hair;
 }
 
@@ -193,6 +194,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		paramSet.AddFloat("uv", &meshUVs[0], meshUVs.size());
 		paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
 		paramSet.AddNormal("N", &meshNorms[0], meshNorms.size());
+		paramSet.AddString("acceltype", &accelType, 1);
 
 		boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
 				ObjectToWorld, reverseOrientation, paramSet);
@@ -245,6 +247,7 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 	const string filename = AdjustFilename(params.FindOneString("filename", "none"));
 	u_int nItems;
 	const Point *cameraPos = params.FindPoint("camerapos", &nItems);
+	const string accelType = params.FindOneString("acceltype", "qbvh");
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -253,7 +256,7 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		return NULL;
 	}
 
-	return new HairFile(o2w, reverseOrientation, name, cameraPos, hairFile);
+	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, hairFile);
 }
 
 static DynamicLoader::RegisterShape<HairFile> r("hairfile");
