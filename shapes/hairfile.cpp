@@ -87,6 +87,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 
 		vector<Point> hairPoints;
 		vector<Point> meshVerts;
+		vector<Normal> meshNorms;
 		vector<int> meshTris;
 		vector<float> meshUVs;
 		for (u_int i = 0; i < header.hair_count; ++i) {
@@ -123,7 +124,9 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 				const Point p0 = hairPoints[j] + radius * x;
 				const Point p1 = hairPoints[j] - radius * x;
 				meshVerts.push_back(p0);
+				meshNorms.push_back(Normal());
 				meshVerts.push_back(p1);
+				meshNorms.push_back(Normal());
 
 				const float v = j / (float)hairPoints.size();
 				meshUVs.push_back(1.f);
@@ -133,6 +136,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			}
 			// Add the cap vertex
 			meshVerts.push_back(hairPoints.back());
+			meshNorms.push_back(Normal());
 			meshUVs.push_back(0.f);
 			meshUVs.push_back(1.f);
 
@@ -140,22 +144,49 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			for (int j = 0; j < segmentSize - 2; ++j) {
 				const u_int index = baseOffset + j * 2;
 
+				const u_int i0 = index;
+				const u_int i1 = index + 1;
+				const u_int i2 = index + 2;
+				const u_int i3 = index + 3;
+
 				// First triangle
-				meshTris.push_back(index);
-				meshTris.push_back(index + 1);
-				meshTris.push_back(index + 2);
+				meshTris.push_back(i0);
+				meshTris.push_back(i1);
+				meshTris.push_back(i2);
+				// First triangle normal
+				const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+				meshNorms[i0] += n0;
+				meshNorms[i1] += n0;
+				meshNorms[i2] += n0;
 
 				// Second triangle
-				meshTris.push_back(index + 1);
-				meshTris.push_back(index + 3);
-				meshTris.push_back(index + 2);
+				meshTris.push_back(i1);
+				meshTris.push_back(i3);
+				meshTris.push_back(i2);
+				// Second triangle normal
+				const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i1], meshVerts[i2] - meshVerts[i1]));
+				meshNorms[i1] += n1;
+				meshNorms[i2] += n1;
+				meshNorms[i3] += n1;
 			}
 			// Add the cap
-			meshTris.push_back(meshVerts.size() - 3);
-			meshTris.push_back(meshVerts.size() - 2);
-			meshTris.push_back(meshVerts.size() - 1);
+			const u_int i0 = meshVerts.size() - 3;
+			const u_int i1 = meshVerts.size() - 2;
+			const u_int i2 = meshVerts.size() - 1;
+			meshTris.push_back(i0);
+			meshTris.push_back(i1);
+			meshTris.push_back(i2);
+			// Cap triangle normal
+			const Normal n = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+			meshNorms[i0] += n;
+			meshNorms[i1] += n;
+			meshNorms[i2] += n;
 		}
 
+		// Normalize normals
+		for (u_int i = 0; i < meshNorms.size(); ++i)
+			meshNorms[i] = Normalize(meshNorms[i]);
+		
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Strands mesh: " << meshTris.size() / 3 << " triangles";
 
 		// Create the mesh Shape
@@ -163,6 +194,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		paramSet.AddInt("indices", &meshTris[0], meshTris.size());
 		paramSet.AddFloat("uv", &meshUVs[0], meshUVs.size());
 		paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
+		paramSet.AddNormal("N", &meshNorms[0], meshNorms.size());
 
 		boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
 				ObjectToWorld, reverseOrientation, paramSet);
