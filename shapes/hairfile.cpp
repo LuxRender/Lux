@@ -75,6 +75,9 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		return;
 	}
 
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Refining " << header.hair_count << " strands";
+	const double start = luxrays::WallClockTime();
+
 	const float *points = hairFile->GetPointsArray();
 	const float *thickness = hairFile->GetThicknessArray();
 	const u_short *segments = hairFile->GetSegmentsArray();
@@ -100,8 +103,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			}
 
 			// Create the mesh vertices
-			meshVerts.clear();
-			meshUVs.clear();
+			const u_int baseOffset = meshVerts.size();
 			for (int j = 0; j < segmentSize - 1; ++j) {
 				const Vector z = Normalize(hairPoints[j + 1] - hairPoints[j]);
 				Vector x, y;
@@ -135,9 +137,8 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			meshUVs.push_back(1.f);
 
 			// Triangulate the vertex mesh
-			meshTris.clear();
 			for (int j = 0; j < segmentSize - 2; ++j) {
-				const u_int index = j * 2;
+				const u_int index = baseOffset + j * 2;
 
 				// First triangle
 				meshTris.push_back(index);
@@ -153,21 +154,23 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			meshTris.push_back(meshVerts.size() - 3);
 			meshTris.push_back(meshVerts.size() - 2);
 			meshTris.push_back(meshVerts.size() - 1);
-
-			// Create the mesh Shape
-			ParamSet paramSet;
-			paramSet.AddInt("indices", &meshTris[0], meshTris.size());
-			paramSet.AddFloat("uv", &meshUVs[0], meshUVs.size());
-			paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
-
-			boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
-					ObjectToWorld, reverseOrientation, paramSet);
-
-			refined.reserve(refined.size() + meshTris.size() / 3);	
-			refined.push_back(shape);
-			refinedHairs.reserve(meshTris.size() / 3);
-			refinedHairs.push_back(shape);
 		}
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Strands mesh: " << meshTris.size() / 3 << " triangles";
+
+		// Create the mesh Shape
+		ParamSet paramSet;
+		paramSet.AddInt("indices", &meshTris[0], meshTris.size());
+		paramSet.AddFloat("uv", &meshUVs[0], meshUVs.size());
+		paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
+
+		boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
+				ObjectToWorld, reverseOrientation, paramSet);
+
+		refined.reserve(refined.size() + meshTris.size() / 3);	
+		refined.push_back(shape);
+		refinedHairs.reserve(meshTris.size() / 3);
+		refinedHairs.push_back(shape);
 	} else {
 		// There are not segments so it must be a particles file. The Shape
 		// is refined as a set of spheres.
@@ -180,6 +183,9 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			refined.push_back(shape);
 		}
 	}
+
+	const float dt = luxrays::WallClockTime() - start;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Refining time: " << std::setprecision(3) << dt << " secs";
 }
 
 void HairFile::Tessellate(vector<luxrays::TriangleMesh *> *meshList,
