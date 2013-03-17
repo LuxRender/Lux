@@ -63,6 +63,77 @@ BBox HairFile::ObjectBound() const {
 	return objectBound;
 }
 
+void HairFile::TessellateRibbon(const vector<Point> &hairPoints, const vector<float> &hairSize,
+		vector<Point> &meshVerts, vector<Normal> &meshNorms,
+		vector<int> &meshTris, vector<float> &meshUVs) const {
+	// Create the mesh vertices
+	const u_int baseOffset = meshVerts.size();
+	for (int i = 0; i < (int)hairPoints.size(); ++i) {
+		Vector z;
+		// I need a special case for the very last point
+		if (i == (int)hairPoints.size() - 1)
+			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+		else
+			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+
+		Vector x, y;
+		// Check if I have to face the ribbon in a specific direction
+		if (hasCameraPosition) {
+			y = Normalize(cameraPosition - hairPoints[i]);
+
+			if (AbsDot(z, y) < 1.f - 0.05f) {
+				x = Normalize(Cross(z, y));
+				y = Normalize(Cross(x, z));
+			} else
+				CoordinateSystem(z, &x, &y);
+		} else
+			CoordinateSystem(z, &x, &y);
+
+		const Point p0 = hairPoints[i] + hairSize[i] * x;
+		const Point p1 = hairPoints[i] - hairSize[i] * x;
+		meshVerts.push_back(p0);
+		meshNorms.push_back(Normal());
+		meshVerts.push_back(p1);
+		meshNorms.push_back(Normal());
+
+		const float v = i / (float)hairPoints.size();
+		meshUVs.push_back(1.f);
+		meshUVs.push_back(v);
+		meshUVs.push_back(-1.f);
+		meshUVs.push_back(v);
+	}
+
+	// Triangulate the vertex mesh
+	for (int i = 0; i < (int)hairPoints.size() - 1; ++i) {
+		const u_int index = baseOffset + i * 2;
+
+		const u_int i0 = index;
+		const u_int i1 = index + 1;
+		const u_int i2 = index + 2;
+		const u_int i3 = index + 3;
+
+		// First triangle
+		meshTris.push_back(i0);
+		meshTris.push_back(i1);
+		meshTris.push_back(i2);
+		// First triangle normal
+		const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+		meshNorms[i0] += n0;
+		meshNorms[i1] += n0;
+		meshNorms[i2] += n0;
+
+		// Second triangle
+		meshTris.push_back(i1);
+		meshTris.push_back(i3);
+		meshTris.push_back(i2);
+		// Second triangle normal
+		const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i1], meshVerts[i2] - meshVerts[i1]));
+		meshNorms[i1] += n1;
+		meshNorms[i2] += n1;
+		meshNorms[i3] += n1;
+	}
+}
+
 void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const cyHairFileHeader &header = hairFile->GetHeader();
 	if (header.hair_count == 0)
@@ -86,6 +157,8 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		u_int pointIndex = 0;
 
 		vector<Point> hairPoints;
+		vector<float> hairSize;
+
 		vector<Point> meshVerts;
 		vector<Normal> meshNorms;
 		vector<int> meshTris;
@@ -96,91 +169,16 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			if (segmentSize == 0)
 				continue;
 
-			// Collect the segment points
+			// Collect the segment points and size
 			hairPoints.clear();
 			for (int j = 0; j < segmentSize; ++j) {
 				hairPoints.push_back(Point(points[pointIndex], points[pointIndex + 1], points[pointIndex + 2]));
+				hairSize.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
+
 				pointIndex += 3;
 			}
 
-			// Create the mesh vertices
-			const u_int baseOffset = meshVerts.size();
-			for (int j = 0; j < segmentSize - 1; ++j) {
-				const Vector z = Normalize(hairPoints[j + 1] - hairPoints[j]);
-				Vector x, y;
-				// Check if I have to face the ribbon in a specific direction
-				if (hasCameraPosition) {
-					y = Normalize(cameraPosition - hairPoints[j]);
-
-					if (AbsDot(z, y) < 1.f - 0.05f) {
-						x = Normalize(Cross(z, y));
-						y = Normalize(Cross(x, z));
-					} else
-						CoordinateSystem(z, &x, &y);
-				} else
-					CoordinateSystem(z, &x, &y);
-				const float radius = ((thickness) ? thickness[i] : header.d_thickness) * .5f;
-
-				const Point p0 = hairPoints[j] + radius * x;
-				const Point p1 = hairPoints[j] - radius * x;
-				meshVerts.push_back(p0);
-				meshNorms.push_back(Normal());
-				meshVerts.push_back(p1);
-				meshNorms.push_back(Normal());
-
-				const float v = j / (float)hairPoints.size();
-				meshUVs.push_back(1.f);
-				meshUVs.push_back(v);
-				meshUVs.push_back(-1.f);
-				meshUVs.push_back(v);
-			}
-			// Add the cap vertex
-			meshVerts.push_back(hairPoints.back());
-			meshNorms.push_back(Normal());
-			meshUVs.push_back(0.f);
-			meshUVs.push_back(1.f);
-
-			// Triangulate the vertex mesh
-			for (int j = 0; j < segmentSize - 2; ++j) {
-				const u_int index = baseOffset + j * 2;
-
-				const u_int i0 = index;
-				const u_int i1 = index + 1;
-				const u_int i2 = index + 2;
-				const u_int i3 = index + 3;
-
-				// First triangle
-				meshTris.push_back(i0);
-				meshTris.push_back(i1);
-				meshTris.push_back(i2);
-				// First triangle normal
-				const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
-				meshNorms[i0] += n0;
-				meshNorms[i1] += n0;
-				meshNorms[i2] += n0;
-
-				// Second triangle
-				meshTris.push_back(i1);
-				meshTris.push_back(i3);
-				meshTris.push_back(i2);
-				// Second triangle normal
-				const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i1], meshVerts[i2] - meshVerts[i1]));
-				meshNorms[i1] += n1;
-				meshNorms[i2] += n1;
-				meshNorms[i3] += n1;
-			}
-			// Add the cap
-			const u_int i0 = meshVerts.size() - 3;
-			const u_int i1 = meshVerts.size() - 2;
-			const u_int i2 = meshVerts.size() - 1;
-			meshTris.push_back(i0);
-			meshTris.push_back(i1);
-			meshTris.push_back(i2);
-			// Cap triangle normal
-			const Normal n = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
-			meshNorms[i0] += n;
-			meshNorms[i1] += n;
-			meshNorms[i2] += n;
+			TessellateRibbon(hairPoints, hairSize, meshVerts, meshNorms, meshTris, meshUVs);
 		}
 
 		// Normalize normals

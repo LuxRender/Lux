@@ -50,6 +50,10 @@ public:
 		const ParamSet &params);
 
 protected:
+	void TessellateRibbon(const vector<Point> &hairPoints, const vector<float> &hairSize,
+		vector<Point> &meshVerts, vector<Normal> &meshNorms,
+		vector<int> &meshTris, vector<float> &meshUVs) const;
+
 	bool hasCameraPosition;
 	Point cameraPosition;
 
