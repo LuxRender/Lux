@@ -248,6 +248,8 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		ply_set_read_cb(plyfile, "vertex", "v", TexCoordCB, &uv, 1);
 	}
 
+	// TODO: add the support for reading vertex colors
+
 	p = new Point[plyNbVerts];
 	if (plyWVerts <= 0)
 		wuv = NULL;
@@ -424,7 +426,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, shpType, proj_text, cam, Mesh::ACCEL_AUTO,
-			      plyNbVerts, p, n, uv, wuv, Mesh::TRI_AUTO, plyNbTris, triVerts,
+			      plyNbVerts, p, n, uv, NULL, wuv, Mesh::TRI_AUTO, plyNbTris, triVerts,
 			      Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
 			      nsubdivlevels, displacementMap, displacementMapScale,
 			      displacementMapOffset, displacementMapNormalSmooth,

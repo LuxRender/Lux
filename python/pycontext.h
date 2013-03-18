@@ -800,13 +800,18 @@ public:
 
 	/**
 	 * Format framebuffers into a bottom-up format required
-	 * by Blender 2.5's RenderLayer type
+	 * by Blender 2.66's RenderLayer type
+	 * Blender expects now always premultiplied alpha
+	 * for showing sky/bg, alpha 1.0 is needed then
+	 * We reuse lux premultiplyAlpha flag for condition
 	 */
 	boost::python::tuple blenderCombinedDepthRects()
 	{
 		updateFramebuffer();
 		boost::python::list combined;
 		boost::python::list depth;
+		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
+		const float c_gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 		checkActiveContext();
 		int xres = luxGetIntAttribute("film", "xResolution");
@@ -822,10 +827,10 @@ public:
 				int i = (y*xres + x);
 				int j = i*3;
 				boost::python::list rect_item;
-				rect_item.append( color[j] );
-				rect_item.append( color[j+1] );
-				rect_item.append( color[j+2] );
-				rect_item.append( alpha[i] );
+				rect_item.append( powf(color[j], c_gamma));
+				rect_item.append( powf(color[j+1], c_gamma));
+				rect_item.append( powf(color[j+2], c_gamma));
+				rect_item.append( preMult == true ? alpha[i] : 1.0 );
 				combined.append( rect_item );
 				boost::python::list depth_item;
 				depth_item.append( z[i] );

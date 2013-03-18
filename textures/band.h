@@ -110,6 +110,11 @@ public:
 		for (u_int i = 0; i < tex.size(); ++i)
 			tex[i]->SetIlluminant();
 	}
+
+	const Texture<float> *GetAmountTex() const { return amount.get(); }
+	const vector<float> &GetOffsets() const { return offsets; }
+	const vector<boost::shared_ptr<Texture<T> > > &GetTextures() const { return tex; }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);

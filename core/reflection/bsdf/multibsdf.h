@@ -202,6 +202,12 @@ bool MultiBSDF<MAX_BxDFS>::SampleF(const SpectrumWavelengths &sw, const Vector &
 	}
 	if (!reverse)
 		*f_ *= fabsf(sideTest);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		*f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return true;
 }
 template<int MAX_BxDFS>
@@ -243,6 +249,12 @@ SWCSpectrum MultiBSDF<MAX_BxDFS>::F(const SpectrumWavelengths &sw, const Vector 
 			bxdfs[i]->F(sw, wo, wi, &f_);
 	if (!reverse)
 		f_ *= fabsf(sideTest);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return f_;
 }
 template<int MAX_BxDFS>
@@ -252,6 +264,12 @@ SWCSpectrum MultiBSDF<MAX_BxDFS>::rho(const SpectrumWavelengths &sw, BxDFType fl
 	for (u_int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
 			ret += bxdfs[i]->rho(sw);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }
 template<int MAX_BxDFS>
@@ -263,6 +281,12 @@ SWCSpectrum MultiBSDF<MAX_BxDFS>::rho(const SpectrumWavelengths &sw, const Vecto
 	for (u_int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
 			ret += bxdfs[i]->rho(sw, wo);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }
 

@@ -23,10 +23,12 @@
 ^qtgui/splash.cpp
 ^html/.*
 ^nbproject/*
-luxcomp
-luxconsole
-luxmerger
-luxrender
+^luxcomp
+^luxconsole
+^luxmerger
+^luxrender
+^luxvr
+^slg4
 pylux.so
 pyluxconsole.py
 syntax: glob

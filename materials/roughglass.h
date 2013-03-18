@@ -47,6 +47,12 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
+	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
+	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
+	Texture<float> *GetIndexTexture() { return index.get(); }
+	Texture<float> *GetNuTexture() { return uroughness.get(); }
+	Texture<float> *GetNvTexture() { return vroughness.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:

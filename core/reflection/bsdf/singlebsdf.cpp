@@ -59,8 +59,15 @@ bool SingleBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vecto
 		return false;
 	if (!reverse)
 		*f_ *= fabsf(sideTest);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		*f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return true;
 }
+
 float SingleBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
 {
@@ -93,18 +100,39 @@ SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	if (!reverse)
 		f_ *= fabsf(sideTest);
 
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return f_;
 }
+
 SWCSpectrum SingleBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
-	return bxdf->rho(sw);
+
+	SWCSpectrum f = bxdf->rho(sw);
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f *= SWCSpectrum(sw, dgShading.color);
+
+	return f;
 }
+
 SWCSpectrum SingleBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	BxDFType flags) const
 {
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
-	return bxdf->rho(sw, WorldToLocal(woW));
+
+	SWCSpectrum f = bxdf->rho(sw, WorldToLocal(woW));
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f *= SWCSpectrum(sw, dgShading.color);
+
+	return f;
 }

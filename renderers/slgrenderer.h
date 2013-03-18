@@ -30,6 +30,7 @@
 #include "luxrays/core/device.h"
 #include "luxrays/core/intersectiondevice.h"
 #include "slg/slg.h"
+#include "slg/renderengine.h"
 #include "slg/sdl/scene.h"
 #include "slg/film/framebuffer.h"
 
@@ -140,6 +141,7 @@ private:
 	vector<RendererHostDescription *> hosts;
 
 	luxrays::Properties overwriteConfig;
+	slg::RenderEngineType renderEngineType;
 	Scene *scene;
 	vector<Normal *> alloctedMeshNormals;
 	// Used to feed LuxRender film with only the delta information from the previous update

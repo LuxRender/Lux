@@ -30,6 +30,7 @@ using luxrays::Vector;
 using luxrays::Point;
 #include "luxrays/core/geometry/normal.h"
 using luxrays::Normal;
+#include "core/color.h"
 
 namespace lux
 {
@@ -43,10 +44,13 @@ public:
 	Normal nn;
 	Vector dpdu, dpdv;
 	float time;
+	// Used by Mesh shape with color vertex definitions to return the
+	// hit point color. Most of the times is just (1.0, 1.0, 1.0), the default value.
+	RGBAColor color;
 	bool scattered;
 	Point wuv;
 
-	PartialDifferentialGeometry() { scattered = false; }
+	PartialDifferentialGeometry() : color(1.f) { scattered = false; }
 
 	PartialDifferentialGeometry(
 			const Point &P,
@@ -144,7 +148,7 @@ public:
 	const Primitive *handle;
 	const Primitive *ihandle; // handle to intersected primitive, used with instances
 
-	// Dade - shape specific data, useful to "transport" informatin between
+	// Dade - shape specific data, useful to "transport" information between
 	// shape intersection method and GetShadingGeometry()
 	IntersectionData iData;
 };

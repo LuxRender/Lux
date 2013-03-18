@@ -37,7 +37,7 @@ public:
 
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		ShapeType type, bool proj, Point cam_, MeshAccelType acceltype,
-		u_int nv, const Point *P, const Normal *N, const float *UV, const Point *WUV,
+		u_int nv, const Point *P, const Normal *N, const float *UV, const float *COLS, const Point *WUV,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,
@@ -60,9 +60,9 @@ public:
 		const boost::shared_ptr<Primitive> &thisPtr);
 	virtual bool CanSample() const { return false; }
 
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
-	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+	virtual void ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
 	virtual void GetIntersection(const luxrays::RayHit &rayHit,
 		const u_int index, Intersection *isect) const;
@@ -99,6 +99,7 @@ protected:
 	Point *wuv;
 	Normal *n; // in object space
 	float *uvs;
+	float *cols;
 	Vector *t;
 	bool *btsign; // bitangent sign, true if positive
 

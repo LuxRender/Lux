@@ -54,17 +54,6 @@
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
 
-#include "textures/blackbody.h"
-#include "textures/constant.h"
-#include "textures/imagemap.h"
-#include "textures/scale.h"
-#include "textures/dots.h"
-#include "textures/brick.h"
-#include "textures/add.h"
-#include "textures/windy.h"
-#include "textures/wrinkled.h"
-#include "textures/uv.h"
-
 #include "light.h"
 #include "lights/sun.h"
 #include "lights/sky.h"
@@ -82,6 +71,7 @@
 #include "materials/null.h"
 #include "materials/mixmaterial.h"
 #include "materials/metal2.h"
+#include "materials/roughglass.h"
 
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
@@ -89,8 +79,20 @@
 #include "textures/mix.h"
 #include "textures/fbm.h"
 #include "textures/marble.h"
+#include "textures/blackbody.h"
+#include "textures/constant.h"
+#include "textures/imagemap.h"
+#include "textures/scale.h"
+#include "textures/dots.h"
+#include "textures/brick.h"
+#include "textures/add.h"
+#include "textures/windy.h"
+#include "textures/wrinkled.h"
+#include "textures/uv.h"
+#include "textures/band.h"
 
 #include "volumes/clearvolume.h"
+#include "film/fleximage.h"
 
 using namespace lux;
 
@@ -154,6 +156,7 @@ SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 	rendererStatistics = new SLGStatistics(this);
 
 	overwriteConfig = config;
+	renderEngineType = slg::PATHOCL;
 }
 
 SLGRenderer::~SLGRenderer() {
@@ -397,6 +400,9 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 	// Check if the texture has already been defined
 	if (!slgScene->texDefs.IsTextureDefined(texName)) {
 		string texProp;
+		//----------------------------------------------------------------------
+		// ImageMap texture
+		//----------------------------------------------------------------------
 		if (dynamic_cast<const ImageSpectrumTexture *>(tex)) {
 			const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
 
@@ -421,7 +427,11 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					// LuxRender applies gain before gamma correction
 					"scene.textures." + texName + ".gain = " + ToString(powf(texInfo.gain, texInfo.gamma)) + "\n"
 					+ GetSLGTexMapping(imgTex->GetTextureMapping2D(), "scene.textures." + texName);
-		} else if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
+		} else
+		//----------------------------------------------------------------------
+		// Constant texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
 			const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
 
 			texProp = "scene.textures." + texName + ".type = constfloat3\n"
@@ -435,7 +445,11 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = " +
 						ToString((*constFloatTex)["value"].FloatValue()) + "\n";
-		} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
+		} else
+		//----------------------------------------------------------------------
+		// NormalMap texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const NormalMapTexture *>(tex)) {
 			const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
 
 			const TexInfo &texInfo = normalTex->GetInfo();
@@ -606,8 +620,41 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 
 			texProp = "scene.textures." + texName + ".type = uv\n"
 					+ GetSLGTexMapping(uvTex->GetTextureMapping2D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BandTexture<T> *>(tex)) {
+			const BandTexture<T> *bandTex = dynamic_cast<const BandTexture<T> *>(tex);
+			const string amountTexName = GetSLGTexName(slgScene, bandTex->GetAmountTex());
+			const vector<float> &offsets = bandTex->GetOffsets();
+			const vector<boost::shared_ptr<Texture<T> > > &texs = bandTex->GetTextures();
+			
+
+			texProp = "scene.textures." + texName + ".type = band\n"
+					"scene.textures." + texName + ".amount = " + amountTexName + "\n";
+
+			for (u_int i = 0; i < offsets.size(); ++i) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(texs[i].get());
+				const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(texs[i].get());
+				if (!constRGBTex && !constFloatTex) {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only BandTexture with constant values (i.e. not " <<
+						ToClassName(texs[i].get()) << ").";
+					texProp = "scene.textures." + texName + ".type = constfloat1\n"
+							"scene.textures." + texName + ".value = 0.7\n";
+					break;
+				}
+
+				texProp += "scene.textures." + texName + ".offset" + ToString(i) + " = " + ToString(offsets[i]) + "\n";
+				if (constRGBTex)
+					texProp += "scene.textures." + texName + ".value" + ToString(i) + " = " +
+							ToString((*constRGBTex)["color.r"].FloatValue()) + " " +
+							ToString((*constRGBTex)["color.g"].FloatValue()) + " " +
+							ToString((*constRGBTex)["color.b"].FloatValue()) + "\n";
+				if (constFloatTex) {
+					const string val = ToString((*constFloatTex)["value"].FloatValue()) + "\n";
+					texProp += "scene.textures." + texName + ".value" + ToString(i) + " = " +
+							val + " " + val + " " + "\n";
+				}
+			}
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled and UV textures (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture and BandTexture (i.e. not " <<
 					ToClassName(tex) << ").";
 
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
@@ -1007,10 +1054,40 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material RoughGlass
+	//------------------------------------------------------------------
+	if (dynamic_cast<RoughGlass *>(mat)) {
+		// Define the material
+		RoughGlass *roughglass = dynamic_cast<RoughGlass *>(mat);
+		matName = roughglass->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			// Textures
+			const string ktTexName = GetSLGTexName(slgScene, roughglass->GetKtTexture());
+			const string krTexName = GetSLGTexName(slgScene, roughglass->GetKrTexture());
+			const string indexTexName = GetSLGTexName(slgScene, roughglass->GetIndexTexture());
+			const string nuTexName = GetSLGTexName(slgScene, roughglass->GetNuTexture());
+			const string nvTexName = GetSLGTexName(slgScene, roughglass->GetNvTexture());
+
+			string matProp;
+			matProp = "scene.materials." + matName +".type = roughglass\n"
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					"scene.materials." + matName +".kr = " + krTexName + "\n"
+					"scene.materials." + matName +".kt = " + ktTexName + "\n"
+					"scene.materials." + matName +".ioroutside = 1.0\n"
+					"scene.materials." + matName +".iorinside = " + indexTexName + "\n"
+					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2 and Metal material (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2, Metal2 and RoughGlass material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
 		return "mat_default";
 	}
@@ -1268,7 +1345,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << ToClassName(prim);
 
 	vector<luxrays::ExtTriangleMesh *> meshList;
-	prim->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
+	prim->ExtTessellate(&meshList, &scene->tessellatedPrimitives);
 
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 		if (!(*mesh)->HasNormals()) {
@@ -1290,7 +1367,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 }
 
 void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+	LOG(LUX_INFO, LUX_NOERROR) << "Tessellating " << scene->primitives.size() << " primitives";
 
 	// To keep track of all primitive mesh lists
 	map<const Primitive *, vector<luxrays::ExtTriangleMesh *> > primMeshLists;
@@ -1395,10 +1472,17 @@ void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 			(scene->camera)["normal.x"].FloatValue(),
 			(scene->camera)["normal.y"].FloatValue(),
 			(scene->camera)["normal.z"].FloatValue());
-	const Vector up(
+	Vector up(
 			(scene->camera)["up.x"].FloatValue(),
 			(scene->camera)["up.y"].FloatValue(),
 			(scene->camera)["up.z"].FloatValue());
+	if (renderEngineType == slg::FILESAVER) {
+		// I snap the up vector to the Z axis so moving inside LuxVR
+		// is a lot easier and work as expected
+		up.x = 0.f;
+		up.y = 0.f;
+		up.z = 1.f;
+	}
 
 	const string createCameraProp = "scene.camera.lookat = " + 
 			ToString(orig.x) + " " +
@@ -1576,13 +1660,43 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	config.Load(overwriteConfig);
 
 	// Check if light buffer is needed and required
-	slg::RenderEngineType type = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
-	if (((type == slg::LIGHTCPU) ||
-		(type == slg::BIDIRCPU) ||
-		(type == slg::BIDIRHYBRID) ||
-		(type == slg::CBIDIRHYBRID) ||
-		(type == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
+	renderEngineType = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
+	if (((renderEngineType == slg::LIGHTCPU) ||
+		(renderEngineType == slg::BIDIRCPU) ||
+		(renderEngineType == slg::BIDIRHYBRID) ||
+		(renderEngineType == slg::CBIDIRHYBRID) ||
+		(renderEngineType == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
 		throw std::runtime_error("You have to select bidirectional surface integrator in order to use the selected render engine");
+	}
+
+	//--------------------------------------------------------------------------
+	// Tone mapping related settings
+	//
+	// They are exported only if using FILESAVER rendering engine otherwise SLG
+	// uses Lux image pipeline and it is not in charge of tone mapping. I handle
+	// only linear tone mapping because it is the only one supported by
+	// RTPATHOCL (i.e. LuxVR)
+	//--------------------------------------------------------------------------
+
+	// Avoid to overwrite an "overwrite" setting
+	if ((renderEngineType == slg::FILESAVER) && !overwriteConfig.IsDefined("film.tonemap.linear.scale")) {
+		const int type = (*film)["TonemapKernel"].IntValue();
+
+		if (type != FlexImageFilm::TMK_Linear)
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxVR supports only linear tone mapping, ignoring tone mapping settings";
+		else {
+			// Translate linear tone mapping settings
+
+			const float sensitivity = (*film)["LinearSensitivity"].FloatValue();
+			const float exposure = (*film)["LinearExposure"].FloatValue();
+			const float fstop = (*film)["LinearFStop"].FloatValue();
+			const float gamma = (*film)["LinearGamma"].FloatValue();
+
+			// Check LinearOp class for an explanation of the following formula
+			const float factor = exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma);
+
+			config.SetString("film.tonemap.linear.scale", ToString(factor));
+		}
 	}
 
 	return config;

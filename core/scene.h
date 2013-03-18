@@ -60,7 +60,7 @@ public:
 			const unsigned int currentPrimIndex = dataSet->GetMeshID(currentTriangleIndex);
 			const unsigned int triIndex = dataSet->GetMeshTriangleID(currentTriangleIndex);
 
-			tesselatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect, null_shp_isect);
+			tessellatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect, null_shp_isect);
 
 			return true;
 		}
@@ -161,7 +161,7 @@ public:
 	// The following data are used when tracing rays with LuxRays
 	// The list of original primitives. It is required by LuxRays to build the DataSet.
 	vector<boost::shared_ptr<Primitive> > primitives;
-	vector<const Primitive *> tesselatedPrimitives;
+	vector<const Primitive *> tessellatedPrimitives;
 	luxrays::DataSet *dataSet;
 
 private:
