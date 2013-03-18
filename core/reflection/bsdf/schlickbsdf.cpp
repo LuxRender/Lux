@@ -250,6 +250,11 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 
 	*f_ /= *pdf;
 
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		*f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return true;
 }
 float SchlickBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
@@ -303,8 +308,14 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 		// blend in base layer Schlick style
 		// assumes coating bxdf takes fresnel factor S into account
-		return coatingF + a * (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+		SWCSpectrum f = coatingF + a * (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+	
+		// The conversion between RGB and SWCSpectrum is quite expansive so it is
+		// better to skip the computation if it is useless.
+		if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+			f *= SWCSpectrum(sw, dgShading.color);
 
+		return f;
 	} else if (sideTest < 0.f) {
 		// Transmission
 		// ignore BRDFs
@@ -318,7 +329,14 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		return a * Sqrt(SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+		SWCSpectrum f = a * Sqrt(SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+	
+		// The conversion between RGB and SWCSpectrum is quite expansive so it is
+		// better to skip the computation if it is useless.
+		if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+			f *= SWCSpectrum(sw, dgShading.color);
+
+		return f;
 	} else
 		return SWCSpectrum(0.f);
 }
@@ -363,6 +381,12 @@ SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) cons
 	if (CoatingMatchesFlags(flags))
 		ret += CoatingRho(sw);
 	ret += base->rho(sw, flags);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }
 SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
@@ -373,5 +397,11 @@ SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	if (CoatingMatchesFlags(flags))
 		ret += CoatingRho(sw, wo);
 	ret += base->rho(sw, woW, flags);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }

@@ -22,6 +22,7 @@
 
 #include "mesh.h"
 #include "mc.h"
+#include "color.h"
 
 using namespace lux;
 
@@ -252,6 +253,14 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 {
 	if (!mesh->n) {
 		*dgShading = dg;
+		if (mesh->cols) {
+			const RGBColor *c0 = (const RGBColor *)(&mesh->cols[v[0] * 3]);
+			const RGBColor *c1 = (const RGBColor *)(&mesh->cols[(v[1] + 1) * 3]);
+			const RGBColor *c2 = (const RGBColor *)(&mesh->cols[(v[2] + 2) * 3]);
+			dgShading->color = dg.iData.baryTriangle.coords[0] * (*c0) +
+				dg.iData.baryTriangle.coords[1] * (*c1) + dg.iData.baryTriangle.coords[2] * (*c2);
+		}
+
 		return;
 	}
 
@@ -316,4 +325,13 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
 		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this);
+
+	if (mesh->cols) {
+		const RGBColor *c0 = (const RGBColor *)(&mesh->cols[v[0] * 3]);
+		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[(v[1] + 1) * 3]);
+		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[(v[2] + 2) * 3]);
+		dgShading->color = dg.iData.baryTriangle.coords[0] * (*c0) +
+			dg.iData.baryTriangle.coords[1] * (*c1) + dg.iData.baryTriangle.coords[2] * (*c2);
+	}
+
 }

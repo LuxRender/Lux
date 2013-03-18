@@ -83,6 +83,12 @@ bool MixBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo, Vector *w
 	*f_ /= *pdf;
 	if (sampledType)
 		*sampledType = sType;
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		*f_ *= SWCSpectrum(sw, dgShading.color);
+
 	return true;
 }
 float MixBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo, const Vector &wi,
@@ -101,7 +107,15 @@ SWCSpectrum MixBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		ff.AddWeighted(weights[i],
 			bsdfs[i]->F(sw, woW, wiW, reverse, flags));
 	}
-	return ff / totalWeight;
+
+	SWCSpectrum f = ff / totalWeight;
+	
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f *= SWCSpectrum(sw, dgShading.color);
+
+	return f;
 }
 SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
@@ -109,6 +123,12 @@ SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 	for (u_int i = 0; i < nBSDFs; ++i)
 		ret.AddWeighted(weights[i], bsdfs[i]->rho(sw, flags));
 	ret /= totalWeight;
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }
 SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, const Vector &wo,
@@ -118,6 +138,12 @@ SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, const Vector &wo,
 	for (u_int i = 0; i < nBSDFs; ++i)
 		ret.AddWeighted(weights[i], bsdfs[i]->rho(sw, wo, flags));
 	ret /= totalWeight;
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
 	return ret;
 }
 

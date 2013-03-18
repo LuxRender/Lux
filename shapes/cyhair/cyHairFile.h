@@ -22,21 +22,21 @@
 //-------------------------------------------------------------------------------
 
 #define CY_HAIR_FILE_SEGMENTS_BIT		1
-#define CY_HAIR_FILE_POINTS_BIT		2
+#define CY_HAIR_FILE_POINTS_BIT			2
 #define CY_HAIR_FILE_THICKNESS_BIT		4
 #define CY_HAIR_FILE_TRANSPARENCY_BIT	8
-#define CY_HAIR_FILE_COLORS_BIT		16
+#define CY_HAIR_FILE_COLORS_BIT			16
 
 #define CY_HAIR_FILE_INFO_SIZE			88
 
 // File read errors
 #define CY_HAIR_FILE_ERROR_CANT_OPEN_FILE			-1
-#define CY_HAIR_FILE_ERROR_CANT_READ_HEADER		-2
+#define CY_HAIR_FILE_ERROR_CANT_READ_HEADER			-2
 #define	CY_HAIR_FILE_ERROR_WRONG_SIGNATURE			-3
-#define	CY_HAIR_FILE_ERROR_READING_SEGMENTS		-4
+#define	CY_HAIR_FILE_ERROR_READING_SEGMENTS			-4
 #define	CY_HAIR_FILE_ERROR_READING_POINTS			-5
 #define	CY_HAIR_FILE_ERROR_READING_THICKNESS		-6
-#define	CY_HAIR_FILE_ERROR_READING_TRANSPARENCY	-7
+#define	CY_HAIR_FILE_ERROR_READING_TRANSPARENCY		-7
 #define	CY_HAIR_FILE_ERROR_READING_COLORS			-8
 
 //-------------------------------------------------------------------------------
@@ -223,7 +223,7 @@ public:
 			if ( readcount < header.point_count ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_READING_THICKNESS);
 		}
 
-		// Read thickness array
+		// Read transparency array
 		if ( header.arrays & CY_HAIR_FILE_TRANSPARENCY_BIT ) {
 			transparency = new float[ header.point_count ];
 			size_t readcount = fread( transparency, sizeof(float), header.point_count, fp );

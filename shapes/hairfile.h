@@ -54,12 +54,14 @@ public:
 		const ParamSet &params);
 
 protected:
-	void TessellateRibbon(const vector<Point> &hairPoints, const vector<float> &hairSize,
+	void TessellateRibbon(const vector<Point> &hairPoints,
+		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs) const;
-	void TessellateRibbonAdaptive(const vector<Point> &hairPoints, const vector<float> &hairSize,
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const;
+	void TessellateRibbonAdaptive(const vector<Point> &hairPoints,
+		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs) const;
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const;
 
 	bool hasCameraPosition;
 	Point cameraPosition;

@@ -125,6 +125,12 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 
 		if (sampledType)
 			*sampledType = flags2;
+
+		// The conversion between RGB and SWCSpectrum is quite expansive so it is
+		// better to skip the computation if it is useless.
+		if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+			*f_ *= SWCSpectrum(sw, dgShading.color);
+
 		return true;
 	}
 
@@ -184,6 +190,12 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 
 		if (sampledType)
 			*sampledType= flags2;
+
+		// The conversion between RGB and SWCSpectrum is quite expansive so it is
+		// better to skip the computation if it is useless.
+		if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+			*f_ *= SWCSpectrum(sw, dgShading.color);
+
 		return true;
 	}
 	return false; // no sample
@@ -298,7 +310,15 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 			return SWCSpectrum(0.f);
 		L *= fabsf(Dot(wiW, ng) / cosWo);
 	}
-	return L * AbsDot(woW, dgShading.nn);
+
+	SWCSpectrum f =  L * AbsDot(woW, dgShading.nn);
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		f *= SWCSpectrum(sw, dgShading.color);
+
+	return f;
 }
 
 float LayeredBSDF::ApplyTransform(const Transform &transform)
@@ -394,7 +414,13 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) cons
 {
 	// NOTE: not implemented yet - do they really make a difference?
 	SWCSpectrum ret(1.f);
-	return ret ;
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
+	return ret;
 }
 
 SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
@@ -402,7 +428,13 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 {
 	// NOTE: not implemented yet - do they really make a difference?
 	SWCSpectrum ret(1.f);
-	return ret ;
+
+	// The conversion between RGB and SWCSpectrum is quite expansive so it is
+	// better to skip the computation if it is useless.
+	if ((dgShading.color.c[0] != 1.f) || (dgShading.color.c[1] != 1.f) || (dgShading.color.c[2] != 1.f))
+		ret *= SWCSpectrum(sw, dgShading.color);
+
+	return ret;
 }
 
 // Threadsafe random seed generator - won't crash but seed may get corrupted

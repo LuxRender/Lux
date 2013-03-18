@@ -34,7 +34,7 @@ using namespace lux;
 
 Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	MeshAccelType acceltype,
-	u_int nv, const Point *P, const Normal *N, const float *UV,
+	u_int nv, const Point *P, const Normal *N, const float *UV, const float *C,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
@@ -66,7 +66,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	// Dade - copy UV and N vertex data, if present
 	if (UV) {
 		uvs = new float[2 * nverts];
-		memcpy(uvs, UV, 2 * nverts*sizeof(float));
+		memcpy(uvs, UV, 2 * nverts * sizeof(float));
 	} else
 		uvs = NULL;
 
@@ -81,6 +81,12 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		}
 	} else
 		n = NULL;
+
+	if (C) {
+		cols = new float[3 * nverts];
+		memcpy(cols, C, 3 * nverts * sizeof(float));
+	} else
+		cols = NULL;
 
 	if (genTangents && !uvs) {
 		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
@@ -216,6 +222,7 @@ Mesh::~Mesh()
 	delete[] p;
 	delete[] n;
 	delete[] uvs;
+	delete[] cols;
 	delete[] t;
 	delete[] btsign;
 }
@@ -259,6 +266,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
+				// TODO: add the support for vertex colors too
+
 				// Apply subdivision
 				LoopSubdiv loopsubdiv(ntris, nverts,
 					triVertexIndex, p, uvs, n,
@@ -277,6 +286,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				delete[] p;
 				delete[] n;
 				delete[] uvs;
+				delete[] cols;
 				delete[] triVertexIndex;
 
 				// Copy the new mesh data
@@ -301,6 +311,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
+				// TODO: add the support for vertex colors too
+
 				if (displacementMap) {
 					// get min/max displacement for MD
 					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
@@ -900,6 +912,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 						   const int* triIndices, u_int triIndicesCount,
 						   const int* quadIndices, u_int quadIndicesCount,
 						   const float* UV, u_int UVCount,
+							const float *cols, u_int colsCount,
 						   const string& subdivSchemeStr, u_int nSubdivLevels,
 						   const Point* P, u_int npi,
 						   const Normal* N, u_int nni) {
@@ -928,6 +941,10 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	if (UV && (UVCount != npi * 2)) {
 		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
 		UV = NULL;
+	}
+	if (cols && (colsCount != npi * 3)) {
+		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"C\"s for mesh must match \"P\"s";
+		cols = NULL;
 	}
 	if (!P)
 		return NULL;
@@ -1022,7 +1039,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	return new Mesh(o2w, reverseOrientation, name,
 		accelType,
-		npi, P, N, UV,
+		npi, P, N, UV, cols,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
 		subdivType, nSubdivLevels, displacementMap,
@@ -1045,6 +1062,9 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	if (UV == NULL) {
 		UV = params.FindFloat("st", &UVCount);
 	}
+
+	u_int colsCount;
+	const float *cols = params.FindFloat("C", &colsCount);
 
 	// Triangles
 	u_int triIndicesCount;
@@ -1071,6 +1091,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		triIndices, triIndicesCount,
 		quadIndices, quadIndicesCount,
 		UV, UVCount,
+		cols, colsCount,
 		subdivscheme, nSubdivLevels,
 		P, npi,
 		N, nni);
