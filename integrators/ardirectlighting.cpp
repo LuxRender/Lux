@@ -100,7 +100,7 @@ u_int ARDirectLightingIntegrator::LiInternal(const Scene &scene,
 		const Normal &n = bsdf->dgShading.nn;
 		if (isect.primitive) { 
 
-		surf_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
+			surf_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
 			if ( !surf_IsSup ) path_t = true; 
 			// Compute direct lighting for suport materials
 			if (nLights > 0) {

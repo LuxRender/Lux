@@ -132,10 +132,10 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 			if (pdfR)
 				*pdfR *= spdf;
 			return true;
-	}
-	if (isect.primitive) {
+		}
+		if (isect.primitive) {
 
-            if( ShapeType(ENV_SHAPE) == isect.primitive->GetPrimitiveType() )
+            		if( ShapeType(ENV_SHAPE) == isect.primitive->GetPrimitiveType() )
 				return true;
 		}
 

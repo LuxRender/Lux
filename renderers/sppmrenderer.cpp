@@ -161,7 +161,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		scene = s;
 		// Not yet available!
-		//scene->arlux_setup();
+		scene->arlux_setup();
 
 		sppmi = dynamic_cast<SPPMIntegrator*>(scene->surfaceIntegrator);
 		if (!sppmi) {

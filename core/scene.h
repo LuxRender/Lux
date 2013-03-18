@@ -60,7 +60,7 @@ public:
 			const unsigned int currentPrimIndex = dataSet->GetMeshID(currentTriangleIndex);
 			const unsigned int triIndex = dataSet->GetMeshTriangleID(currentTriangleIndex);
 
-			tesselatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect);
+			tesselatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect, null_shp_isect);
 
 			return true;
 		}
