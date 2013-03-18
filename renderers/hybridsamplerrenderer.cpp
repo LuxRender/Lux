@@ -271,11 +271,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 		virtualIM2MDevice = NULL;
 	}
 
-	// The default QBVH stack size (i.e. 24) is too small for the average
-	// LuxRender scene and the slight slow down caused by a bigger stack
-	for (size_t i = 0; i < hardwareDevices.size(); ++i) {
+	for (size_t i = 0; i < hardwareDevices.size(); ++i)
 		hardwareDevices[i]->SetMaxStackSize(qbvhStackSize);
-	}
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -694,7 +691,10 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 	// about all OpenCL devices).
 	const u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 64));
 
-	const u_int qbvhStackSize = max(16, configParams.FindOneInt("accelerator.qbvh.stacksize.max", 32));
+	// The default QBVH stack size (i.e. 24) is too small for the average
+	// LuxRender scene and the slight slow down caused by a bigger stack is
+	// hidden with hybrid rendering.
+	const u_int qbvhStackSize = max(16, configParams.FindOneInt("accelerator.qbvh.stacksize.max", 48));
 
 	params.MarkUsed(configParams);
 	return new HybridSamplerRenderer(platformIndex, useGPUs,
