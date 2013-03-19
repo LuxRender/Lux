@@ -403,6 +403,10 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 					hairCols.push_back(RGBColor(colors[pointIndex], colors[pointIndex + 1], colors[pointIndex + 2]));
 				else
 					hairCols.push_back(RGBColor(header.d_color[0], header.d_color[1], header.d_color[2]));
+//				if (i % 200 < 100)
+//					hairCols.push_back(RGBColor(0.65f, 0.65f, 0.65f));
+//				else
+//					hairCols.push_back(RGBColor(0.65f, 0.f, 0.f));
 
 				pointIndex += 3;
 			}
