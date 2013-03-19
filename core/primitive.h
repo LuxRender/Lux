@@ -93,6 +93,14 @@ public:
 	 */
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+	
+	/**
+	 * Return RGB color and alpha of the hit point. Mostly used by Mesh primitive.
+	 * @param dgShading The intersection geometry.
+	 * @param color     Where to return the point color information.
+	 * @param alpha     Where to return the point alpha information.
+	 */
+	virtual void GetShadingInformation(const DifferentialGeometry &dgShading, RGBColor *color, float *alpha) const;
 
 	// Sampling
 	/**

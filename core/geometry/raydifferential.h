@@ -44,13 +44,9 @@ public:
 	Normal nn;
 	Vector dpdu, dpdv;
 	float time;
-	// Used by Mesh shape with color vertex definitions to return the
-	// hit point color. Most of the times is just (1.0, 1.0, 1.0), the default value.
-	RGBAColor color;
-	float alpha;
 	bool scattered;
 
-	PartialDifferentialGeometry() : color(1.f), alpha(1.f) { scattered = false; }
+	PartialDifferentialGeometry() { scattered = false; }
 
 	PartialDifferentialGeometry(
 			const Point &P,

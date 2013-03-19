@@ -26,6 +26,7 @@
 #include "rgbillum.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
+#include "primitive.h"
 
 namespace lux
 {
@@ -37,7 +38,11 @@ public:
 	virtual ~HitPointAlphaTexture() { }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgs) const {
-		return dgs.alpha;
+		RGBColor color;
+		float alpha;
+		dgs.handle->GetShadingInformation(dgs, &color, &alpha);
+
+		return alpha;
 	}
 
 	// The following methods don't make very much sense in this case. I have no
@@ -57,7 +62,11 @@ public:
 	virtual ~HitPointRGBColorTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgs) const {
-		return SWCSpectrum(sw, dgs.color);
+		RGBColor color;
+		float alpha;
+		dgs.handle->GetShadingInformation(dgs, &color, &alpha);
+
+		return SWCSpectrum(sw, color);
 	}
 
 	// The following methods don't make very much sense in this case. I have no
