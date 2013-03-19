@@ -30,6 +30,26 @@
 namespace lux
 {
 
+class HitPointAlphaTexture : public Texture<float> {
+public:
+	HitPointAlphaTexture() :
+		Texture("HitPointAlphaTexture-" + boost::lexical_cast<string>(this)) { }
+	virtual ~HitPointAlphaTexture() { }
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dgs) const {
+		return dgs.alpha;
+	}
+
+	// The following methods don't make very much sense in this case. I have no
+	// information about the color that will be delivered by DifferentialGeometry.
+	virtual float Y() const { return 1.f; }
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
+
+	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+};
+
 class HitPointRGBColorTexture : public Texture<SWCSpectrum> {
 public:
 	HitPointRGBColorTexture() :

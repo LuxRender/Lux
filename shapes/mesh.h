@@ -37,7 +37,8 @@ public:
 
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		MeshAccelType acceltype,
-		u_int nv, const Point *P, const Normal *N, const float *UV, const float *COLS,
+		u_int nv, const Point *P, const Normal *N, const float *UV,
+		const float *COLS, const float *ALPHA,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,
@@ -92,6 +93,7 @@ protected:
 	Normal *n; // in object space
 	float *uvs;
 	float *cols;
+	float *alphas;
 	Vector *t;
 	bool *btsign; // bitangent sign, true if positive
 

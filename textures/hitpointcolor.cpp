@@ -26,9 +26,15 @@
 
 using namespace lux;
 
+Texture<float> *HitPointAlphaTexture::CreateFloatTexture(const Transform &tex2world,
+		const ParamSet &tp) {
+	return new HitPointAlphaTexture();
+}
+
 Texture<SWCSpectrum> *HitPointRGBColorTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const ParamSet &tp) {
 	return new HitPointRGBColorTexture();
 }
 
-static DynamicLoader::RegisterSWCSpectrumTexture<HitPointRGBColorTexture> r1("hitpointcolor");
+static DynamicLoader::RegisterFloatTexture<HitPointAlphaTexture> r1("hitpointalpha");
+static DynamicLoader::RegisterSWCSpectrumTexture<HitPointRGBColorTexture> r2("hitpointcolor");

@@ -260,6 +260,13 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 			dgShading->color = dg.iData.baryTriangle.coords[0] * (*c0) +
 				dg.iData.baryTriangle.coords[1] * (*c1) + dg.iData.baryTriangle.coords[2] * (*c2);
 		}
+		if (mesh->alphas) {
+			const float alpha0 = mesh->alphas[v[0]];
+			const float alpha1 = mesh->alphas[v[1]];
+			const float alpha2 = mesh->alphas[v[2]];
+			dgShading->alpha = dg.iData.baryTriangle.coords[0] * alpha0 +
+				dg.iData.baryTriangle.coords[1] * alpha1 + dg.iData.baryTriangle.coords[2] * alpha2;
+		}
 
 		return;
 	}
@@ -334,4 +341,11 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 			dg.iData.baryTriangle.coords[1] * (*c1) + dg.iData.baryTriangle.coords[2] * (*c2);
 	}
 
+	if (mesh->alphas) {
+		const float alpha0 = mesh->alphas[v[0]];
+		const float alpha1 = mesh->alphas[v[1]];
+		const float alpha2 = mesh->alphas[v[2]];
+		dgShading->alpha = dg.iData.baryTriangle.coords[0] * alpha0 +
+			dg.iData.baryTriangle.coords[1] * alpha1 + dg.iData.baryTriangle.coords[2] * alpha2;
+	}
 }
