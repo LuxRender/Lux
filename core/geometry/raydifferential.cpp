@@ -29,7 +29,7 @@ PartialDifferentialGeometry::PartialDifferentialGeometry(
 		const Point &P,
 		const Vector &DPDU,
 		const Vector &DPDV)
-	: p(P), dpdu(DPDU), dpdv(DPDV), color(1.f) {
+	: p(P), dpdu(DPDU), dpdv(DPDV) {
 	nn = Normal(Normalize(Cross(dpdu, dpdv)));
 	scattered = false;
 }
@@ -48,7 +48,7 @@ PartialDifferentialGeometry::PartialDifferentialGeometry(
 		const Normal &NN,
 		const Vector &DPDU,
 		const Vector &DPDV)
-	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), color(1.f) {
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV) {
 	scattered = false;
 }
 

@@ -34,7 +34,8 @@ using namespace lux;
 
 Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	ShapeType shpType, bool proj, Point cam_, MeshAccelType acceltype,
-	u_int nv, const Point *P, const Normal *N, const float *UV, const float *C, const Point *WUV,
+	u_int nv, const Point *P, const Normal *N, const float *UV, 
+	const float *C, const float *ALPHA, const Point *WUV,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
@@ -127,6 +128,12 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		memcpy(cols, C, 3 * nverts * sizeof(float));
 	} else
 		cols = NULL;
+
+	if (ALPHA) {
+		alphas = new float[nverts];
+		memcpy(alphas, ALPHA, nverts * sizeof(float));
+	} else
+		alphas = NULL;
 
 	if (genTangents && !uvs) {
 		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
@@ -265,6 +272,7 @@ Mesh::~Mesh()
 	delete[] n;
 	delete[] uvs;
 	delete[] cols;
+	delete[] alphas;
 	delete[] t;
 	delete[] btsign;
 }
@@ -309,7 +317,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
-				// TODO: add the support for vertex colors too
+				// TODO: add the support for vertex colors/alphas too
 
 				// Apply subdivision
 				LoopSubdiv loopsubdiv(shape_type, proj_text, cam, ntris, nverts,
@@ -330,6 +338,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				delete[] n;
 				delete[] uvs;
 				delete[] cols;
+				delete[] alphas;
 				delete[] triVertexIndex;
 LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				// Copy the new mesh data
@@ -354,7 +363,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
-				// TODO: add the support for vertex colors too
+				// TODO: add the support for vertex colors/alphas too
 
 				if (displacementMap) {
 					// get min/max displacement for MD
@@ -953,16 +962,18 @@ void Mesh::GenerateTangentSpace() {
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
-						   const string& accelTypeStr, const string& triTypeStr, const string& quadTypeStr,
-						   const int* triIndices, u_int triIndicesCount,
-						   const int* quadIndices, u_int quadIndicesCount,
-						   const float* UV, u_int UVCount,
-							const float *cols, u_int colsCount,
-						   const string& subdivSchemeStr, u_int nSubdivLevels,
-						   const Point* P, u_int npi,
-						   const Normal* N, u_int nni, const Point* WUV, u_int nWuv ) {
+		const string& accelTypeStr, const string& triTypeStr, const string& quadTypeStr,
+		const int* triIndices, u_int triIndicesCount,
+		const int* quadIndices, u_int quadIndicesCount,
+		const float* UV, u_int UVCount,
+		const float *cols, u_int colsCount,
+		const float *alphas, u_int alphasCount,
+		const string& subdivSchemeStr, u_int nSubdivLevels,
+		const Point* P, u_int npi,
+		const Normal* N, u_int nni, const Point* WUV, u_int nWuv ) {
 
 	string name = params.FindOneString("name", "'mesh'");
+
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree")
@@ -984,12 +995,16 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
 	if (UV && (UVCount != npi * 2)) {
-		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
 		UV = NULL;
 	}
 	if (cols && (colsCount != npi * 3)) {
-		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"C\"s for mesh must match \"P\"s";
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Number of \"C\"s for mesh must match \"P\"s";
 		cols = NULL;
+	}
+	if (alphas && (alphasCount != npi)) {
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Number of \"A\"s for mesh must match \"P\"s";
+		alphas = NULL;
 	}
 	if (!P)
 		return NULL;
@@ -1102,7 +1117,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
 	return new Mesh(o2w, reverseOrientation, name,
 		shpType, proj_text, cam, accelType,
-		npi, P, N, UV, cols, WUV,
+		npi, P, N, UV, cols, alphas, WUV,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
 		subdivType, nSubdivLevels, displacementMap,
@@ -1131,6 +1146,9 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	u_int colsCount;
 	const float *cols = params.FindFloat("C", &colsCount);
 
+	u_int alphasCount;
+	const float *alphas = params.FindFloat("A", &alphasCount);
+
 	// Triangles
 	u_int triIndicesCount;
 	const int *triIndices = params.FindInt("triindices", &triIndicesCount);
@@ -1156,6 +1174,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		quadIndices, quadIndicesCount,
 		UV, UVCount,
 		cols, colsCount,
+		alphas, alphasCount,
 		subdivscheme, nSubdivLevels,
 		P, npi,
 		N, nni, WUV, nWuv);

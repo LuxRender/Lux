@@ -37,7 +37,8 @@ public:
 
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		ShapeType type, bool proj, Point cam_, MeshAccelType acceltype,
-		u_int nv, const Point *P, const Normal *N, const float *UV, const float *COLS, const Point *WUV,
+		u_int nv, const Point *P, const Normal *N, const float *UV, 
+		const float *COLS, const float *ALPHA, const Point *WUV,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,
@@ -100,6 +101,7 @@ protected:
 	Normal *n; // in object space
 	float *uvs;
 	float *cols;
+	float *alphas;
 	Vector *t;
 	bool *btsign; // bitangent sign, true if positive
 
@@ -163,6 +165,9 @@ public:
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;
+
+	virtual void GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const;
 
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;

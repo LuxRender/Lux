@@ -386,6 +386,7 @@ SET(lux_uniform_textures_src
 	textures/equalenergy.cpp
 	textures/frequencytexture.cpp
 	textures/gaussiantexture.cpp
+	textures/hitpointcolor.cpp
 	textures/irregulardata.cpp
 	textures/lampspectrum.cpp
 	textures/regulardata.cpp
@@ -833,6 +834,7 @@ SET(lux_textures_uniform_hdr
 	textures/equalenergy.h
 	textures/frequencytexture.h
 	textures/gaussiantexture.h
+	textures/hitpointcolor.h
 	textures/irregulardata.h
 	textures/lampspectrum.h
 	textures/regulardata.h

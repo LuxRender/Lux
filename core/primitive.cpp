@@ -71,6 +71,12 @@ void Primitive::GetShadingGeometry(const Transform &obj2world,
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::GetShadingGeometry method called!";
 }
 
+void Primitive::GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const {
+	*color = RGBColor(.65f);
+	*alpha = 1.f;
+}
+
 float Primitive::Area() const
 {
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::Area method called!";

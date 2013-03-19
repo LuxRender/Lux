@@ -40,10 +40,11 @@ public:
 	~CatmullRomCurve() {
 	}
 
-	void AddPoint(const Point &p, const float size, const RGBColor &col) {
+	void AddPoint(const Point &p, const float size, const RGBColor &col, const float transp) {
 		points.push_back(p);
 		sizes.push_back(size);
 		cols.push_back(col);
+		transps.push_back(transp);
 	}
 
 	void AdaptiveTessellate(const u_int maxDepth, const float error, vector<float> &values) {
@@ -100,6 +101,22 @@ public:
 			return CatmullRomSpline(cols[count - 3], cols[count - 2], cols[count - 1], cols[count - 1], ct);
 
 		return CatmullRomSpline(cols[segment - 1], cols[segment], cols[segment + 1], cols[segment + 2], ct);
+	}
+
+	float EvaluateTransparency(const float t) {
+		int count = (int)transps.size();
+		int segment = Floor2Int((count - 1) * t);
+		segment = max(segment, 0);
+		segment = min(segment, count - 2);
+
+		const float ct = t * (count - 1) - segment;
+
+		if (segment == 0)
+			return CatmullRomSpline(transps[0], transps[0], transps[1], transps[2], ct);
+		if (segment == count - 2)
+			return CatmullRomSpline(transps[count - 3], transps[count - 2], transps[count - 1], transps[count - 1], ct);
+
+		return CatmullRomSpline(transps[segment - 1], transps[segment], transps[segment + 1], transps[segment + 2], ct);
 	}
 
 private:
@@ -204,6 +221,7 @@ private:
 	vector<Point> points;
 	vector<float> sizes;
 	vector<RGBColor> cols;
+	vector<float> transps;
 };
 
 //------------------------------------------------------------------------------
@@ -252,8 +270,10 @@ BBox HairFile::ObjectBound() const {
 
 void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const {
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const {
 	// Create the mesh vertices
 	const u_int baseOffset = meshVerts.size();
 	for (int i = 0; i < (int)hairPoints.size(); ++i) {
@@ -296,6 +316,9 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		meshCols.push_back(hairCols[i].c[0]);
 		meshCols.push_back(hairCols[i].c[1]);
 		meshCols.push_back(hairCols[i].c[2]);
+
+		meshTransps.push_back(hairTransps[i]);
+		meshTransps.push_back(hairTransps[i]);
 	}
 
 	// Triangulate the vertex mesh
@@ -331,12 +354,14 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 
 void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const {
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const {
 	// Interpolate the hair segments
 	CatmullRomCurve curve;
 	for (int i = 0; i < (int)hairPoints.size(); ++i)
-		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i]);
+		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i], hairTransps[i]);
 
 	// Tessellate the curve
 	vector<float> values;
@@ -346,12 +371,15 @@ void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 	vector<Point> tesselPoints;
 	vector<float> tesselSizes;
 	vector<RGBColor> tesselCols;
+	vector<float> tesselTransps;
 	for (u_int i = 0; i < values.size(); ++i) {
 		tesselPoints.push_back(curve.EvaluatePoint(values[i]));
 		tesselSizes.push_back(curve.EvaluateSize(values[i]));
 		tesselCols.push_back(curve.EvaluateColor(values[i]));
+		tesselTransps.push_back(curve.EvaluateTransparency(values[i]));
 	}
-	TessellateRibbon(tesselPoints, tesselSizes, tesselCols, meshVerts, meshNorms, meshTris, meshUVs, meshCols);
+	TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselTransps,
+		meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 }
 
 void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
@@ -373,6 +401,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const float *thickness = hairFile->GetThicknessArray();
 	const u_short *segments = hairFile->GetSegmentsArray();
 	const float *colors = hairFile->GetColorsArray();
+	const float *transparency = hairFile->GetTransparencyArray();
 
 	if (segments || (header.d_segments > 0)) {
 		u_int pointIndex = 0;
@@ -380,12 +409,14 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		vector<Point> hairPoints;
 		vector<float> hairSizes;
 		vector<RGBColor> hairCols;
+		vector<float> hairTransps;
 
 		vector<Point> meshVerts;
 		vector<Normal> meshNorms;
 		vector<int> meshTris;
 		vector<float> meshUVs;
 		vector<float> meshCols;
+		vector<float> meshTransps;
 		for (u_int i = 0; i < header.hair_count; ++i) {
 			// segmentSize must be a signed 
 			const int segmentSize = segments ? segments[i] : header.d_segments;
@@ -396,6 +427,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			hairPoints.clear();
 			hairSizes.clear();
 			hairCols.clear();
+			hairTransps.clear();
 			for (int j = 0; j <= segmentSize; ++j) {
 				hairPoints.push_back(Point(points[pointIndex], points[pointIndex + 1], points[pointIndex + 2]));
 				hairSizes.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
@@ -403,18 +435,30 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 					hairCols.push_back(RGBColor(colors[pointIndex], colors[pointIndex + 1], colors[pointIndex + 2]));
 				else
 					hairCols.push_back(RGBColor(header.d_color[0], header.d_color[1], header.d_color[2]));
+				if (transparency)
+					hairTransps.push_back(1.f - transparency[pointIndex]);
+				else
+					hairTransps.push_back(1.f - header.d_transparency);
+
+//				if (i % 200 < 100)
+//					hairCols.push_back(RGBColor(0.65f, 0.65f, 0.65f));
+//				else
+//					hairCols.push_back(RGBColor(0.65f, 0.f, 0.f));
+//				hairTransps.push_back(1.f - j / (float)segmentSize);
 
 				pointIndex += 3;
 			}
 
 			switch (tesselType) {
 				case TESSEL_RIBBON:
-					TessellateRibbon(hairPoints, hairSizes, hairCols,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols);
+					TessellateRibbon(hairPoints, hairSizes, hairCols, hairTransps,
+							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
+							meshTransps);
 					break;
 				case TESSEL_RIBBON_ADAPTIVE:
-					TessellateRibbonAdaptive(hairPoints, hairSizes, hairCols,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols);
+					TessellateRibbonAdaptive(hairPoints, hairSizes, hairCols, hairTransps,
+							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
+							meshTransps);
 					break;
 				default:
 					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
@@ -448,7 +492,21 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Strands use colors";
 			paramSet.AddFloat("C", &meshCols[0], meshCols.size());
 		}
-		
+
+		// Check if I have to include vertex alpha too
+		bool useAlpha = false;
+		BOOST_FOREACH(const float &a, meshCols) {
+			if (a != 1.f) {
+				useAlpha = true;
+				break;
+			}
+		}
+
+		if (useAlpha) {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Strands use alphas";
+			paramSet.AddFloat("A", &meshTransps[0], meshTransps.size());
+		}
+
 		boost::shared_ptr<Shape> shape = MakeShape("trianglemesh",
 				ObjectToWorld, reverseOrientation, paramSet);
 
