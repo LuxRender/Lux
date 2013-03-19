@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(luxconsolePath))
 			throw runtime_error("Unable to find luxconsole executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole path: [" << luxconsolePath << "]";
-		const string luxconsole = luxconsolePath.make_preferred().string();
+		const string luxconsole = "\"" + luxconsolePath.make_preferred().string() + "\"";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole native path: [" << luxconsole << "]";
 
 		//----------------------------------------------------------------------
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(slgPath))
 			throw runtime_error("Unable to find slg executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
-		const string slg = slgPath.make_preferred().string();
+		const string slg = "\"" + slgPath.make_preferred().string() + "\"";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
 
 		//----------------------------------------------------------------------
@@ -313,6 +313,9 @@ int main(int argc, char **argv) {
 		exec(slgCmd);
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Done.";
+	} catch (runtime_error err) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
+		return EXIT_FAILURE;
 	} catch (exception err) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "ERROR: " << err.what();
 		return EXIT_FAILURE;
