@@ -56,12 +56,16 @@ public:
 protected:
 	void TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const;
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const;
 	void TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
-		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols) const;
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const;
 
 	bool hasCameraPosition;
 	Point cameraPosition;
