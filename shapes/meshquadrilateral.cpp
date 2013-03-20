@@ -537,9 +537,9 @@ void MeshQuadrilateral::GetShadingInformation(const DifferentialGeometry &dgShad
 		RGBColor *color, float *alpha) const {
 	if (mesh->cols) {
 		const RGBColor *c0 = (const RGBColor *)(&mesh->cols[idx[0] * 3]);
-		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[(idx[1] + 1) * 3]);
-		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[(idx[2] + 2) * 3]);
-		const RGBColor *c3 = (const RGBColor *)(&mesh->cols[(idx[3] + 3) * 3]);
+		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[idx[1] * 3]);
+		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[idx[2] * 3]);
+		const RGBColor *c3 = (const RGBColor *)(&mesh->cols[idx[3] * 3]);
 
 		*color = ((1.0f - dgShading.u) * (1.0f - dgShading.v)) * (*c0) +
 				(dgShading.u * (1.0f - dgShading.v)) * (*c1) +

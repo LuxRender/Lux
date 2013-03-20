@@ -124,7 +124,7 @@ static int ColorCB(p_ply_argument argument) {
 	p_ply_property property;
 	ply_get_argument_property(argument, &property, NULL, NULL);
 	e_ply_type dataType;
-	ply_get_property_info(property, NULL, NULL, NULL, &dataType);
+	ply_get_property_info(property, NULL, &dataType, NULL, NULL);
 	if (dataType == PLY_UCHAR) {
 		if (userIndex == 0)
 			c[colIndex * 3] =
@@ -165,7 +165,7 @@ static int AlphaCB(p_ply_argument argument) {
 	p_ply_property property;
 	ply_get_argument_property(argument, &property, NULL, NULL);
 	e_ply_type dataType;
-	ply_get_property_info(property, NULL, NULL, NULL, &dataType);
+	ply_get_property_info(property, NULL, &dataType, NULL, NULL);
 	if (dataType == PLY_UCHAR) {
 		if (userIndex == 0)
 			c[alphaIndex] =
