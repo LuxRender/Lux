@@ -230,7 +230,8 @@ private:
 
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 		const string &aType,  const TessellationType tType, const u_int rAdaptiveMaxDepth,
-		const float rAdaptiveError, boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
+		const float rAdaptiveError, const u_int sSideCount,  const bool sCap,
+		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
 	if (hasCameraPosition) {
 		// Transform the camera position in local coordinate
@@ -241,6 +242,8 @@ HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Poin
 	tesselType = tType;
 	ribbonAdaptiveMaxDepth = rAdaptiveMaxDepth;
 	ribbonAdaptiveError = rAdaptiveError;
+	solidSideCount = sSideCount;
+	solidCap = sCap;
 	hairFile = hair;
 }
 
@@ -382,6 +385,117 @@ void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 		meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 }
 
+void HairFile::TessellateSolid(const vector<Point> &hairPoints,
+		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
+		vector<Point> &meshVerts, vector<Normal> &meshNorms,
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const {
+	// Create the mesh vertices
+	const u_int baseOffset = meshVerts.size();
+	const float angleStep = Radians(360.f / solidSideCount);
+	for (int i = 0; i < (int)hairPoints.size(); ++i) {
+		Vector z;
+		// I need a special case for the very last point
+		if (i == (int)hairPoints.size() - 1)
+			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+		else
+			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+
+		Vector x, y;
+		CoordinateSystem(z, &x, &y);
+
+		float angle = 0.f;
+		for (uint j = 0; j < solidSideCount; ++j) {
+			const Point lp(hairSizes[i] * cosf(angle), hairSizes[i] * sinf(angle), 0.f);
+			const Point p(
+				x.x * lp.x + y.x * lp.y + z.x * lp.z + hairPoints[i].x,
+				x.y * lp.x + y.y * lp.y + z.y * lp.z + hairPoints[i].y,
+				x.z * lp.x + y.z * lp.y + z.z * lp.z + hairPoints[i].z);
+			
+			meshVerts.push_back(p);
+			meshNorms.push_back(Normal());
+			meshUVs.push_back(j / (float)solidSideCount);
+			meshUVs.push_back(i / (float)hairPoints.size());
+			meshCols.push_back(hairCols[i].c[0]);
+			meshCols.push_back(hairCols[i].c[1]);
+			meshCols.push_back(hairCols[i].c[2]);
+			meshTransps.push_back(hairTransps[i]);
+
+			angle += angleStep;
+		}
+	}
+
+	// Triangulate the vertex mesh
+	for (int i = 0; i < (int)hairPoints.size() - 1; ++i) {
+		const u_int index = baseOffset + i * solidSideCount;
+
+		for (uint j = 0; j < solidSideCount; ++j) {
+			// Side face
+
+			const u_int i0 = index + j;
+			const u_int i1 = (j == solidSideCount - 1) ? index : (index + j + 1);
+			const u_int i2 = index + j + solidSideCount;
+			const u_int i3 = (j == solidSideCount - 1) ? (index + solidSideCount) : (index + j + solidSideCount  + 1);
+
+			// First triangle
+			meshTris.push_back(i0);
+			meshTris.push_back(i1);
+			meshTris.push_back(i2);
+			const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+			meshNorms[i0] += n0;
+			meshNorms[i1] += n0;
+			meshNorms[i2] += n0;
+
+			// Second triangle
+			meshTris.push_back(i1);
+			meshTris.push_back(i3);
+			meshTris.push_back(i2);
+			const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+			meshNorms[i1] += n1;
+			meshNorms[i3] += n1;
+			meshNorms[i2] += n1;
+		}
+	}
+
+	if (solidCap) {
+		// Add a fan cap
+
+		const u_int offset = meshVerts.size();
+		const Normal n = Normal(Normalize(hairPoints[hairPoints.size() - 1] - hairPoints[hairPoints.size() - 2]));
+		for (uint j = 0; j < solidSideCount; ++j) {
+			meshVerts.push_back(meshVerts[offset - solidSideCount + j]);
+			meshNorms.push_back(n);
+			meshUVs.push_back(j / (float)solidSideCount);
+			meshUVs.push_back(1.f);
+			meshCols.push_back(hairCols.back().c[0]);
+			meshCols.push_back(hairCols.back().c[1]);
+			meshCols.push_back(hairCols.back().c[2]);
+			meshTransps.push_back(hairTransps.back());
+		}
+
+		// Add the fan center
+		meshVerts.push_back(hairPoints.back());
+		meshNorms.push_back(n);
+		meshUVs.push_back(0.f);
+		meshUVs.push_back(1.f);
+		meshCols.push_back(hairCols.back().c[0]);
+		meshCols.push_back(hairCols.back().c[1]);
+		meshCols.push_back(hairCols.back().c[2]);
+		meshTransps.push_back(hairTransps.back());
+
+		const u_int i3 = meshVerts.size() - 1;
+		for (uint j = 0; j < solidSideCount; ++j) {
+			const u_int i0 = offset + j;
+			const u_int i1 = (j == solidSideCount - 1) ? offset : (offset + j + 1);
+
+			meshTris.push_back(i0);
+			meshTris.push_back(i1);
+			meshTris.push_back(i3);
+		}
+	}
+}
+
 void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const cyHairFileHeader &header = hairFile->GetHeader();
 	if (header.hair_count == 0)
@@ -460,6 +574,11 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
 							meshTransps);
 					break;
+				case TESSEL_SOLID:
+					TessellateSolid(hairPoints, hairSizes, hairCols, hairTransps,
+							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
+							meshTransps);
+					break;					
 				default:
 					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
 			}
@@ -565,6 +684,8 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		tessellationType = TESSEL_RIBBON;
 	else if (tessellationTypeStr == "ribbonadaptive")
 		tessellationType = TESSEL_RIBBON_ADAPTIVE;
+	else if (tessellationTypeStr == "solid")
+		tessellationType = TESSEL_SOLID;
 	else {
 		SHAPE_LOG(name, LUX_WARNING, LUX_BADTOKEN) << "Tessellation type  '" << tessellationTypeStr << "' unknown. Using \"ribbon\".";
 		tessellationType = TESSEL_RIBBON;
@@ -572,6 +693,9 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 
 	const u_int ribbonAdaptiveMaxDepth = max(0, params.FindOneInt("ribbonadaptive_maxdepth", 8));
 	const float ribbonAdaptiveError = params.FindOneFloat("ribbonadaptive_error", 0.1f);
+
+	const u_int solidSideCount = max(0, params.FindOneInt("solid_sidecount", 3));
+	const bool solidCap = params.FindOneBool("solid_cap", false);
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -581,7 +705,7 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 	}
 
 	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, tessellationType,
-		ribbonAdaptiveMaxDepth, ribbonAdaptiveError, hairFile);
+		ribbonAdaptiveMaxDepth, ribbonAdaptiveError, solidSideCount, solidCap, hairFile);
 }
 
 static DynamicLoader::RegisterShape<HairFile> r("hairfile");
