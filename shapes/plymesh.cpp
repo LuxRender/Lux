@@ -264,7 +264,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	// Check if the file includes alpha informations
 	float *alphas;
-	long plyNbAlphas = ply_set_read_cb(plyfile, "vertex", "alpha", AlphaCB, &cols, 0);
+	long plyNbAlphas = ply_set_read_cb(plyfile, "vertex", "alpha", AlphaCB, &alphas, 0);
 
 	p = new Point[plyNbVerts];
 	if (plyNbNormals <= 0)
