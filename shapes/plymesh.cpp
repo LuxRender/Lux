@@ -120,15 +120,32 @@ static int ColorCB(p_ply_argument argument) {
 	long colIndex;
 	ply_get_argument_element(argument, NULL, &colIndex);
 
-	if (userIndex == 0)
-		c[colIndex * 3] =
-			static_cast<float>(ply_get_argument_value(argument) / 255.0);
-	else if (userIndex == 1)
-		c[colIndex * 3 + 1] =
-			static_cast<float>(ply_get_argument_value(argument) / 255.0);
-	else if (userIndex == 2)
-		c[colIndex * 3 + 2] =
-			static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	// Check the type of value used
+	p_ply_property property;
+	ply_get_argument_property(argument, &property, NULL, NULL);
+	e_ply_type dataType;
+	ply_get_property_info(property, NULL, NULL, NULL, &dataType);
+	if (dataType == PLY_UCHAR) {
+		if (userIndex == 0)
+			c[colIndex * 3] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+		else if (userIndex == 1)
+			c[colIndex * 3 + 1] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+		else if (userIndex == 2)
+			c[colIndex * 3 + 2] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	} else {
+		if (userIndex == 0)
+			c[colIndex * 3] =
+				static_cast<float>(ply_get_argument_value(argument));
+		else if (userIndex == 1)
+			c[colIndex * 3 + 1] =
+				static_cast<float>(ply_get_argument_value(argument));
+		else if (userIndex == 2)
+			c[colIndex * 3 + 2] =
+				static_cast<float>(ply_get_argument_value(argument));
+	}
 
 	return 1;
 }
@@ -144,9 +161,20 @@ static int AlphaCB(p_ply_argument argument) {
 	long alphaIndex;
 	ply_get_argument_element(argument, NULL, &alphaIndex);
 
-	if (userIndex == 0)
-		c[alphaIndex] =
-			static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	// Check the type of value used
+	p_ply_property property;
+	ply_get_argument_property(argument, &property, NULL, NULL);
+	e_ply_type dataType;
+	ply_get_property_info(property, NULL, NULL, NULL, &dataType);
+	if (dataType == PLY_UCHAR) {
+		if (userIndex == 0)
+			c[alphaIndex] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	} else {
+		if (userIndex == 0)
+			c[alphaIndex] =
+				static_cast<float>(ply_get_argument_value(argument));		
+	}
 
 	return 1;
 }
