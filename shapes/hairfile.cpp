@@ -495,7 +495,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 
 		// Check if I have to include vertex alpha too
 		bool useAlpha = false;
-		BOOST_FOREACH(const float &a, meshCols) {
+		BOOST_FOREACH(const float &a, meshTransps) {
 			if (a != 1.f) {
 				useAlpha = true;
 				break;
