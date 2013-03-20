@@ -418,8 +418,8 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	if (alphas && (plyNbVerts != plyNbAlphas)) {
 		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Incorrect number of alpha values";
-		delete[] cols;
-		cols = NULL;
+		delete[] alphas;
+		alphas = NULL;
 	}
 
 	const int *triVerts = plyNbTris > 0 ? &faceData.triVerts[0] : NULL;
