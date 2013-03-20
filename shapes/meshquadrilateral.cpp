@@ -216,7 +216,7 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 		const Vector e01 = p10 - p00;
 		const Vector e03 = p01 - p00;
 		const Vector e02 = p11 - p00;
-		const Vector N = Cross(e01, e03);
+		//const Vector N = Cross(e01, e03);
 
 		float a11 = 0.0f;
 		float b11 = 0.0f;
@@ -531,4 +531,33 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts, dndu, dndv,
 		dg.u, dg.v, this);
+}
+
+void MeshQuadrilateral::GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const {
+	if (mesh->cols) {
+		const RGBColor *c0 = (const RGBColor *)(&mesh->cols[idx[0] * 3]);
+		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[(idx[1] + 1) * 3]);
+		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[(idx[2] + 2) * 3]);
+		const RGBColor *c3 = (const RGBColor *)(&mesh->cols[(idx[3] + 3) * 3]);
+
+		*color = ((1.0f - dgShading.u) * (1.0f - dgShading.v)) * (*c0) +
+				(dgShading.u * (1.0f - dgShading.v)) * (*c1) +
+				(dgShading.u * dgShading.v) * (*c2) +
+				((1.0f - dgShading.u) * dgShading.v) * (*c3);
+	} else
+		*color = RGBColor(1.f);
+
+	if (mesh->alphas) {
+		const float alpha0 = mesh->alphas[idx[0]];
+		const float alpha1 = mesh->alphas[idx[1]];
+		const float alpha2 = mesh->alphas[idx[2]];
+		const float alpha3 = mesh->alphas[idx[3]];
+
+		*alpha = ((1.0f - dgShading.u) * (1.0f - dgShading.v)) * alpha0 +
+				(dgShading.u * (1.0f - dgShading.v)) * alpha1 +
+				(dgShading.u * dgShading.v) * alpha2 +
+				((1.0f - dgShading.u) * dgShading.v) * alpha3;
+	} else
+		*alpha = 1.f;
 }

@@ -56,7 +56,7 @@ void Primitive::GetShadingGeometry(const Transform &obj2world,
 
 void Primitive::GetShadingInformation(const DifferentialGeometry &dgShading,
 		RGBColor *color, float *alpha) const {
-	*color = RGBColor(.65f);
+	*color = RGBColor(1.f);
 	*alpha = 1.f;
 }
 
