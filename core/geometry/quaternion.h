@@ -42,6 +42,12 @@ public:
 	Quaternion(const Quaternion &q) : w(q.w), v(q.v) { }
 	Quaternion(float _w, const Vector &_v) : w(_w), v(_v) { }
 
+	Quaternion Invert() const {
+		return Quaternion(w, -v);
+	}
+
+	Vector RotateVector(const Vector &v) const;
+
 	// get the rotation matrix from quaternion
 	void ToMatrix(float m[4][4]) const;
 };
@@ -73,6 +79,7 @@ inline Quaternion Normalize(const Quaternion &q) {
 }
 
 Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2);
+Quaternion GetRotationBetween(const Vector &u, const Vector &v);
 
 }//namespace lux
 

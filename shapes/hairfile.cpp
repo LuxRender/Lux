@@ -279,27 +279,51 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		vector<float> &meshTransps) const {
 	// Create the mesh vertices
 	const u_int baseOffset = meshVerts.size();
+
+	Vector previousDir;
+	Vector previousX;
+	// I'm using quaternion here in order to avoid Gimbal lock problem
+	Quaternion trans;
 	for (int i = 0; i < (int)hairPoints.size(); ++i) {
-		Vector z;
+		Vector dir;
 		// I need a special case for the very last point
 		if (i == (int)hairPoints.size() - 1)
-			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+			dir = Normalize(hairPoints[i] - hairPoints[i - 1]);
 		else
-			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+			dir = Normalize(hairPoints[i + 1] - hairPoints[i]);
 
-		Vector x, y;
-		// Check if I have to face the ribbon in a specific direction
-		if (hasCameraPosition) {
-			y = Normalize(cameraPosition - hairPoints[i]);
+		if (i == 0) {
+			// Build the initial quaternion by establishing an initial (arbitrary)
+			// frame
 
-			if (AbsDot(z, y) < 1.f - 0.05f) {
-				x = Normalize(Cross(z, y));
-				y = Normalize(Cross(x, z));
-			} else
-				CoordinateSystem(z, &x, &y);
-		} else
-			CoordinateSystem(z, &x, &y);
+			// Check if I have to face the ribbon in a specific direction
+			Vector up;
+			if (hasCameraPosition)
+				up = Normalize(cameraPosition - hairPoints[i]);
+			else
+				up = Vector(1.f, 0.f, 0.f);
 
+			if (AbsDot(dir, up) > 1.f - 0.05f) {
+				up = Vector(0.f, 1.f, 0.f);
+				if (AbsDot(dir, up) > 1.f - 0.05f)
+					up = Vector(0.f, 0.f, 1.f);
+			}
+
+			const Transform dirTrans = LookAt(hairPoints[0], hairPoints[1], up);
+			trans = Quaternion(dirTrans.m);
+		} else {
+			// Compose the new delta transformation with all old one
+			trans = GetRotationBetween(previousDir, dir) * trans;
+		}
+		previousDir = dir;
+
+		const Vector newPreviousX = trans.RotateVector(Vector(1.f, 0.f, 0.f));
+
+		// Using this trick to have a section half way between previous and new one
+		const Vector x = (i == 0) ? newPreviousX : (previousX + newPreviousX) * .5;
+
+		previousX = newPreviousX;
+		
 		const Point p0 = hairPoints[i] + hairSizes[i] * x;
 		const Point p1 = hairPoints[i] - hairSizes[i] * x;
 		meshVerts.push_back(p0);
@@ -394,16 +418,47 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 	// Create the mesh vertices
 	const u_int baseOffset = meshVerts.size();
 	const float angleStep = Radians(360.f / solidSideCount);
+
+	Vector previousDir;
+	Vector previousX, previousY, previousZ;
+	// I'm using quaternion here in order to avoid Gimbal lock problem
+	Quaternion trans;
 	for (int i = 0; i < (int)hairPoints.size(); ++i) {
-		Vector z;
+		Vector dir;
 		// I need a special case for the very last point
 		if (i == (int)hairPoints.size() - 1)
-			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+			dir = Normalize(hairPoints[i] - hairPoints[i - 1]);
 		else
-			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+			dir = Normalize(hairPoints[i + 1] - hairPoints[i]);
 
-		Vector x, y;
-		CoordinateSystem(z, &x, &y);
+		if (i == 0) {
+			// Build the initial quaternion by establishing an initial (arbitrary)
+			// frame
+
+			Vector up(0.f, 0.f, 1.f);
+			if (AbsDot(dir, up) > 1.f - 0.05f)
+				up = Vector(1.f, 0.f, 0.f);
+
+			const Transform dirTrans = LookAt(hairPoints[0], hairPoints[1], up);
+			trans = Quaternion(dirTrans.m);
+		} else {
+			// Compose the new delta transformation with all old one
+			trans = GetRotationBetween(previousDir, dir) * trans;
+		}
+		previousDir = dir;
+
+		const Vector newPreviousX = trans.RotateVector(Vector(1.f, 0.f, 0.f));
+		const Vector newPreviousY = trans.RotateVector(Vector(0.f, 1.f, 0.f));
+		const Vector newPreviousZ = trans.RotateVector(Vector(0.f, 0.f, 1.f));
+
+		// Using this trick to have a section half way between previous and new one
+		const Vector x = (i == 0) ? newPreviousX : (previousX + newPreviousX) * .5;
+		const Vector y = (i == 0) ? newPreviousY : (previousY + newPreviousY) * .5;
+		const Vector z = (i == 0) ? newPreviousZ : (previousZ + newPreviousZ) * .5;
+
+		previousX = newPreviousX;
+		previousY = newPreviousY;
+		previousZ = newPreviousZ;
 
 		float angle = 0.f;
 		for (u_int j = 0; j < solidSideCount; ++j) {
@@ -553,12 +608,6 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 					hairTransps.push_back(1.f - transparency[pointIndex]);
 				else
 					hairTransps.push_back(1.f - header.d_transparency);
-
-//				if (i % 200 < 100)
-//					hairCols.push_back(RGBColor(0.65f, 0.65f, 0.65f));
-//				else
-//					hairCols.push_back(RGBColor(0.65f, 0.f, 0.f));
-//				hairTransps.push_back(1.f - j / (float)segmentSize);
 
 				pointIndex += 3;
 			}

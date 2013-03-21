@@ -110,6 +110,13 @@ Quaternion::Quaternion(const Matrix4x4 &m) {
 	}
 }
 
+Vector Quaternion::RotateVector(const Vector &v) const {
+	const Quaternion vectorQuaternion(0.f, v);
+	const Quaternion rotatedQuaternion = (*this) * (vectorQuaternion * Invert());
+
+	return rotatedQuaternion.v;
+}
+
 // get the rotation matrix from quaternion
 void Quaternion::ToMatrix(float m[4][4]) const {
 	const float xx = v.x * v.x;
@@ -160,6 +167,17 @@ Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2) {
 
 	return f1 * q1 + (sign * f2) * q2;
 } 
+
+// Note: u and v must be normalized.
+Quaternion GetRotationBetween(const Vector &u, const Vector &v) {
+  if (u == -v) {
+    // 180 degree rotation around any axis (y-axis used here)
+    return Quaternion(0.f, Vector(0.f, 1.f, 0.f));
+  }
+
+  const Vector half = Normalize(u + v);
+  return Quaternion(Dot(u, half), Cross(u, half));
+}
 
 }//namespace lux
 
