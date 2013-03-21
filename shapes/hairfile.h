@@ -36,7 +36,7 @@ public:
 	HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 			const string &accelType, const TessellationType tesselType,
 			const u_int ribbonAdaptiveMaxDepth, const float ribbonAdaptiveError, 
-			const u_int solidSideCount, const bool solidCap,
+			const u_int solidSideCount, const bool solidCapBottom, const bool solidCapTop,
 			boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
@@ -83,7 +83,7 @@ protected:
 	u_int ribbonAdaptiveMaxDepth;
 	float ribbonAdaptiveError;
 	u_int solidSideCount;
-	bool solidCap;
+	bool solidCapBottom, solidCapTop;
 
 	boost::shared_ptr<cyHairFile> hairFile;
 
