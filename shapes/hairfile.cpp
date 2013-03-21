@@ -406,7 +406,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		CoordinateSystem(z, &x, &y);
 
 		float angle = 0.f;
-		for (uint j = 0; j < solidSideCount; ++j) {
+		for (u_int j = 0; j < solidSideCount; ++j) {
 			const Point lp(hairSizes[i] * cosf(angle), hairSizes[i] * sinf(angle), 0.f);
 			const Point p(
 				x.x * lp.x + y.x * lp.y + z.x * lp.z + hairPoints[i].x,
@@ -430,7 +430,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 	for (int i = 0; i < (int)hairPoints.size() - 1; ++i) {
 		const u_int index = baseOffset + i * solidSideCount;
 
-		for (uint j = 0; j < solidSideCount; ++j) {
+		for (u_int j = 0; j < solidSideCount; ++j) {
 			// Side face
 
 			const u_int i0 = index + j;
@@ -463,7 +463,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 
 		const u_int offset = meshVerts.size();
 		const Normal n = Normal(Normalize(hairPoints[hairPoints.size() - 1] - hairPoints[hairPoints.size() - 2]));
-		for (uint j = 0; j < solidSideCount; ++j) {
+		for (u_int j = 0; j < solidSideCount; ++j) {
 			meshVerts.push_back(meshVerts[offset - solidSideCount + j]);
 			meshNorms.push_back(n);
 			meshUVs.push_back(j / (float)solidSideCount);
@@ -485,7 +485,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		meshTransps.push_back(hairTransps.back());
 
 		const u_int i3 = meshVerts.size() - 1;
-		for (uint j = 0; j < solidSideCount; ++j) {
+		for (u_int j = 0; j < solidSideCount; ++j) {
 			const u_int i0 = offset + j;
 			const u_int i1 = (j == solidSideCount - 1) ? offset : (offset + j + 1);
 
