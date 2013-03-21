@@ -136,6 +136,76 @@ static int TexCoordCB(p_ply_argument argument)
 	return 1;
 }
 
+// rply color callback
+static int ColorCB(p_ply_argument argument) {
+	long userIndex = 0;
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, &userIndex);
+
+	float *c = *static_cast<float **> (userData);
+
+	long colIndex;
+	ply_get_argument_element(argument, NULL, &colIndex);
+
+	// Check the type of value used
+	p_ply_property property;
+	ply_get_argument_property(argument, &property, NULL, NULL);
+	e_ply_type dataType;
+	ply_get_property_info(property, NULL, &dataType, NULL, NULL);
+	if (dataType == PLY_UCHAR) {
+		if (userIndex == 0)
+			c[colIndex * 3] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+		else if (userIndex == 1)
+			c[colIndex * 3 + 1] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+		else if (userIndex == 2)
+			c[colIndex * 3 + 2] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	} else {
+		if (userIndex == 0)
+			c[colIndex * 3] =
+				static_cast<float>(ply_get_argument_value(argument));
+		else if (userIndex == 1)
+			c[colIndex * 3 + 1] =
+				static_cast<float>(ply_get_argument_value(argument));
+		else if (userIndex == 2)
+			c[colIndex * 3 + 2] =
+				static_cast<float>(ply_get_argument_value(argument));
+	}
+
+	return 1;
+}
+
+// rply vertex callback
+static int AlphaCB(p_ply_argument argument) {
+	long userIndex = 0;
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, &userIndex);
+
+	float *c = *static_cast<float **> (userData);
+
+	long alphaIndex;
+	ply_get_argument_element(argument, NULL, &alphaIndex);
+
+	// Check the type of value used
+	p_ply_property property;
+	ply_get_argument_property(argument, &property, NULL, NULL);
+	e_ply_type dataType;
+	ply_get_property_info(property, NULL, &dataType, NULL, NULL);
+	if (dataType == PLY_UCHAR) {
+		if (userIndex == 0)
+			c[alphaIndex] =
+				static_cast<float>(ply_get_argument_value(argument) / 255.0);
+	} else {
+		if (userIndex == 0)
+			c[alphaIndex] =
+				static_cast<float>(ply_get_argument_value(argument));		
+	}
+
+	return 1;
+}
+
 class FaceData {
 public:
 	FaceData() : triVerts(), quadVerts() { }
@@ -248,7 +318,15 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		ply_set_read_cb(plyfile, "vertex", "v", TexCoordCB, &uv, 1);
 	}
 
-	// TODO: add the support for reading vertex colors
+	// Check if the file includes color informations
+	float *cols;
+	long plyNbColors = ply_set_read_cb(plyfile, "vertex", "red", ColorCB, &cols, 0);
+	ply_set_read_cb(plyfile, "vertex", "green", ColorCB, &cols, 1);
+	ply_set_read_cb(plyfile, "vertex", "blue", ColorCB, &cols, 2);
+
+	// Check if the file includes alpha informations
+	float *alphas;
+	long plyNbAlphas = ply_set_read_cb(plyfile, "vertex", "alpha", AlphaCB, &alphas, 0);
 
 	p = new Point[plyNbVerts];
 	if (plyWVerts <= 0)
@@ -266,6 +344,15 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	else
 		uv = new float[2*plyNbUVs];
 
+	if (plyNbColors == 0)
+		cols = NULL;
+	else
+		cols = new float[3 * plyNbVerts];
+
+	if (plyNbAlphas == 0)
+		alphas = NULL;
+	else
+		alphas = new float[plyNbVerts];
 
 	if (!ply_read(plyfile)) {
 		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
@@ -273,6 +360,8 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		delete[] wuv;
 		delete[] n;
 		delete[] uv;
+		delete[] cols;
+		delete[] alphas;
 		return NULL;
 	}
 
@@ -355,12 +444,22 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		delete[] nf;
 	}
 
-	if (plyNbVerts != plyNbUVs) {
-		if (uv) {
-			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Incorrect number of uv coordinates";
-			delete[] uv;
-			uv = NULL;
-		}
+	if (uv && (plyNbVerts != plyNbUVs)) {
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Incorrect number of uv coordinates";
+		delete[] uv;
+		uv = NULL;
+	}
+
+	if (cols && (plyNbVerts != plyNbColors)) {
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Incorrect number of color values";
+		delete[] cols;
+		cols = NULL;
+	}
+
+	if (alphas && (plyNbVerts != plyNbAlphas)) {
+		SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY)<< "Incorrect number of alpha values";
+		delete[] alphas;
+		alphas = NULL;
 	}
 
 	if (plyNbVerts != plyWVerts) {
@@ -426,7 +525,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, shpType, proj_text, cam, Mesh::ACCEL_AUTO,
-			      plyNbVerts, p, n, uv, NULL, NULL, wuv, Mesh::TRI_AUTO, plyNbTris, triVerts,
+			      plyNbVerts, p, n, uv, cols, alphas, wuv, Mesh::TRI_AUTO, plyNbTris, triVerts,
 			      Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
 			      nsubdivlevels, displacementMap, displacementMapScale,
 			      displacementMapOffset, displacementMapNormalSmooth,
@@ -435,6 +534,8 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	delete[] n;
 	delete[] uv;
 	delete[] wuv;
+	delete[] cols;
+	delete[] alphas;
 	return mesh;
 }
 

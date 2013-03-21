@@ -333,6 +333,9 @@ public:
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
 
+	virtual void GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const;
+
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;
 	virtual float Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {

@@ -31,11 +31,12 @@ namespace lux
 
 class HairFile : public Shape {
 public:
-	enum TessellationType { TESSEL_RIBBON, TESSEL_RIBBON_ADAPTIVE };
+	enum TessellationType { TESSEL_RIBBON, TESSEL_RIBBON_ADAPTIVE, TESSEL_SOLID };
 
 	HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 			const string &accelType, const TessellationType tesselType,
 			const u_int ribbonAdaptiveMaxDepth, const float ribbonAdaptiveError, 
+			const u_int solidSideCount, const bool solidCap,
 			boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
@@ -66,14 +67,23 @@ protected:
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
+	void TessellateSolid(const vector<Point> &hairPoints,
+		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
+		const vector<float> &hairTransps,
+		vector<Point> &meshVerts, vector<Normal> &meshNorms,
+		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
+		vector<float> &meshTransps) const;
 
 	bool hasCameraPosition;
 	Point cameraPosition;
 	string accelType;
 	TessellationType tesselType;
 
+	// Tessellation options
 	u_int ribbonAdaptiveMaxDepth;
 	float ribbonAdaptiveError;
+	u_int solidSideCount;
+	bool solidCap;
 
 	boost::shared_ptr<cyHairFile> hairFile;
 

@@ -347,6 +347,7 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
 		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this, lscale, dg.wuv);
+	dgShading->iData = dg.iData;	
 
 }
 
@@ -355,8 +356,9 @@ void MeshBaryTriangle::GetShadingInformation(const DifferentialGeometry &dgShadi
 		RGBColor *color, float *alpha) const {
 	if (mesh->cols) {
 		const RGBColor *c0 = (const RGBColor *)(&mesh->cols[v[0] * 3]);
-		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[(v[1] + 1) * 3]);
-		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[(v[2] + 2) * 3]);
+		const RGBColor *c1 = (const RGBColor *)(&mesh->cols[v[1] * 3]);
+		const RGBColor *c2 = (const RGBColor *)(&mesh->cols[v[2] * 3]);
+
 		*color = dgShading.iData.baryTriangle.coords[0] * (*c0) +
 			dgShading.iData.baryTriangle.coords[1] * (*c1) + dgShading.iData.baryTriangle.coords[2] * (*c2);
 	} else
@@ -366,6 +368,7 @@ void MeshBaryTriangle::GetShadingInformation(const DifferentialGeometry &dgShadi
 		const float alpha0 = mesh->alphas[v[0]];
 		const float alpha1 = mesh->alphas[v[1]];
 		const float alpha2 = mesh->alphas[v[2]];
+
 		*alpha = dgShading.iData.baryTriangle.coords[0] * alpha0 +
 			dgShading.iData.baryTriangle.coords[1] * alpha1 + dgShading.iData.baryTriangle.coords[2] * alpha2;
 	} else
