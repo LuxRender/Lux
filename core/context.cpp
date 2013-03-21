@@ -1223,24 +1223,19 @@ void Context::Abort() {
 
 //controlling number of threads
 u_int Context::AddThread() {
-	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
-		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-		desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
+	RendererDeviceDescription *desc = hosts[0]->GetDeviceDescs()[0];
+	desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
 
-		return desc->GetUsedUnitsCount();
-	} else
-		return 1;
+	return desc->GetUsedUnitsCount();
 }
 
 void Context::RemoveThread() {
-	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
-		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-		desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
-	}
+	RendererDeviceDescription *desc = hosts[0]->GetDeviceDescs()[0];
+	desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
 }
 
 //framebuffer access
