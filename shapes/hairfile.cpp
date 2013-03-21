@@ -229,8 +229,8 @@ private:
 //------------------------------------------------------------------------------
 
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
-		const string &aType,  const TessellationType tType, const u_int rAdaptiveMaxDepth,
-		const float rAdaptiveError, const u_int sSideCount,
+		const string &aType,  const TessellationType tType, const u_int aMaxDepth,
+		const float aError, const u_int sSideCount,
 		const bool sCapBottom, const bool sCapTop,
 		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
@@ -241,8 +241,8 @@ HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Poin
 
 	accelType = aType;
 	tesselType = tType;
-	ribbonAdaptiveMaxDepth = rAdaptiveMaxDepth;
-	ribbonAdaptiveError = rAdaptiveError;
+	adaptiveMaxDepth = aMaxDepth;
+	adaptiveError = aError;
 	solidSideCount = sSideCount;
 	solidCapBottom = sCapBottom;
 	solidCapTop = sCapTop;
@@ -381,7 +381,7 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 	}
 }
 
-void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
+void HairFile::TessellateAdaptive(const bool solid, const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
 		const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
@@ -394,7 +394,7 @@ void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 
 	// Tessellate the curve
 	vector<float> values;
-	curve.AdaptiveTessellate(ribbonAdaptiveMaxDepth, ribbonAdaptiveError, values);
+	curve.AdaptiveTessellate(adaptiveMaxDepth, adaptiveError, values);
 
 	// Create the ribbon
 	vector<Point> tesselPoints;
@@ -407,8 +407,13 @@ void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
 		tesselCols.push_back(curve.EvaluateColor(values[i]));
 		tesselTransps.push_back(curve.EvaluateTransparency(values[i]));
 	}
-	TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselTransps,
-		meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
+
+	if (solid)
+		TessellateSolid(tesselPoints, tesselSizes, tesselCols, tesselTransps,
+			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
+	else
+		TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselTransps,
+			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 }
 
 void HairFile::TessellateSolid(const vector<Point> &hairPoints,
@@ -658,7 +663,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 							meshTransps);
 					break;
 				case TESSEL_RIBBON_ADAPTIVE:
-					TessellateRibbonAdaptive(hairPoints, hairSizes, hairCols, hairTransps,
+					TessellateAdaptive(false, hairPoints, hairSizes, hairCols, hairTransps,
 							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
 							meshTransps);
 					break;
@@ -667,6 +672,11 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
 							meshTransps);
 					break;					
+				case TESSEL_SOLID_ADAPTIVE:
+					TessellateAdaptive(true, hairPoints, hairSizes, hairCols, hairTransps,
+							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
+							meshTransps);
+					break;
 				default:
 					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
 			}
@@ -774,13 +784,15 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		tessellationType = TESSEL_RIBBON_ADAPTIVE;
 	else if (tessellationTypeStr == "solid")
 		tessellationType = TESSEL_SOLID;
+	else if (tessellationTypeStr == "solidadaptive")
+		tessellationType = TESSEL_SOLID_ADAPTIVE;
 	else {
 		SHAPE_LOG(name, LUX_WARNING, LUX_BADTOKEN) << "Tessellation type  '" << tessellationTypeStr << "' unknown. Using \"ribbon\".";
 		tessellationType = TESSEL_RIBBON;
 	}
 
-	const u_int ribbonAdaptiveMaxDepth = max(0, params.FindOneInt("ribbonadaptive_maxdepth", 8));
-	const float ribbonAdaptiveError = params.FindOneFloat("ribbonadaptive_error", 0.1f);
+	const u_int adaptiveMaxDepth = max(0, params.FindOneInt("adaptive_maxdepth", 8));
+	const float adaptiveError = params.FindOneFloat("adaptive_error", 0.1f);
 
 	const u_int solidSideCount = max(0, params.FindOneInt("solid_sidecount", 3));
 	const bool solidCapBottom = params.FindOneBool("solid_capbottom", false);
@@ -794,7 +806,7 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 	}
 
 	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, tessellationType,
-		ribbonAdaptiveMaxDepth, ribbonAdaptiveError, solidSideCount, solidCapBottom, solidCapTop,
+		adaptiveMaxDepth, adaptiveError, solidSideCount, solidCapBottom, solidCapTop,
 		hairFile);
 }
 
