@@ -282,6 +282,10 @@ public:
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		u_int depth, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
+	u_int EnvSampleLights(const Scene &scene, const Sample &sample,
+		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+		u_int depth, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
 	u_int SampleLights(const Scene &scene, const Sample &sample,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		u_int depth, const SWCSpectrum &scale, vector<SWCSpectrum> &L,

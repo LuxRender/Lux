@@ -632,7 +632,6 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 							NULL, &lightPdf, &Li);
 					else if (lightIsect.primitive) {
 						if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
-
 							light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
 								 NULL, &lightPdf, &Li);
 							//float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
@@ -707,7 +706,6 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						NULL, &lightPdf, &Li);
 				else if (lightIsect.primitive) {
 					if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
-						//Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
 						light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
 							 NULL, &lightPdf, &Li);
 						//float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
