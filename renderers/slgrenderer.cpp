@@ -120,7 +120,7 @@ static string ToString(float v) {
 //------------------------------------------------------------------------------
 
 SLGHostDescription::SLGHostDescription(SLGRenderer *r, const string &n) : renderer(r), name(n) {
-	SLGDeviceDescription *desc = new SLGDeviceDescription(this, "Test");
+	SLGDeviceDescription *desc = new SLGDeviceDescription(this, "SLG");
 	devs.push_back(desc);
 }
 
