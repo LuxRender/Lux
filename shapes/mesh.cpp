@@ -563,7 +563,7 @@ void Mesh::ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList, vector<co
 	// A little hack with pointers
 	luxrays::ExtTriangleMesh *tm = new luxrays::ExtTriangleMesh(
 			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex,
-			n, (luxrays::UV *)uvs);
+			n, (luxrays::UV *)uvs, (luxrays::Spectrum *)cols, alphas);
 
 	meshList->push_back(tm);
 	primitiveList->push_back(this);

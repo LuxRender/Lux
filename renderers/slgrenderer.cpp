@@ -90,6 +90,7 @@
 #include "textures/wrinkled.h"
 #include "textures/uv.h"
 #include "textures/band.h"
+#include "textures/hitpointcolor.h"
 
 #include "volumes/clearvolume.h"
 #include "film/fleximage.h"
@@ -653,6 +654,10 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 							val + " " + val + " " + "\n";
 				}
 			}
+		} else if (dynamic_cast<const HitPointRGBColorTexture *>(tex)) {
+			texProp = "scene.textures." + texName + ".type = hitpointcolor\n";
+		} else if (dynamic_cast<const HitPointAlphaTexture *>(tex)) {
+			texProp = "scene.textures." + texName + ".type = hitpointalpha\n";
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture and BandTexture (i.e. not " <<
 					ToClassName(tex) << ").";
@@ -783,8 +788,8 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
 		matName = glass2->GetName();
 
-		slg::Spectrum krRGB(1.f);
-		slg::Spectrum ktRGB(1.f);
+		luxrays::Spectrum krRGB(1.f);
+		luxrays::Spectrum ktRGB(1.f);
 		float index = 1.41f;
 
 		const Volume *intVol = prim->GetInterior();
@@ -1132,7 +1137,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		slg::Spectrum emission;
+		luxrays::Spectrum emission;
 		float emissionY;
 		SPD *spd = NULL;
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
@@ -1148,7 +1153,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 		}
 
 		const RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
-		emission = slg::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
+		emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
 		emissionY = spd->Y();
 
 		const float gainFactor = power * efficacy /
@@ -1735,7 +1740,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					slg::PER_PIXEL_NORMALIZED, pixelX, pixelY);
 
-				slg::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
 
 				(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1768,7 +1773,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					slg::PER_SCREEN_NORMALIZED, pixelX, pixelY);
 
-				slg::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousLightWeight)(pixelX, pixelY);
 
 				(*previousLightBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1924,7 +1929,7 @@ void SLGRenderer::Render(Scene *s) {
 			const u_int slgFilmHeight = session->film->GetHeight();
 
 			if (session->film->HasPerPixelNormalizedBuffer()) {
-				previousEyeBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
@@ -1937,7 +1942,7 @@ void SLGRenderer::Render(Scene *s) {
 			}
 
 			if (session->film->HasPerScreenNormalizedBuffer()) {
-				previousLightBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
 				for (u_int y = 0; y < slgFilmHeight; ++y) {
