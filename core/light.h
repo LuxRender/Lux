@@ -91,17 +91,33 @@ protected:
 class AreaLight : public Light {
 public:
 	// AreaLight Interface
-	AreaLight(const Transform &light2world,
+	AreaLight(const string &name, const Transform &l2w, u_int ns) :
+		Light(name, l2w, ns) { }
+	virtual ~AreaLight() { }
+	virtual bool L(const Sample &sample, const Ray &ray,
+		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+		float *pdfDirect, SWCSpectrum *Le) const = 0;
+	virtual bool IsDeltaLight() const { return false; }
+	virtual bool IsEnvironmental() const { return false; }
+
+	virtual Texture<SWCSpectrum> *GetTexture() = 0;
+
+protected:
+	// AreaLight Protected Data
+};
+
+class AreaLightImpl : public AreaLight {
+public:
+	// AreaLight Interface
+	AreaLightImpl(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > &Le, float g,
 		float pow, float e, SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
-	virtual ~AreaLight();
+	virtual ~AreaLightImpl();
 	virtual bool L(const Sample &sample, const Ray &ray,
 		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
 		float *pdfDirect, SWCSpectrum *Le) const;
 	virtual float Power(const Scene &scene) const;
-	virtual bool IsDeltaLight() const { return false; }
-	virtual bool IsEnvironmental() const { return false; }
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
@@ -111,7 +127,7 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
 
-	Texture<SWCSpectrum> *GetTexture() { return Le.get(); }
+	virtual Texture<SWCSpectrum> *GetTexture() { return Le.get(); }
 
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
@@ -193,6 +209,92 @@ public:
 
 protected:
 	boost::shared_ptr<Light> light;
+	MotionSystem motionPath;
+};
+
+class  InstanceAreaLight : public AreaLight {
+public:
+	// Light Interface
+	InstanceAreaLight(const Transform &l2w, boost::shared_ptr<AreaLight> &l) :
+		AreaLight("InstanceAreaLight-" + boost::lexical_cast<string>(this),
+		l2w, l->nSamples), light(l) { }
+	virtual ~InstanceAreaLight() { }
+	virtual float Power(const Scene &scene) const {
+		return light->Power(scene);
+	}
+	virtual bool IsDeltaLight() const { return light->IsDeltaLight(); }
+	virtual bool IsEnvironmental() const {
+		return light->IsEnvironmental();
+	}
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual bool L(const Sample &sample, const Ray &ray,
+		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+		float *pdfDirect, SWCSpectrum *Le) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
+		const PartialDifferentialGeometry dgi(Inverse(LightToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return light->Pdf(Inverse(LightToWorld) * p, dgi) * factor;
+	}
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *L) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+
+	virtual Texture<SWCSpectrum> *GetTexture() {
+		return light->GetTexture();
+	}
+
+protected:
+	boost::shared_ptr<AreaLight> light;
+};
+
+class  MotionAreaLight : public AreaLight {
+public:
+	// Light Interface
+	MotionAreaLight(const MotionSystem &mp, boost::shared_ptr<AreaLight> &l) :
+		AreaLight("MotionAreaLight-" + boost::lexical_cast<string>(this),
+		Transform(), l->nSamples), light(l), motionPath(mp) { }
+	virtual ~MotionAreaLight() { }
+	virtual float Power(const Scene &scene) const {
+		return light->Power(scene);
+	}
+	virtual bool IsDeltaLight() const { return light->IsDeltaLight(); }
+	virtual bool IsEnvironmental() const {
+		return light->IsEnvironmental();
+	}
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual bool L(const Sample &sample, const Ray &ray,
+		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+		float *pdfDirect, SWCSpectrum *Le) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
+		const Transform LightToWorld(motionPath.Sample(dg.time));
+		const PartialDifferentialGeometry dgi(Inverse(LightToWorld) *
+			dg);
+		const float factor = dgi.Volume() / dg.Volume();
+		return light->Pdf(Inverse(LightToWorld) * p, dgi) * factor;
+	}
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *L) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+
+	virtual Texture<SWCSpectrum> *GetTexture() {
+		return light->GetTexture();
+	}
+
+protected:
+	boost::shared_ptr<AreaLight> light;
 	MotionSystem motionPath;
 };
 

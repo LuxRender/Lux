@@ -156,12 +156,13 @@ protected:
 };
 
 // AreaLight Method Definitions
-AreaLight::AreaLight(const Transform &light2world,
+AreaLightImpl::AreaLightImpl(const Transform &light2world,
 	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
 	float e, SampleableSphericalFunction *ssf, u_int ns,
-	const boost::shared_ptr<Primitive> &p)
-	: Light("AreaLight-" + boost::lexical_cast<string>(this), light2world, ns),
-		Le(le), paramGain(g), gain(g), power(pow), efficacy(e), func(ssf)
+	const boost::shared_ptr<Primitive> &p) :
+	AreaLight("AreaLight-" + boost::lexical_cast<string>(this),
+	light2world, ns), Le(le), paramGain(g), gain(g), power(pow),
+	efficacy(e), func(ssf)
 {
 	if (p->CanIntersect() && p->CanSample()) {
 		// Create a temporary to increase shared count
@@ -185,28 +186,28 @@ AreaLight::AreaLight(const Transform &light2world,
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
 
-	AddFloatAttribute(*this, "gain", "AreaLight gain", &AreaLight::paramGain);
-	AddFloatAttribute(*this, "power", "AreaLight power", &AreaLight::power);
-	AddFloatAttribute(*this, "efficacy", "AreaLight efficacy", &AreaLight::efficacy);
-	AddFloatAttribute(*this, "area", "AreaLight area", &AreaLight::area);
+	AddFloatAttribute(*this, "gain", "AreaLight gain", &AreaLightImpl::paramGain);
+	AddFloatAttribute(*this, "power", "AreaLight power", &AreaLightImpl::power);
+	AddFloatAttribute(*this, "efficacy", "AreaLight efficacy", &AreaLightImpl::efficacy);
+	AddFloatAttribute(*this, "area", "AreaLight area", &AreaLightImpl::area);
 }
 
-AreaLight::~AreaLight()
+AreaLightImpl::~AreaLightImpl()
 {
 	delete func;
 }
 
-float AreaLight::Power(const Scene &scene) const
+float AreaLightImpl::Power(const Scene &scene) const
 {
 	return gain * area * M_PI * Le->Y();
 }
 
-float AreaLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
+float AreaLightImpl::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	return prim->Pdf(p, dg);
 }
 
-bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
+bool AreaLightImpl::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -226,7 +227,7 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / *pdf);
 	return true;
 }
-bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
+bool AreaLightImpl::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -249,7 +250,7 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
 	return true;
 }
-bool AreaLight::L(const Sample &sample, const Ray &ray,
+bool AreaLightImpl::L(const Sample &sample, const Ray &ray,
 	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -270,7 +271,7 @@ bool AreaLight::L(const Sample &sample, const Ray &ray,
 	return !Le->Black();
 }
 
-AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
+AreaLight* AreaLightImpl::CreateAreaLight(const Transform &light2world,
 	const ParamSet &paramSet, const boost::shared_ptr<Primitive> &prim)
 {
 	boost::shared_ptr<Texture<SWCSpectrum> > L(
@@ -287,10 +288,10 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
-	AreaLight *l = new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
+	AreaLightImpl *l = new AreaLightImpl(light2world, L, g, p, e, ssf, nSamples, prim);
 	l->hints.InitParam(paramSet);
 	return l;
 }
 
-static DynamicLoader::RegisterAreaLight<AreaLight> r("area");
+static DynamicLoader::RegisterAreaLight<AreaLightImpl> r("area");
 

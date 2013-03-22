@@ -737,18 +737,19 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	// Create primitive and add to scene or current instance
 	if (renderOptions->currentInstanceRefined) {
 		if (graphicsState->areaLight != "") {
-			LOG(LUX_WARNING,LUX_UNIMPLEMENT)<<"Area lights not supported with object instancing";
-/*			// Lotus - add a decorator to set the arealight field
-			boost::shared_ptr<Primitive> prim(
-				new AreaLightPrimitive(pr, area));
-			if (!prim->CanIntersect())
-				prim->Refine(*(renderOptions->currentInstance),
-					PrimitiveRefinementHints(false), prim);
-			else
-				renderOptions->currentInstance->push_back(prim);
-			// Add area light for primitive to light vector
-			renderOptions->currentLightInstance->push_back(area);*/
-		} /*else*/ {
+			u_int lg = GetLightGroup();
+			AreaLight *area = MakeAreaLight(graphicsState->areaLight,
+				curTransform.StaticTransform(),
+				graphicsState->areaLightParams, sh);
+			if (area) {
+				area->group = lg;
+				area->SetVolume(graphicsState->exterior); //unused
+			}
+			// Lotus - add a decorator to set the arealight field
+			boost::shared_ptr<Primitive> pr(sh);
+			boost::shared_ptr<AreaLightPrimitive> prim(new AreaLightPrimitive(pr, area));
+			renderOptions->currentAreaLightInstance->push_back(prim);
+		} else {
 			renderOptions->currentInstanceSource->push_back(sh);
 			if (!sh->CanIntersect())
 				sh->Refine(*(renderOptions->currentInstanceRefined),
@@ -840,6 +841,8 @@ void Context::ObjectBegin(const string &n) {
 	renderOptions->currentInstanceRefined = &renderOptions->instancesRefined[n];
 	renderOptions->lightInstances[n] = vector<boost::shared_ptr<Light> >();
 	renderOptions->currentLightInstance = &renderOptions->lightInstances[n];
+	renderOptions->areaLightInstances[n] = vector<boost::shared_ptr<AreaLightPrimitive> >();
+	renderOptions->currentAreaLightInstance = &renderOptions->areaLightInstances[n];
 }
 void Context::ObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
@@ -852,6 +855,7 @@ void Context::ObjectEnd() {
 	renderOptions->currentInstanceSource = NULL;
 	renderOptions->currentInstanceRefined = NULL;
 	renderOptions->currentLightInstance = NULL;
+	renderOptions->currentAreaLightInstance = NULL;
 	AttributeEnd();
 }
 void Context::ObjectInstance(const string &n) {
@@ -868,6 +872,44 @@ void Context::ObjectInstance(const string &n) {
 	if (renderOptions->currentInstanceRefined == &in) {
 		LOG(LUX_ERROR,LUX_NESTING) << "ObjectInstance '" << n << "' self reference";
 		return;
+	}
+	for (u_int i = 0; i < renderOptions->areaLightInstances[n].size(); ++i) {
+		boost::shared_ptr<AreaLight> li(renderOptions->areaLightInstances[n][i]->GetAreaLight());
+		boost::shared_ptr<Primitive> pi(renderOptions->areaLightInstances[n][i]->GetPrimitive());
+		AreaLightPrimitive *ap;
+		if (curTransform.IsStatic()) {
+			vector<boost::shared_ptr<Primitive> > source;
+			source.push_back(pi);
+			boost::shared_ptr<Primitive> p(new InstancePrimitive(source,
+				pi, curTransform.StaticTransform(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+			AreaLight *l = new InstanceAreaLight(curTransform.StaticTransform(),
+				li);
+			ap = new AreaLightPrimitive(p, l);
+		} else {
+			boost::shared_ptr<Primitive> p(new MotionPrimitive(pi,
+				curTransform.GetMotionSystem(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+			AreaLight *l(new MotionAreaLight(curTransform.GetMotionSystem(),
+				li));
+			ap = new AreaLightPrimitive(p, l);
+		}
+		if (renderOptions->currentLightInstance)
+			renderOptions->currentAreaLightInstance->push_back(boost::shared_ptr<AreaLightPrimitive>(ap));
+		else {
+			boost::shared_ptr<Primitive> sap(ap);
+			inSource.push_back(sap);
+			if (!ap->CanIntersect())
+				sap->Refine(in, PrimitiveRefinementHints(false),
+					sap);
+			else
+				in.push_back(sap);
+			renderOptions->lights.push_back(ap->GetAreaLight());
+		}
 	}
 	if (in.size() != 0) {
 		if (in.size() > 1 || !in[0]->CanIntersect()) {

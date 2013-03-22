@@ -143,3 +143,127 @@ bool MotionLight::SampleL(const Scene &scene, const Sample &sample,
 	return true;
 }
 
+bool InstanceAreaLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	if (!light->Le(scene, sample, Inverse(LightToWorld) * r, bsdf,
+		pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool InstanceAreaLight::L(const Sample &sample, const Ray &r,
+	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
+{
+	if (!light->L(sample, Inverse(LightToWorld) * r,
+		Inverse(LightToWorld) * dg, bsdf, pdf, pdfDirect, Le))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool InstanceAreaLight::SampleL(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, u1, u2, u3, bsdf, pdf, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	*pdf *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool InstanceAreaLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, Inverse(LightToWorld) * p, u1, u2, u3,
+		bsdf, pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	*pdfDirect *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool MotionAreaLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	if (!light->Le(scene, sample, Inverse(LightToWorld) * r, bsdf,
+		pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool MotionAreaLight::L(const Sample &sample, const Ray &r,
+	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
+{
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	if (!light->L(sample, Inverse(LightToWorld) * r,
+		Inverse(LightToWorld) * dg, bsdf, pdf, pdfDirect, Le))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool MotionAreaLight::SampleL(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, u1, u2, u3, bsdf, pdf, L))
+		return false;
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	*pdf *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool MotionAreaLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	if (!light->SampleL(scene, sample, Inverse(LightToWorld) * p, u1, u2, u3,
+		bsdf, pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	*pdfDirect *= factor;
+	*L /= factor;
+	return true;
+}
+
