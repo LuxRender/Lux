@@ -51,8 +51,15 @@ private:
 		return costheta / (costheta * (1.f - roughness) + roughness);
 	}
 	float SchlickZ(float cosNH) const {
-		const float d = 1.f + (roughness - 1) * cosNH * cosNH;
-		return roughness > 0.f ? roughness / (d * d) : INFINITY;
+		if (roughness == 0.f)
+			return INFINITY;
+
+		const float cosNH2 = cosNH * cosNH;
+		// expanded for increased numerical stability
+		const float d = (cosNH2 * roughness + (1.f - cosNH2));
+		// use double division to avoid overflow in product
+		// return roughness / (d * d);
+		return (roughness / d) / d;
 	}
 	float SchlickA(const Vector &H) const {
 		const float h = sqrtf(H.x * H.x + H.y * H.y);
