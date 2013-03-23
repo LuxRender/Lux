@@ -220,8 +220,8 @@ Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
 	else if (wrap == "clamp")
 		wrapMode = TEXTURE_CLAMP;
 
-	float gain = tp.FindOneFloat("gain", 1.0f);
-	float gamma = tp.FindOneFloat("gamma", 1.0f);
+	float gain = tp.FindOneFloat("gain", 1.f);
+	float gamma = tp.FindOneFloat("gamma", 1.f);
 
 	FileData::decode(tp, "filename");
 	string filename = tp.FindOneString("filename", "");

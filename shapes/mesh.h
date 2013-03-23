@@ -38,7 +38,7 @@ public:
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		MeshAccelType acceltype,
 		u_int nv, const Point *P, const Normal *N, const float *UV,
-		const float *COLS, const float *ALPHA,
+		const float *COLS, const float *ALPHA, const float colorGamma,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,

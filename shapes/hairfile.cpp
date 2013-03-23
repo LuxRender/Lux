@@ -231,7 +231,7 @@ private:
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 		const string &aType,  const TessellationType tType, const u_int aMaxDepth,
 		const float aError, const u_int sSideCount,
-		const bool sCapBottom, const bool sCapTop,
+		const bool sCapBottom, const bool sCapTop, const float gamma,
 		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
 	if (hasCameraPosition) {
@@ -241,6 +241,7 @@ HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Poin
 
 	accelType = aType;
 	tesselType = tType;
+	colorGamma = gamma;
 	adaptiveMaxDepth = aMaxDepth;
 	adaptiveError = aError;
 	solidSideCount = sSideCount;
@@ -695,6 +696,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
 		paramSet.AddNormal("N", &meshNorms[0], meshNorms.size());
 		paramSet.AddString("acceltype", &accelType, 1);
+		paramSet.AddFloat("gamma", &colorGamma, 1);
 
 		// Check if I have to include vertex color too
 		bool useColor = false;
@@ -797,6 +799,8 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 	const u_int solidSideCount = max(0, params.FindOneInt("solid_sidecount", 3));
 	const bool solidCapBottom = params.FindOneBool("solid_capbottom", false);
 	const bool solidCapTop = params.FindOneBool("solid_captop", false);
+	
+	
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -805,8 +809,10 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		return NULL;
 	}
 
+	const float colorGamma = params.FindOneFloat("gamma", 1.f);
+
 	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, tessellationType,
-		adaptiveMaxDepth, adaptiveError, solidSideCount, solidCapBottom, solidCapTop,
+		adaptiveMaxDepth, adaptiveError, solidSideCount, solidCapBottom, solidCapTop, colorGamma,
 		hairFile);
 }
 

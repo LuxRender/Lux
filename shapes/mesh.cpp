@@ -35,7 +35,7 @@ using namespace lux;
 Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	MeshAccelType acceltype,
 	u_int nv, const Point *P, const Normal *N, const float *UV,
-	const float *C, const float *ALPHA,
+	const float *C, const float *ALPHA, const float colorGamma,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
@@ -85,7 +85,13 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 
 	if (C) {
 		cols = new float[3 * nverts];
-		memcpy(cols, C, 3 * nverts * sizeof(float));
+		if (colorGamma == 1.f)
+			memcpy(cols, C, 3 * nverts * sizeof(float));
+		else {
+			// Reverse gamma correction
+			for (u_int i = 0; i < 3 * nverts; ++i)
+				cols[i] = powf(C[i], colorGamma);
+		}
 	} else
 		cols = NULL;
 
@@ -1051,9 +1057,11 @@ static Shape *CreateShape(const Transform &o2w, bool reverseOrientation, const P
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
 
+	const float colorGamma = params.FindOneFloat("gamma", 1.f);
+
 	return new Mesh(o2w, reverseOrientation, name,
 		accelType,
-		npi, P, N, UV, cols, alphas,
+		npi, P, N, UV, cols, alphas, colorGamma,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
 		subdivType, nSubdivLevels, displacementMap,

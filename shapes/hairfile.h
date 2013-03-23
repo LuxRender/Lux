@@ -40,7 +40,7 @@ public:
 			const string &accelType, const TessellationType tesselType,
 			const u_int adaptiveMaxDepth, const float adaptiveError, 
 			const u_int solidSideCount, const bool solidCapBottom, const bool solidCapTop,
-			boost::shared_ptr<cyHairFile> &hairFile);
+			const float colorGamma, boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
 	virtual BBox ObjectBound() const;
@@ -81,6 +81,7 @@ protected:
 	Point cameraPosition;
 	string accelType;
 	TessellationType tesselType;
+	float colorGamma;
 
 	// Tessellation options
 	u_int adaptiveMaxDepth;
