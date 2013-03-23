@@ -280,11 +280,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
-				// TODO: add the support for vertex colors/alphas too
-
 				// Apply subdivision
 				LoopSubdiv loopsubdiv(ntris, nverts,
-					triVertexIndex, p, uvs, n,
+					triVertexIndex, p, uvs, n, cols, alphas,
 					nSubdivLevels, displacementMap,
 					displacementMapScale,
 					displacementMapOffset,
@@ -311,6 +309,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
 				p = new Point[nverts];
 				memcpy(p, res->P, nverts * sizeof(Point));
+
 				if (res->uv) {
 					uvs = new float[2 * nverts];
 					memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
@@ -323,6 +322,17 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				} else
 					n = NULL;
 
+				if (res->cols) {
+					cols = new float[3 * nverts];
+					memcpy(cols, res->cols, 3 * nverts * sizeof(float));
+				} else
+					cols = NULL;
+
+				if (res->alphas) {
+					alphas = new float[nverts];
+					memcpy(alphas, res->alphas, nverts * sizeof(float));
+				} else
+					alphas = NULL;
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:

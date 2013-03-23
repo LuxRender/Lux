@@ -39,8 +39,9 @@ struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
 	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f,
-		Normal nn = Normal(0, 0, 0)) : P(pt), n(nn), u(uu), v(vv),
-		startFace(NULL), child(NULL), regular(false), boundary(false) {}
+		Normal nn = Normal(0, 0, 0), RGBColor cc = RGBColor(1.f), float aa = 1.f) :
+		P(pt), n(nn), u(uu), v(vv), col(cc), alpha(aa),
+		startFace(NULL), child(NULL), regular(false), boundary(false) { }
 
 	// SDVertex Methods
 	u_int valence() const;
@@ -49,6 +50,8 @@ struct SDVertex {
 	Point P;
 	Normal n;
 	float u, v;
+	RGBColor col;
+	float alpha;
 	SDFace *startFace;
 	SDVertex *child;
 	bool regular, boundary;
@@ -144,6 +147,7 @@ public:
 	// LoopSubdiv Public Methods
 	LoopSubdiv(u_int nt, u_int nv, const int *vi,
 		const Point *P, const float *uv, const Normal *n,
+		const float *cols, const float *alphas,
 		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset, bool dmnormalsmooth,
 		bool dmsharpboundary, bool normalsplit, const string &name);
@@ -152,16 +156,17 @@ public:
 	class SubdivResult {
 	public:
 		SubdivResult(u_int aNtris, u_int aNverts, const int* aIndices,
-			const Point *aP, const Normal *aN, const float *aUv)
+			const Point *aP, const Normal *aN, const float *aUv,
+			const float *aCols, const float *aAlphas)
 			: ntris(aNtris), nverts(aNverts), indices(aIndices),
-			P(aP), N(aN), uv(aUv)
-		{
-		}
+			P(aP), N(aN), uv(aUv), cols(aCols), alphas(aAlphas) { }
 		~SubdivResult() {
 			delete[] indices;
 			delete[] P;
 			delete[] N;
 			delete[] uv;
+			delete[] cols;
+			delete[] alphas;
 		}
 
 		const u_int ntris;
@@ -171,6 +176,8 @@ public:
 		const Point * const P;
 		const Normal * const N;
 		const float * const uv;
+		const float * const cols;
+		const float * const alphas;
 	};
 	boost::shared_ptr<SubdivResult> Refine() const;
 
@@ -199,8 +206,8 @@ private:
 	float displacementMapScale;
 	float displacementMapOffset;
 
-	bool hasUV, displacementMapNormalSmooth, displacementMapSharpBoundary;
-	bool normalSplit;
+	bool hasUV, hasCol, hasAlpha, displacementMapNormalSmooth,
+		displacementMapSharpBoundary, normalSplit;
 
 	string name;
 

@@ -32,7 +32,8 @@ using namespace lux;
 
 // LoopSubdiv Method Definitions
 LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
-	const Point *P, const float *uv, const Normal *n, u_int nl,
+	const Point *P, const float *uv, const Normal *n,
+	const float *cols, const float *alphas, u_int nl,
 	const boost::shared_ptr<Texture<float> > &dismap, float dmscale,
 	float dmoffset, bool dmnormalsmooth, bool dmsharpboundary,
 	bool normalsplit, const string &sname)
@@ -44,18 +45,20 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 {
 	nLevels = nl;
 	hasUV = (uv != NULL);
+	hasCol = (cols != NULL);
+	hasAlpha = (alphas != NULL);
 	normalSplit = normalsplit && n != NULL;
 
 	// Allocate _LoopSubdiv_ vertices and faces
 	SDVertex *verts = new SDVertex[nvertices];
 	vertices.reserve(nvertices);
 	for (u_int i = 0; i < nvertices; ++i) {
-		if (hasUV)
-			verts[i] = SDVertex(P[i], uv[2 * i], uv[2 * i + 1]);
-		else
-			verts[i] = SDVertex(P[i]);
-		if (normalSplit)
-			verts[i].n = n[i];
+		verts[i] = SDVertex(P[i],
+				hasUV ? uv[2 * i] : 0.f,
+				hasUV ? uv[2 * i + 1] : 0.f,
+				normalSplit ? n[i] : Normal(0.f, 0.f, 0.f),
+				hasCol ? RGBColor(cols[3 * i], cols[3 * i + 1], cols[3 * i + 2]) : RGBColor(1.f),
+				hasAlpha ? alphas[i] : 1.f);
 
 		vertices.push_back(&verts[i]);
 	}
@@ -230,6 +233,8 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						vert->u = 0.5f * (v0->u + v1->u);
 						vert->v = 0.5f * (v0->v + v1->v);
 						vert->n = 0.5f * (v0->n + v1->n);
+						vert->col = 0.5f * (v0->col + v1->col);
+						vert->alpha = 0.5f * (v0->alpha + v1->alpha);
 					} else {
 						SDVertex *ov1 = face->v[PREV(k)];
 						SDVertex *ov2 = f2->otherVert(edge.v[0]->P, edge.v[1]->P);
@@ -239,16 +244,28 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						// If UV are different on each side of the edge interpolate as boundary
 						if (f2->v[f2->vnum(v0->P)]->u == v0->u &&
 							f2->v[f2->vnum(v0->P)]->v == v0->v &&
+							f2->v[f2->vnum(v0->P)]->col == v0->col &&
+							f2->v[f2->vnum(v0->P)]->alpha == v0->alpha &&
 							f2->v[f2->vnum(v1->P)]->u == v1->u &&
-							f2->v[f2->vnum(v1->P)]->v == v1->v) {
+							f2->v[f2->vnum(v1->P)]->v == v1->v &&
+							f2->v[f2->vnum(v1->P)]->col == v1->col &&
+							f2->v[f2->vnum(v1->P)]->alpha == v1->alpha) {
 							vert->u = 3.f/8.f * (v0->u + v1->u);
 							vert->u += 1.f/8.f * (ov1->u + ov2->u);
 
 							vert->v = 3.f/8.f * (v0->v + v1->v);
 							vert->v += 1.f/8.f * (ov1->v + ov2->v);
+
+							vert->col = 3.f/8.f * (v0->col + v1->col);
+							vert->col += 1.f/8.f * (ov1->col + ov2->col);
+
+							vert->alpha = 3.f/8.f * (v0->alpha + v1->alpha);
+							vert->alpha += 1.f/8.f * (ov1->alpha + ov2->alpha);
 						} else {
 							vert->u = 0.5f * (v0->u + v1->u);
 							vert->v = 0.5f * (v0->v + v1->v);
+							vert->col = 0.5f * (v0->col + v1->col);
+							vert->alpha = 0.5f * (v0->alpha + v1->alpha);
 						}
 						vert->n =  3.f/8.f * (v0->n + v1->n);
 						vert->n += 1.f/8.f * (ov1->n + ov2->n);
@@ -259,8 +276,12 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 					if (!vert->boundary &&
 						(f2->v[f2->vnum(v0->P)]->u != v0->u ||
 						f2->v[f2->vnum(v0->P)]->v != v0->v ||
+						f2->v[f2->vnum(v0->P)]->col != v0->col ||
+						f2->v[f2->vnum(v0->P)]->alpha != v0->alpha ||
 						f2->v[f2->vnum(v1->P)]->u != v1->u ||
-						f2->v[f2->vnum(v1->P)]->v != v1->v)) {
+						f2->v[f2->vnum(v1->P)]->v != v1->v ||
+						f2->v[f2->vnum(v1->P)]->col != v1->col ||
+						f2->v[f2->vnum(v1->P)]->alpha != v1->alpha)) {
 						const Point &P(vert->P);
 						const Normal &N(vert->n);
 						SDFace *startFace = vert->startFace;
@@ -275,6 +296,8 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						vert->u = 0.5f * (v0->u + v1->u);
 						vert->v = 0.5f * (v0->v + v1->v);
 						vert->n = N;
+						vert->col = 0.5f * (v0->col + v1->col);
+						vert->alpha = 0.5f * (v0->alpha + v1->alpha);
 					}
 					edgeVerts.erase(edge);
 				}
@@ -305,6 +328,8 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		v[i]->u = Vlimit[i].u;
 		v[i]->v = Vlimit[i].v;
 		v[i]->n = Vlimit[i].n;
+		v[i]->col = Vlimit[i].col;
+		v[i]->alpha = Vlimit[i].alpha;
 	}
 	delete[] Vlimit;
 
@@ -324,13 +349,32 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	}
 
 	// Dade - calculate vertex UVs if required
-	float *UVlimit = NULL;
+	float *UVLimit = NULL;
 	if (hasUV) {
-		UVlimit = new float[2 * nverts];
+		UVLimit = new float[2 * nverts];
 		for (u_int i = 0; i < nverts; ++i) {
-			UVlimit[2 * i] = v[i]->u;
-			UVlimit[2 * i + 1] = v[i]->v;
+			UVLimit[2 * i] = v[i]->u;
+			UVLimit[2 * i + 1] = v[i]->v;
 		}
+	}
+
+	// Dade - calculate vertex colors if required
+	float *colLimit = NULL;
+	if (hasCol) {
+		colLimit = new float[3 * nverts];
+		for (u_int i = 0; i < nverts; ++i) {
+			colLimit[3 * i] = v[i]->col.c[0];
+			colLimit[3 * i + 1] = v[i]->col.c[1];
+			colLimit[3 * i + 2] = v[i]->col.c[2];
+		}
+	}
+
+	// Dade - calculate vertex alphas if required
+	float *alphaLimit = NULL;
+	if (hasAlpha) {
+		alphaLimit = new float[nverts];
+		for (u_int i = 0; i < nverts; ++i)
+			alphaLimit[i] = v[i]->alpha;
 	}
 
 	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Subdivision complete, got " << ntris << " triangles";
@@ -360,7 +404,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 			Ns[i] = v[i]->n;
 	}
 
-	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVlimit));
+	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVLimit, colLimit, alphaLimit));
 }
 
 void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
@@ -496,23 +540,41 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 	// Get one ring vertices for interior vertex
 	SDFace *face = vert->startFace;
 	bool uvSplit = false;
+	bool colSplit = false;
+	bool alphaSplit = false;
 	do {
 		SDVertex *v = face->v[face->vnum(vert->P)];
+
 		if (v->u != vert->u || v->v != vert->v)
 			uvSplit = true;
+		if (v->col != vert->col)
+			colSplit = true;
+		if (v->alpha != vert->alpha)
+			alphaSplit = true;
+
 		SDVertex *v2 = face->nextVert(vert->P);
 		float vu = v2->u;
 		float vv = v2->v;
+		RGBColor vc = v2->col;
+		float va = v2->alpha;
+
 		*VR++ = v2;
 		face = face->nextFace(vert->P);
 		v2 = face->prevVert(vert->P);
+
 		if (vu != v2->u || vv != v2->v)
 			uvSplit = true;
+		if (vc != v2->col)
+			colSplit = true;
+		if (va != v2->alpha)
+			alphaSplit = true;
 	} while (face != vert->startFace);
 
 	Point P((1 - valence * beta) * vert->P);
 	float u = (1 - valence * beta) * vert->u;
 	float v = (1 - valence * beta) * vert->v;
+	RGBColor col = (1 - valence * beta) * vert->col;
+	float alpha = (1 - valence * beta) * vert->alpha;
 	Normal N((1 - valence * beta) * vert->n);
 
 	for (u_int i = 0; i < valence; ++i) {
@@ -520,6 +582,8 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 		u += beta * Vring[i]->u;
 		v += beta * Vring[i]->v;
 		N += beta * Vring[i]->n;
+		col += beta * Vring[i]->col;
+		alpha += beta * Vring[i]->alpha;
 	}
 
 	destVert->P = P;
@@ -530,6 +594,14 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 		destVert->u = u;
 		destVert->v = v;
 	}
+	if (colSplit)
+		destVert->col = vert->col;
+	else
+		destVert->col = col;
+	if (alphaSplit)
+		destVert->alpha = vert->alpha;
+	else
+		destVert->alpha = alpha;
 	destVert->n = N;
 }
 
@@ -565,6 +637,8 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		destVert->u = vert->u;
 		destVert->v = vert->v;
 		destVert->n = vert->n;
+		destVert->col = vert->col;
+		destVert->alpha = vert->alpha;
 		return;
 	}
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
@@ -578,19 +652,35 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 	*VR++ = face->nextVert(vert->P);
 	// Add all vertices up to the first one (on the boundary)
 	bool uvSplit = false;
+	bool colSplit = false;
+	bool alphaSplit = false;
 	do {
 		SDVertex *v = face->v[face->vnum(vert->P)];
+
 		if (v->u != vert->u || v->v != vert->v)
 			uvSplit = true;
+		if (v->col != vert->col)
+			colSplit = true;
+		if (v->alpha != vert->alpha)
+			alphaSplit = true;
+
 		SDVertex *v2 = face->prevVert(vert->P);
 		float vu = v2->u;
 		float vv = v2->v;
+		RGBColor vc = v2->col;
+		float va = v2->alpha;
+
 		*VR++ = v2;
 		face = face->prevFace(vert->P);
 		if (face) {
 			v2 = face->nextVert(vert->P);
+
 			if (vu != v2->u || vv != v2->v)
 				uvSplit = true;
+			if (vc != v2->col)
+				colSplit = true;
+			if (va != v2->alpha)
+				alphaSplit = true;
 		}
 	} while (face != NULL);
 
@@ -609,6 +699,20 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		v += beta * (Vring[0]->v + Vring[valence - 1]->v);
 		destVert->u = u;
 		destVert->v = v;
+	}
+	if (colSplit)
+		destVert->col = vert->col;
+	else {
+		RGBColor col = (1.f - 2.f * beta) * vert->col;
+		col += beta * (Vring[0]->col + Vring[valence - 1]->col);
+		destVert->col = col;
+	}
+	if (alphaSplit)
+		destVert->alpha = vert->alpha;
+	else {
+		float alpha = (1.f - 2.f * beta) * vert->alpha;
+		alpha += beta * (Vring[0]->alpha + Vring[valence - 1]->alpha);
+		destVert->alpha = alpha;
 	}
 
 	Normal N((1 - 2 * beta) * vert->n);
