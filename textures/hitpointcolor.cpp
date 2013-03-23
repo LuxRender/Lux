@@ -36,5 +36,11 @@ Texture<SWCSpectrum> *HitPointRGBColorTexture::CreateSWCSpectrumTexture(const Tr
 	return new HitPointRGBColorTexture();
 }
 
+Texture<float> *HitPointGreyTexture::CreateFloatTexture(const Transform &tex2world,
+		const ParamSet &tp) {
+	return new HitPointGreyTexture();
+}
+
 static DynamicLoader::RegisterFloatTexture<HitPointAlphaTexture> r1("hitpointalpha");
 static DynamicLoader::RegisterSWCSpectrumTexture<HitPointRGBColorTexture> r2("hitpointcolor");
+static DynamicLoader::RegisterFloatTexture<HitPointGreyTexture> r3("hitpointgrey");

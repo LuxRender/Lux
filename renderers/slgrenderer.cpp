@@ -658,9 +658,14 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 			texProp = "scene.textures." + texName + ".type = hitpointcolor\n";
 		} else if (dynamic_cast<const HitPointAlphaTexture *>(tex)) {
 			texProp = "scene.textures." + texName + ".type = hitpointalpha\n";
+		} else if (dynamic_cast<const HitPointGreyTexture *>(tex)) {
+			texProp = "scene.textures." + texName + ".type = hitpointgrey\n";
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture and BandTexture (i.e. not " <<
-					ToClassName(tex) << ").";
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
+					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
+					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
+					"HitPointAlphaTexture and HitPointGreyTexture"
+					"(i.e. not " << ToClassName(tex) << ").";
 
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = 0.7\n";
