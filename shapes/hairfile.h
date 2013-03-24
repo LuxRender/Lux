@@ -25,6 +25,7 @@
 #include "./cyhair/cyHairFile.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/geometry/uv.h"
 
 namespace lux
 {
@@ -60,19 +61,19 @@ public:
 protected:
 	void TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
 	void TessellateAdaptive(const bool solid, const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
 	void TessellateSolid(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;

@@ -40,11 +40,13 @@ public:
 	~CatmullRomCurve() {
 	}
 
-	void AddPoint(const Point &p, const float size, const RGBColor &col, const float transp) {
+	void AddPoint(const Point &p, const float size, const RGBColor &col,
+			const float transp, const luxrays::UV &uv) {
 		points.push_back(p);
 		sizes.push_back(size);
 		cols.push_back(col);
 		transps.push_back(transp);
+		uvs.push_back(uv);
 	}
 
 	void AdaptiveTessellate(const u_int maxDepth, const float error, vector<float> &values) {
@@ -117,6 +119,22 @@ public:
 			return CatmullRomSpline(transps[count - 3], transps[count - 2], transps[count - 1], transps[count - 1], ct);
 
 		return CatmullRomSpline(transps[segment - 1], transps[segment], transps[segment + 1], transps[segment + 2], ct);
+	}
+
+	luxrays::UV EvaluateUV(const float t) {
+		int count = (int)uvs.size();
+		int segment = Floor2Int((count - 1) * t);
+		segment = max(segment, 0);
+		segment = min(segment, count - 2);
+
+		const float ct = t * (count - 1) - segment;
+
+		if (segment == 0)
+			return CatmullRomSpline(uvs[0], uvs[0], uvs[1], uvs[2], ct);
+		if (segment == count - 2)
+			return CatmullRomSpline(uvs[count - 3], uvs[count - 2], uvs[count - 1], uvs[count - 1], ct);
+
+		return CatmullRomSpline(uvs[segment - 1], uvs[segment], uvs[segment + 1], uvs[segment + 2], ct);
 	}
 
 private:
@@ -218,10 +236,17 @@ private:
 				Clamp(CatmullRomSpline(a.c[2], b.c[2], c.c[2], d.c[2], t), 0.f, 1.f));
 	}
 
+	luxrays::UV CatmullRomSpline(const luxrays::UV a, const luxrays::UV b, const luxrays::UV c, const luxrays::UV d, const float t) {
+		return luxrays::UV(
+				Clamp(CatmullRomSpline(a.u, b.u, c.u, d.u, t), 0.f, 1.f),
+				Clamp(CatmullRomSpline(a.v, b.v, c.v, d.v, t), 0.f, 1.f));
+	}
+
 	vector<Point> points;
 	vector<float> sizes;
 	vector<RGBColor> cols;
 	vector<float> transps;
+	vector<luxrays::UV> uvs;
 };
 
 //------------------------------------------------------------------------------
@@ -276,7 +301,7 @@ BBox HairFile::ObjectBound() const {
 
 void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
@@ -334,11 +359,10 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		meshVerts.push_back(p1);
 		meshNorms.push_back(Normal());
 
-		const float v = i / (float)hairPoints.size();
-		meshUVs.push_back(1.f);
-		meshUVs.push_back(v);
-		meshUVs.push_back(-1.f);
-		meshUVs.push_back(v);
+		meshUVs.push_back(hairUVs[i].u);
+		meshUVs.push_back(hairUVs[i].v);
+		meshUVs.push_back(hairUVs[i].u);
+		meshUVs.push_back(hairUVs[i].v);
 
 		meshCols.push_back(hairCols[i].c[0]);
 		meshCols.push_back(hairCols[i].c[1]);
@@ -384,14 +408,15 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 
 void HairFile::TessellateAdaptive(const bool solid, const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
 	// Interpolate the hair segments
 	CatmullRomCurve curve;
 	for (int i = 0; i < (int)hairPoints.size(); ++i)
-		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i], hairTransps[i]);
+		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i],
+				hairTransps[i], hairUVs[i]);
 
 	// Tessellate the curve
 	vector<float> values;
@@ -402,24 +427,26 @@ void HairFile::TessellateAdaptive(const bool solid, const vector<Point> &hairPoi
 	vector<float> tesselSizes;
 	vector<RGBColor> tesselCols;
 	vector<float> tesselTransps;
+	vector<luxrays::UV> tesselUVs;
 	for (u_int i = 0; i < values.size(); ++i) {
 		tesselPoints.push_back(curve.EvaluatePoint(values[i]));
 		tesselSizes.push_back(curve.EvaluateSize(values[i]));
 		tesselCols.push_back(curve.EvaluateColor(values[i]));
 		tesselTransps.push_back(curve.EvaluateTransparency(values[i]));
+		tesselUVs.push_back(curve.EvaluateUV(values[i]));
 	}
 
 	if (solid)
-		TessellateSolid(tesselPoints, tesselSizes, tesselCols, tesselTransps,
+		TessellateSolid(tesselPoints, tesselSizes, tesselCols, tesselUVs, tesselTransps,
 			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 	else
-		TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselTransps,
+		TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselUVs, tesselTransps,
 			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 }
 
 void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
@@ -478,8 +505,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 			
 			meshVerts.push_back(p);
 			meshNorms.push_back(Normal());
-			meshUVs.push_back(j / (float)solidSideCount);
-			meshUVs.push_back(i / (float)hairPoints.size());
+			meshUVs.push_back(hairUVs[i].u);
+			meshUVs.push_back(hairUVs[i].v);
 			meshCols.push_back(hairCols[i].c[0]);
 			meshCols.push_back(hairCols[i].c[1]);
 			meshCols.push_back(hairCols[i].c[2]);
@@ -529,8 +556,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		for (u_int j = 0; j < solidSideCount; ++j) {
 			meshVerts.push_back(meshVerts[offset - solidSideCount + j]);
 			meshNorms.push_back(n);
-			meshUVs.push_back(j / (float)solidSideCount);
-			meshUVs.push_back(1.f);
+			meshUVs.push_back(hairUVs.back().u);
+			meshUVs.push_back(hairUVs.back().v);
 			meshCols.push_back(hairCols.back().c[0]);
 			meshCols.push_back(hairCols.back().c[1]);
 			meshCols.push_back(hairCols.back().c[2]);
@@ -540,8 +567,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		// Add the fan center
 		meshVerts.push_back(hairPoints.back());
 		meshNorms.push_back(n);
-		meshUVs.push_back(0.f);
-		meshUVs.push_back(1.f);
+		meshUVs.push_back(hairUVs.back().u);
+		meshUVs.push_back(hairUVs.back().v);
 		meshCols.push_back(hairCols.back().c[0]);
 		meshCols.push_back(hairCols.back().c[1]);
 		meshCols.push_back(hairCols.back().c[2]);
@@ -566,8 +593,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		for (u_int j = 0; j < solidSideCount; ++j) {
 			meshVerts.push_back(meshVerts[baseOffset + j]);
 			meshNorms.push_back(n);
-			meshUVs.push_back(j / (float)solidSideCount);
-			meshUVs.push_back(0.f);
+			meshUVs.push_back(hairUVs[0].u);
+			meshUVs.push_back(hairUVs[0].v);
 			meshCols.push_back(hairCols[0].c[0]);
 			meshCols.push_back(hairCols[0].c[1]);
 			meshCols.push_back(hairCols[0].c[2]);
@@ -577,8 +604,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		// Add the fan center
 		meshVerts.push_back(hairPoints[0]);
 		meshNorms.push_back(n);
-		meshUVs.push_back(0.f);
-		meshUVs.push_back(1.f);
+		meshUVs.push_back(hairUVs[0].u);
+		meshUVs.push_back(hairUVs[0].v);
 		meshCols.push_back(hairCols[0].c[0]);
 		meshCols.push_back(hairCols[0].c[1]);
 		meshCols.push_back(hairCols[0].c[2]);
@@ -616,6 +643,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const u_short *segments = hairFile->GetSegmentsArray();
 	const float *colors = hairFile->GetColorsArray();
 	const float *transparency = hairFile->GetTransparencyArray();
+	const float *uvs = hairFile->GetUVsArray();
 
 	if (segments || (header.d_segments > 0)) {
 		u_int pointIndex = 0;
@@ -624,6 +652,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		vector<float> hairSizes;
 		vector<RGBColor> hairCols;
 		vector<float> hairTransps;
+		vector<luxrays::UV> hairUVs;
 
 		vector<Point> meshVerts;
 		vector<Normal> meshNorms;
@@ -642,41 +671,46 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			hairSizes.clear();
 			hairCols.clear();
 			hairTransps.clear();
+			hairUVs.clear();
 			for (int j = 0; j <= segmentSize; ++j) {
-				hairPoints.push_back(Point(points[pointIndex], points[pointIndex + 1], points[pointIndex + 2]));
+				hairPoints.push_back(Point(points[pointIndex * 3], points[pointIndex * 3 + 1], points[pointIndex * 3 + 2]));
 				hairSizes.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
 				if (colors)
-					hairCols.push_back(RGBColor(colors[pointIndex], colors[pointIndex + 1], colors[pointIndex + 2]));
+					hairCols.push_back(RGBColor(colors[pointIndex * 3], colors[pointIndex * 3 + 1], colors[pointIndex * 3 + 2]));
 				else
 					hairCols.push_back(RGBColor(header.d_color[0], header.d_color[1], header.d_color[2]));
 				if (transparency)
 					hairTransps.push_back(1.f - transparency[pointIndex]);
 				else
 					hairTransps.push_back(1.f - header.d_transparency);
+				if (uvs)
+					hairUVs.push_back(luxrays::UV(uvs[pointIndex * 2], uvs[pointIndex * 2 + 1]));
+				else
+					hairUVs.push_back(luxrays::UV(header.d_uv[0], header.d_uv[1]));
 
-				pointIndex += 3;
+				++pointIndex;
 			}
 
 			switch (tesselType) {
 				case TESSEL_RIBBON:
-					TessellateRibbon(hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateRibbon(hairPoints, hairSizes, hairCols, hairUVs,
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;
 				case TESSEL_RIBBON_ADAPTIVE:
-					TessellateAdaptive(false, hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateAdaptive(false, hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;
 				case TESSEL_SOLID:
-					TessellateSolid(hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateSolid(hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;					
 				case TESSEL_SOLID_ADAPTIVE:
-					TessellateAdaptive(true, hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateAdaptive(true, hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;
 				default:
 					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
@@ -686,7 +720,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		// Normalize normals
 		for (u_int i = 0; i < meshNorms.size(); ++i)
 			meshNorms[i] = Normalize(meshNorms[i]);
-		
+
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Strands mesh: " << meshTris.size() / 3 << " triangles";
 
 		// Create the mesh Shape
