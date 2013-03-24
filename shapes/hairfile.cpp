@@ -153,7 +153,7 @@ private:
 		const Vector v = p1 - p0;
 
 		// Check if the vectors are nearly parallel
-		if (AbsDot(Normalize(vmid), Normalize(v)) < 1.f - 0.05f) {
+		if (AbsDot(Normalize(vmid), Normalize(v)) < 1.f - .05f) {
 			// Tessellate left side too
 			const bool leftSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
 			const bool rightSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, tmid, t1);
@@ -331,9 +331,9 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 			else
 				up = Vector(1.f, 0.f, 0.f);
 
-			if (AbsDot(dir, up) > 1.f - 0.05f) {
+			if (AbsDot(dir, up) > 1.f - .05f) {
 				up = Vector(0.f, 1.f, 0.f);
-				if (AbsDot(dir, up) > 1.f - 0.05f)
+				if (AbsDot(dir, up) > 1.f - .05f)
 					up = Vector(0.f, 0.f, 1.f);
 			}
 
@@ -471,7 +471,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 			// frame
 
 			Vector up(0.f, 0.f, 1.f);
-			if (AbsDot(dir, up) > 1.f - 0.05f)
+			if (AbsDot(dir, up) > 1.f - .05f)
 				up = Vector(1.f, 0.f, 0.f);
 
 			const Transform dirTrans = LookAt(hairPoints[0], hairPoints[1], up);
@@ -685,8 +685,8 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 					hairTransps.push_back(1.f - header.d_transparency);
 				if (uvs)
 					hairUVs.push_back(luxrays::UV(uvs[pointIndex * 2], uvs[pointIndex * 2 + 1]));
-				else
-					hairUVs.push_back(luxrays::UV(header.d_uv[0], header.d_uv[1]));
+				else 
+					hairUVs.push_back(luxrays::UV(0.f, i / (float)segmentSize));
 
 				++pointIndex;
 			}

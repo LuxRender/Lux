@@ -46,7 +46,7 @@
 /// Hair file header
 struct cyHairFileHeader
 {
-	char			signature[4];	///< This should be "HIR2" (not "HAIR" because of the extension for UV coordinates)
+	char			signature[4];	///< This should be "HAIR"
 	unsigned int	hair_count;		///< number of hair strands
 	unsigned int	point_count;	///< total number of points of all strands
 	unsigned int	arrays;			///< bit array of data in the file
@@ -55,7 +55,6 @@ struct cyHairFileHeader
 	float			d_thickness;	///< default thickness of hair strands
 	float			d_transparency;	///< default transparency of hair strands
 	float			d_color[3];		///< default color of hair strands
-	float			d_uv[2];		///< default uv of hair strands
 
 	char			info[CY_HAIR_FILE_INFO_SIZE];	///< information about the file
 };
@@ -118,8 +117,6 @@ public:
 		header.d_color[0] = 1.0f;
 		header.d_color[1] = 1.0f;
 		header.d_color[2] = 1.0f;
-		header.d_uv[0] = 0.0f;
-		header.d_uv[1] = 0.0f;
 		memset( header.info, '\0', CY_HAIR_FILE_INFO_SIZE );
 	}
 
@@ -191,10 +188,6 @@ public:
 	/// Sets default hair color, which is used if color array does not exist.
 	void SetDefaultColor( float r, float g, float b ) { header.d_color[0]=r; header.d_color[1]=g; header.d_color[2]=b; }
 
-	/// Sets default hair uv, which is used if uv array does not exist.
-	void SetDefaultUV( float u, float v ) { header.d_uv[0]=u; header.d_uv[1]=v; }
-
-
 	//////////////////////////////////////////////////////////////////////////
 	///@name Load and Save Methods
 
@@ -217,7 +210,7 @@ public:
 		if ( headread < 1 ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_CANT_READ_HEADER);
 
 		// Check if this is a hair file
-		if ( strncmp( header.signature, "HIR2", 4) != 0 ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_WRONG_SIGNATURE);
+		if ( strncmp( header.signature, "HAIR", 4) != 0 ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_WRONG_SIGNATURE);
 
 		// Read segments array
 		if ( header.arrays & CY_HAIR_FILE_SEGMENTS_BIT ) {
