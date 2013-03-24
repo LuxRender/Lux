@@ -686,7 +686,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 				if (uvs)
 					hairUVs.push_back(luxrays::UV(uvs[pointIndex * 2], uvs[pointIndex * 2 + 1]));
 				else 
-					hairUVs.push_back(luxrays::UV(0.f, i / (float)segmentSize));
+					hairUVs.push_back(luxrays::UV(0.f, j / (float)segmentSize));
 
 				++pointIndex;
 			}
