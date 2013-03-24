@@ -317,7 +317,7 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
 		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this);
-	dgShading->iData = dg.iData;	
+	dgShading->iData = dg.iData;
 }
 
 void MeshBaryTriangle::GetShadingInformation(const DifferentialGeometry &dgShading,
