@@ -1358,17 +1358,6 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 	prim->ExtTessellate(&meshList, &scene->tessellatedPrimitives);
 
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
-		if (!(*mesh)->HasNormals()) {
-			// SLG requires shading normals
-			Normal *normals = (*mesh)->ComputeNormals();
-
-			if (normals) {
-				// I have to keep track of memory allocated for normals so, later, it
-				// can be deleted
-				alloctedMeshNormals.push_back(normals);
-			}
-		}
-
 		const string meshName = "Mesh-" + ToString(*mesh);
 		slgScene->DefineObject(meshName, *mesh);
 	}
@@ -2048,10 +2037,6 @@ void SLGRenderer::Render(Scene *s) {
 	previousLightBufferRadiance = NULL;
 	delete previousLightWeight;
 	previousLightWeight = NULL;
-
-	// Free allocated normals
-	for (u_int i = 0; i < alloctedMeshNormals.size(); ++i)
-		delete[] alloctedMeshNormals[i];
 
 	SLG_LOG("Done.");
 
