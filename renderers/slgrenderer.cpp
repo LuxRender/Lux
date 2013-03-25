@@ -50,6 +50,7 @@
 #include "samplers/metrosampler.h"
 #include "samplers/random.h"
 #include "samplers/lowdiscrepancy.h"
+#include "samplers/sobol.h"
 
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
@@ -1618,7 +1619,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 				"sampler.maxconsecutivereject = " + ToString(maxRejects) + "\n"
 				"sampler.largesteprate = " + ToString(pLarge) + "\n"
 				"sampler.imagemutationrate = " + ToString(range) + "\n";
-	} else if (dynamic_cast<LDSampler *>(scene->sampler)) {
+	} else if (dynamic_cast<LDSampler *>(scene->sampler) || dynamic_cast<SobolSampler *>(scene->sampler)) {
 		ss << "sampler.type = SOBOL\n";
 	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
 		ss << "sampler.type = RANDOM\n";
