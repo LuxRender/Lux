@@ -299,8 +299,16 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
 
+	// Initialize the thread's rangen
+	u_long seed = scene.seedBase + myThread->n;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+
+	RandomGenerator rng(seed);
+
 	Sampler *sampler = scene.sampler;
 	Sample sample;
+	// Some sampler may have to use the RandomNumber generator in InitSample()
+	sample.rng = &rng;
 	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
@@ -312,16 +320,8 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
 	sample.contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
-
-	// initialize the thread's rangen
-	u_long seed = scene.seedBase + myThread->n;
-	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
-
-	RandomGenerator rng(seed);
 	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
-
-	sample.rng = &rng;
 
 	// Trace rays: The main loop
 	while (true) {
