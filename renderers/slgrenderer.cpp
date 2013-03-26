@@ -1557,6 +1557,13 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			;
 
 	//--------------------------------------------------------------------------
+	// Epsilon related settings
+	//--------------------------------------------------------------------------
+
+	ss << "scene.epsilon.min = " << ToString(MachineEpsilon::GetMin()) << "\n"
+			"scene.epsilon.max = " << ToString(MachineEpsilon::GetMax()) << "\n";
+
+	//--------------------------------------------------------------------------
 	// Surface integrator related settings
 	//--------------------------------------------------------------------------
 
