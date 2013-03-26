@@ -20,7 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// constant.cpp*
+#include <limits>
+
 #include "hitpointcolor.h"
 #include "dynload.h"
 
@@ -38,7 +39,10 @@ Texture<SWCSpectrum> *HitPointRGBColorTexture::CreateSWCSpectrumTexture(const Tr
 
 Texture<float> *HitPointGreyTexture::CreateFloatTexture(const Transform &tex2world,
 		const ParamSet &tp) {
-	return new HitPointGreyTexture();
+	int channel = tp.FindOneInt("channel", -1);
+
+	return new HitPointGreyTexture(((channel != 0) && (channel != 1) && (channel != 2)) ?
+		std::numeric_limits<u_int>::max() : static_cast<u_int>(channel));
 }
 
 static DynamicLoader::RegisterFloatTexture<HitPointAlphaTexture> r1("hitpointalpha");

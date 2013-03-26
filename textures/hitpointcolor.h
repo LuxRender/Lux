@@ -82,8 +82,8 @@ public:
 
 class HitPointGreyTexture : public Texture<float> {
 public:
-	HitPointGreyTexture() :
-		Texture("HitPointGreyTexture-" + boost::lexical_cast<string>(this)) { }
+	HitPointGreyTexture(const u_int ch) :
+		Texture("HitPointGreyTexture-" + boost::lexical_cast<string>(this)), channel(ch) { }
 	virtual ~HitPointGreyTexture() { }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgs) const {
@@ -91,7 +91,7 @@ public:
 		float alpha;
 		dgs.handle->GetShadingInformation(dgs, &color, &alpha);
 
-		return color.Y();
+		return (channel > 2) ? color.Y() : color.c[channel];
 	}
 
 	// The following methods don't make very much sense in this case. I have no
@@ -102,7 +102,12 @@ public:
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 
+	u_int GetChannel() const { return channel; }
+
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	u_int channel;
 };
 
 }//namespace lux
