@@ -28,6 +28,8 @@
 #include "error.h"
 #include "queryable.h"
 
+#include <boost/thread.hpp>
+
 namespace lux
 {
 
@@ -53,6 +55,7 @@ public:
 private:
 	std::map<std::string, Queryable*> queryableObjects;
 	std::string XMLOptionsString;
+	mutable boost::mutex classWideMutex;
 };
 
 }//namespace lux

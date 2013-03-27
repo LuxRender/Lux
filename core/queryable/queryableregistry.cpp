@@ -32,6 +32,7 @@ namespace lux
 
 void QueryableRegistry::Insert(Queryable* object)
 {
+	boost::mutex::scoped_lock lock(classWideMutex);
 	std::map<std::string, Queryable*>::iterator it = queryableObjects.find(object->GetName());
 	if (it != queryableObjects.end()) {
 		LOG(LUX_ERROR, LUX_BUG) << "Duplicate registration of Queryable object '" << object->GetName() << "' detected";
@@ -42,6 +43,7 @@ void QueryableRegistry::Insert(Queryable* object)
 
 void QueryableRegistry::Erase(Queryable* object)
 {
+	boost::mutex::scoped_lock lock(classWideMutex);
 	if (!queryableObjects.erase(object->GetName())) {
 		LOG(LUX_ERROR, LUX_BUG) << "Deregistration of non-existing Queryable object '" << object->GetName() << "' detected";
 	}
