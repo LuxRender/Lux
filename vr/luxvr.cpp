@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
 		// Execute LuxConsole in order to translate the scene
 		//----------------------------------------------------------------------
 
-		const string luxconsoleCmd = luxconsole + " " + (commandLineOpts.count("verbose") ? "-V " : "") + "\"" + lxsCopy + "\" 2>&1";
+		const string luxconsoleCmd = luxconsole + " " + (commandLineOpts.count("verbose") ? "-V " : "") + lxsCopy + " 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole command: " << luxconsoleCmd;
 		exec(luxconsoleCmd);
 
@@ -307,7 +307,7 @@ int main(int argc, char **argv) {
 			" -R" // Use LuxVR name
 			" -D renderengine.type RTPATHOCL"
 			" -D sampler.type RANDOM"
-			" -d \"" + slgScene + "\""
+			" -d " + slgScene +
 			" render.cfg 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
 		exec(slgCmd);
