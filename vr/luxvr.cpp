@@ -49,15 +49,14 @@ using namespace lux;
 #endif
 
 static void exec(const string &cmd) {
-	string escapedCmd = cmd;
+	string execCmd = cmd;
 #if defined(WIN32)
-	// I need to escape all " in the string
-	boost::algorithm::replace_all(escapedCmd, "\"", "\\\"");
-	escapedCmd = "\"" + escapedCmd + "\"";
+	// Wrap whole command line in quotes so it becomes one parameter
+	execCmd = "\"" + execCmd + "\"";
 #endif
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Exec: [" << escapedCmd << "]" ;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Exec: [" << execCmd << "]" ;
 
-	FILE *pipe = POPEN(escapedCmd.c_str(), "r");
+	FILE *pipe = POPEN(execCmd.c_str(), "r");
 	if (!pipe)
 		throw runtime_error("Unable to execute command: " + cmd);
 
