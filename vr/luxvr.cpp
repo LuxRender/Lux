@@ -31,6 +31,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "lux.h"
 #include "api.h"
@@ -48,7 +49,15 @@ using namespace lux;
 #endif
 
 static void exec(const string &cmd) {
-	FILE *pipe = POPEN(cmd.c_str(), "r");
+	string escapedCmd = cmd;
+#if defined(WIN32)
+	// I need to escape all " in the string
+	boost::algorithm::replace_all(escapedCmd, "\"", "\\\"");
+	escapedCmd = "\"" + escapedCmd + "\"";
+#endif
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Exec: [" << escapedCmd << "]" ;
+
+	FILE *pipe = POPEN(escapedCmd.c_str(), "r");
 	if (!pipe)
 		throw runtime_error("Unable to execute command: " + cmd);
 
@@ -148,7 +157,7 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(luxconsolePath))
 			throw runtime_error("Unable to find luxconsole executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole path: [" << luxconsolePath << "]";
-		const string luxconsole = "\"" + luxconsolePath.make_preferred().string() + "\"";
+		const string luxconsole = luxconsolePath.make_preferred().string();
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole native path: [" << luxconsole << "]";
 
 		//----------------------------------------------------------------------
@@ -168,7 +177,7 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(slgPath))
 			throw runtime_error("Unable to find slg executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
-		const string slg = "\"" + slgPath.make_preferred().string() + "\"";
+		const string slg = slgPath.make_preferred().string();
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
 
 		//----------------------------------------------------------------------
@@ -289,7 +298,7 @@ int main(int argc, char **argv) {
 		// Execute LuxConsole in order to translate the scene
 		//----------------------------------------------------------------------
 
-		const string luxconsoleCmd = luxconsole + " " + (commandLineOpts.count("verbose") ? "-V " : "") + lxsCopy + " 2>&1";
+		const string luxconsoleCmd = "\"" + luxconsole + "\" " + (commandLineOpts.count("verbose") ? "-V " : "") + "\"" + lxsCopy + "\"" + " 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole command: " << luxconsoleCmd;
 		exec(luxconsoleCmd);
 
@@ -303,11 +312,11 @@ int main(int argc, char **argv) {
 		// Execute SLG GUI
 		//----------------------------------------------------------------------
 
-		const string slgCmd = slg +
+		const string slgCmd = "\"" + slg + "\""
 			" -R" // Use LuxVR name
 			" -D renderengine.type RTPATHOCL"
 			" -D sampler.type RANDOM"
-			" -d " + slgScene +
+			" -d \"" + slgScene + "\""
 			" render.cfg 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
 		exec(slgCmd);
