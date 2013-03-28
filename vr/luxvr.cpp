@@ -96,6 +96,7 @@ int main(int argc, char **argv) {
 			("directory,d", boost::program_options::value<std::string>(), "Current directory path")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("version,v", "Print version string")
+			("convert-only,c", "Convert the scene in SLG format and stop")
 			("help,h", "Display this help and exit");
 
 		boost::program_options::variables_map commandLineOpts;
@@ -311,14 +312,17 @@ int main(int argc, char **argv) {
 		// Execute SLG GUI
 		//----------------------------------------------------------------------
 
-		const string slgCmd = "\"" + slg + "\""
-			" -R" // Use LuxVR name
-			" -D renderengine.type RTPATHOCL"
-			" -D sampler.type RANDOM"
-			" -d \"" + slgScene + "\""
-			" render.cfg 2>&1";
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
-		exec(slgCmd);
+		// Check if I have to execute SLG GUI
+		if (!commandLineOpts.count("convert-only")) {
+			const string slgCmd = "\"" + slg + "\""
+				" -R" // Use LuxVR name
+				" -D renderengine.type RTPATHOCL"
+				" -D sampler.type RANDOM"
+				" -d \"" + slgScene + "\""
+				" render.cfg 2>&1";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
+			exec(slgCmd);
+		}
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Done.";
 	} catch (runtime_error err) {
