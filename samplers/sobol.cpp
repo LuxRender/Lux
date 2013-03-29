@@ -32,7 +32,7 @@
 using namespace lux;
 
 SobolSampler::SobolData::SobolData(const Sampler &sampler, const Sample &sample) :
-		rng0(sample.rng->floatValue()), rng1(sample.rng->floatValue()), pass(0),
+		rng0(sample.rng->floatValue()), rng1(sample.rng->floatValue()), pass(SOBOL_STARTOFFSET),
 		samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0) {
 	nxD = sampler.nxD.size();
 	xD = new float *[nxD];
