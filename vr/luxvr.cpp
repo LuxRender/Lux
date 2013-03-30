@@ -161,26 +161,6 @@ int main(int argc, char **argv) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole native path: [" << luxconsole << "]";
 
 		//----------------------------------------------------------------------
-		// Looks for SLG command
-		//----------------------------------------------------------------------
-
-		boost::filesystem::path slgPath = exePath / "slg4";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg4.exe";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg.exe";
-		// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "../../../SmallluxGPU/slg4";
-		if (!boost::filesystem::exists(slgPath))
-			throw runtime_error("Unable to find slg executable");
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
-		const string slg = slgPath.make_preferred().string();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
-
-		//----------------------------------------------------------------------
 		// Looks for name of the .lxs file
 		//----------------------------------------------------------------------
 
@@ -314,6 +294,26 @@ int main(int argc, char **argv) {
 
 		// Check if I have to execute SLG GUI
 		if (!commandLineOpts.count("convert-only")) {
+			//------------------------------------------------------------------
+			// Looks for SLG command
+			//------------------------------------------------------------------
+
+			boost::filesystem::path slgPath = exePath / "slg4";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg4.exe";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg.exe";
+			// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "../../../SmallluxGPU/slg4";
+			if (!boost::filesystem::exists(slgPath))
+				throw runtime_error("Unable to find slg executable");
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
+			const string slg = slgPath.make_preferred().string();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
+
 			const string slgCmd = "\"" + slg + "\""
 				" -R" // Use LuxVR name
 				" -D renderengine.type RTPATHOCL"
