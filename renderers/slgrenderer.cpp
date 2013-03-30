@@ -1148,33 +1148,57 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		luxrays::Spectrum emission;
-		float emissionY;
-		SPD *spd = NULL;
+
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
 			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-			spd = constRGBTex->GetRGBSPD();
+
+			const SPD *spd = constRGBTex->GetRGBSPD();
+			const float emissionY = constRGBTex->Y();
+			RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				rgb *= gain * gainFactor;
+			else
+				rgb *= gain;
+
+			emissionTexName = ToString(rgb.c[0]) + " " + ToString(rgb.c[1]) + " " + ToString(rgb.c[2]);
 		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
-			BlackBodyTexture *bb = dynamic_cast<BlackBodyTexture *>(tex);
-			spd = bb->GetBlackBodySPD();
+			BlackBodyTexture *bbTex = dynamic_cast<BlackBodyTexture *>(tex);
+
+			const SPD *spd = bbTex->GetBlackBodySPD();
+			const float emissionY = bbTex->Y();
+			RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				rgb *= gain * gainFactor;
+			else
+				rgb *= gain;
+
+			emissionTexName = ToString(rgb.c[0]) + " " + ToString(rgb.c[1]) + " " + ToString(rgb.c[2]);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
-				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
-			emissionY = 0.f;
+			const string texName = GetSLGTexName(slgScene, tex);
+
+			// For generic textures I need to add a scale texture
+			const float emissionY = tex->Y();
+			float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				gainFactor *= gain;
+			else
+				gainFactor = gain;
+
+			emissionTexName = texName + "-emission-scale"; 
+			const string scaleTexProp = "scene.textures." + emissionTexName + ".type = scale\n"
+					"scene.textures." + emissionTexName + ".texture1 = " + ToString(gainFactor) + "\n"
+					"scene.textures." + emissionTexName + ".texture2 = " + texName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << scaleTexProp << "]";
+			slgScene->DefineTextures(scaleTexProp);
 		}
 
-		const RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
-		emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
-		emissionY = spd->Y();
-
-		const float gainFactor = power * efficacy /
-			(area * M_PI * emissionY);
-		if (gainFactor > 0.f && !isinf(gainFactor))
-			emission *= gain * gainFactor;
-		else
-			emission *= gain;
-
-		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
 
 		const Primitive *p = alPrim->GetPrimitive().get();
