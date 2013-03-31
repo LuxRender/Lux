@@ -542,7 +542,11 @@ bool parseFile(const char *filename) {
 		// before parsing
 		include_clear();
 		yyrestart(yyin);
-		parse_success = (yyparse() == 0);
+		try {
+			parse_success = (yyparse() == 0);
+		} catch (std::runtime_error& e) {
+			LOG(LUX_SEVERE, LUX_SYSTEM)  << "Exception during parsing (file '" << currentFile << "', line: " << lineNum << "): " << e.what();
+		}
 		
 		if (yyin != stdin)
 			fclose(yyin);
