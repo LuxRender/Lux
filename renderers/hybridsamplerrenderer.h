@@ -102,15 +102,14 @@ private:
 
 	class RenderThread : public boost::noncopyable {
 	public:
-		RenderThread(u_int index, HybridSamplerRenderer *renderer, luxrays::IntersectionDevice * idev);
+		RenderThread(u_int index, HybridSamplerRenderer *renderer);
 		~RenderThread();
 
 		static void RenderImpl(RenderThread *r);
 
-		u_int  n;
+		u_int n;
 		boost::thread *thread; // keep pointer to delete the thread object
 		HybridSamplerRenderer *renderer;
-		luxrays::IntersectionDevice * iDevice;
 
 		// Rendering statistics
 		fast_mutex statLock;
@@ -126,10 +125,7 @@ private:
 	luxrays::Context *ctx;
 
 	RendererState state;
-	// LuxRays virtual device used to feed all HardwareIntersectionDevice
-	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIM2ODevice;
-	luxrays::VirtualM2MHardwareIntersectionDevice *virtualIM2MDevice;
-	vector<luxrays::IntersectionDevice *> hardwareDevices;
+	luxrays::IntersectionDevice *intersectionDevice;
 
 	u_int rayBufferSize;
 	u_int stateBufferCount;

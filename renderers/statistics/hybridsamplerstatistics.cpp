@@ -198,14 +198,7 @@ double HSRStatistics::getPathEfficiencyWindow() {
 
 // Returns percent of GPU efficiency, zero if no GPUs
 double HSRStatistics::getAverageGpuEfficiency() {
-	double eff = 0.0;
-	u_int gpuCount = getGpuCount();
-
-	if (renderer->virtualIM2ODevice || renderer->virtualIM2MDevice)
-		for (size_t i = 0; i < gpuCount; ++i)
-			eff += renderer->hardwareDevices[i]->GetLoad();
-
-	return (gpuCount == 0) ? 0.0 : (eff / gpuCount) * 100.0;
+	return renderer->intersectionDevice->GetLoad();
 }
 
 double HSRStatistics::getAverageSamplesPerSecond() {
