@@ -31,6 +31,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "lux.h"
 #include "api.h"
@@ -48,7 +49,14 @@ using namespace lux;
 #endif
 
 static void exec(const string &cmd) {
-	FILE *pipe = POPEN(cmd.c_str(), "r");
+	string execCmd = cmd;
+#if defined(WIN32)
+	// Wrap whole command line in quotes so it becomes one parameter
+	execCmd = "\"" + execCmd + "\"";
+#endif
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Exec: [" << execCmd << "]" ;
+
+	FILE *pipe = POPEN(execCmd.c_str(), "r");
 	if (!pipe)
 		throw runtime_error("Unable to execute command: " + cmd);
 
@@ -88,6 +96,7 @@ int main(int argc, char **argv) {
 			("directory,d", boost::program_options::value<std::string>(), "Current directory path")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("version,v", "Print version string")
+			("convert-only,c", "Convert the scene in SLG format and stop")
 			("help,h", "Display this help and exit");
 
 		boost::program_options::variables_map commandLineOpts;
@@ -148,28 +157,8 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(luxconsolePath))
 			throw runtime_error("Unable to find luxconsole executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole path: [" << luxconsolePath << "]";
-		const string luxconsole = "\"" + luxconsolePath.make_preferred().string() + "\"";
+		const string luxconsole = luxconsolePath.make_preferred().string();
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole native path: [" << luxconsole << "]";
-
-		//----------------------------------------------------------------------
-		// Looks for SLG command
-		//----------------------------------------------------------------------
-
-		boost::filesystem::path slgPath = exePath / "slg4";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg4.exe";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg";
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "slg.exe";
-		// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
-		if (!boost::filesystem::exists(slgPath))
-			slgPath = exePath / "../../../SmallluxGPU/slg4";
-		if (!boost::filesystem::exists(slgPath))
-			throw runtime_error("Unable to find slg executable");
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
-		const string slg = "\"" + slgPath.make_preferred().string() + "\"";
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
 
 		//----------------------------------------------------------------------
 		// Looks for name of the .lxs file
@@ -289,7 +278,7 @@ int main(int argc, char **argv) {
 		// Execute LuxConsole in order to translate the scene
 		//----------------------------------------------------------------------
 
-		const string luxconsoleCmd = luxconsole + " " + (commandLineOpts.count("verbose") ? "-V " : "") + lxsCopy + " 2>&1";
+		const string luxconsoleCmd = "\"" + luxconsole + "\" " + (commandLineOpts.count("verbose") ? "-V " : "") + "\"" + lxsCopy + "\"" + " 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole command: " << luxconsoleCmd;
 		exec(luxconsoleCmd);
 
@@ -303,14 +292,37 @@ int main(int argc, char **argv) {
 		// Execute SLG GUI
 		//----------------------------------------------------------------------
 
-		const string slgCmd = slg +
-			" -R" // Use LuxVR name
-			" -D renderengine.type RTPATHOCL"
-			" -D sampler.type RANDOM"
-			" -d " + slgScene +
-			" render.cfg 2>&1";
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
-		exec(slgCmd);
+		// Check if I have to execute SLG GUI
+		if (!commandLineOpts.count("convert-only")) {
+			//------------------------------------------------------------------
+			// Looks for SLG command
+			//------------------------------------------------------------------
+
+			boost::filesystem::path slgPath = exePath / "slg4";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg4.exe";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg";
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "slg.exe";
+			// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
+			if (!boost::filesystem::exists(slgPath))
+				slgPath = exePath / "../../../SmallluxGPU/slg4";
+			if (!boost::filesystem::exists(slgPath))
+				throw runtime_error("Unable to find slg executable");
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
+			const string slg = slgPath.make_preferred().string();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
+
+			const string slgCmd = "\"" + slg + "\""
+				" -R" // Use LuxVR name
+				" -D renderengine.type RTPATHOCL"
+				" -D sampler.type RANDOM"
+				" -d \"" + slgScene + "\""
+				" render.cfg 2>&1";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
+			exec(slgCmd);
+		}
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Done.";
 	} catch (runtime_error err) {

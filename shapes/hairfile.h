@@ -25,19 +25,23 @@
 #include "./cyhair/cyHairFile.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/geometry/uv.h"
 
 namespace lux
 {
 
 class HairFile : public Shape {
 public:
-	enum TessellationType { TESSEL_RIBBON, TESSEL_RIBBON_ADAPTIVE, TESSEL_SOLID };
+	enum TessellationType {
+		TESSEL_RIBBON, TESSEL_RIBBON_ADAPTIVE,
+		TESSEL_SOLID, TESSEL_SOLID_ADAPTIVE
+	};
 
 	HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
 			const string &accelType, const TessellationType tesselType,
-			const u_int ribbonAdaptiveMaxDepth, const float ribbonAdaptiveError, 
-			const u_int solidSideCount, const bool solidCap,
-			boost::shared_ptr<cyHairFile> &hairFile);
+			const u_int adaptiveMaxDepth, const float adaptiveError, 
+			const u_int solidSideCount, const bool solidCapBottom, const bool solidCapTop,
+			const float colorGamma, boost::shared_ptr<cyHairFile> &hairFile);
 	virtual ~HairFile();
 
 	virtual BBox ObjectBound() const;
@@ -57,19 +61,19 @@ public:
 protected:
 	void TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
-	void TessellateRibbonAdaptive(const vector<Point> &hairPoints,
+	void TessellateAdaptive(const bool solid, const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
 	void TessellateSolid(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const;
@@ -78,12 +82,13 @@ protected:
 	Point cameraPosition;
 	string accelType;
 	TessellationType tesselType;
+	float colorGamma;
 
 	// Tessellation options
-	u_int ribbonAdaptiveMaxDepth;
-	float ribbonAdaptiveError;
+	u_int adaptiveMaxDepth;
+	float adaptiveError;
 	u_int solidSideCount;
-	bool solidCap;
+	bool solidCapBottom, solidCapTop;
 
 	boost::shared_ptr<cyHairFile> hairFile;
 

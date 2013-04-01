@@ -50,6 +50,7 @@
 #include "samplers/metrosampler.h"
 #include "samplers/random.h"
 #include "samplers/lowdiscrepancy.h"
+#include "samplers/sobol.h"
 
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
@@ -90,6 +91,7 @@
 #include "textures/wrinkled.h"
 #include "textures/uv.h"
 #include "textures/band.h"
+#include "textures/hitpointcolor.h"
 
 #include "volumes/clearvolume.h"
 #include "film/fleximage.h"
@@ -119,7 +121,7 @@ static string ToString(float v) {
 //------------------------------------------------------------------------------
 
 SLGHostDescription::SLGHostDescription(SLGRenderer *r, const string &n) : renderer(r), name(n) {
-	SLGDeviceDescription *desc = new SLGDeviceDescription(this, "Test");
+	SLGDeviceDescription *desc = new SLGDeviceDescription(this, "SLG");
 	devs.push_back(desc);
 }
 
@@ -653,9 +655,23 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 							val + " " + val + " " + "\n";
 				}
 			}
+		} else if (dynamic_cast<const HitPointRGBColorTexture *>(tex)) {
+			texProp = "scene.textures." + texName + ".type = hitpointcolor\n";
+		} else if (dynamic_cast<const HitPointAlphaTexture *>(tex)) {
+			texProp = "scene.textures." + texName + ".type = hitpointalpha\n";
+		} else if (dynamic_cast<const HitPointGreyTexture *>(tex)) {
+			const HitPointGreyTexture *hpTex = dynamic_cast<const HitPointGreyTexture *>(tex);
+
+			const int channel = hpTex->GetChannel();
+			texProp = "scene.textures." + texName + ".type = hitpointgrey\n"
+					"scene.textures." + texName + ".channel = " + ToString(((channel != 0) && (channel != 1) && (channel != 2)) ?
+						-1 : channel) + "\n";
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture and BandTexture (i.e. not " <<
-					ToClassName(tex) << ").";
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
+					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
+					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
+					"HitPointAlphaTexture and HitPointGreyTexture"
+					"(i.e. not " << ToClassName(tex) << ").";
 
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = 0.7\n";
@@ -783,8 +799,8 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
 		matName = glass2->GetName();
 
-		slg::Spectrum krRGB(1.f);
-		slg::Spectrum ktRGB(1.f);
+		luxrays::Spectrum krRGB(1.f);
+		luxrays::Spectrum ktRGB(1.f);
 		float index = 1.41f;
 
 		const Volume *intVol = prim->GetInterior();
@@ -1132,33 +1148,57 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		slg::Spectrum emission;
-		float emissionY;
-		SPD *spd = NULL;
+
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
 			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-			spd = constRGBTex->GetRGBSPD();
+
+			const SPD *spd = constRGBTex->GetRGBSPD();
+			const float emissionY = constRGBTex->Y();
+			RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				rgb *= gain * gainFactor;
+			else
+				rgb *= gain;
+
+			emissionTexName = ToString(rgb.c[0]) + " " + ToString(rgb.c[1]) + " " + ToString(rgb.c[2]);
 		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
-			BlackBodyTexture *bb = dynamic_cast<BlackBodyTexture *>(tex);
-			spd = bb->GetBlackBodySPD();
+			BlackBodyTexture *bbTex = dynamic_cast<BlackBodyTexture *>(tex);
+
+			const SPD *spd = bbTex->GetBlackBodySPD();
+			const float emissionY = bbTex->Y();
+			RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				rgb *= gain * gainFactor;
+			else
+				rgb *= gain;
+
+			emissionTexName = ToString(rgb.c[0]) + " " + ToString(rgb.c[1]) + " " + ToString(rgb.c[2]);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
-				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
-			emissionY = 0.f;
+			const string texName = GetSLGTexName(slgScene, tex);
+
+			// For generic textures I need to add a scale texture
+			const float emissionY = tex->Y();
+			float gainFactor = power * efficacy /
+				(area * M_PI * emissionY);
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				gainFactor *= gain;
+			else
+				gainFactor = gain;
+
+			emissionTexName = texName + "-emission-scale"; 
+			const string scaleTexProp = "scene.textures." + emissionTexName + ".type = scale\n"
+					"scene.textures." + emissionTexName + ".texture1 = " + ToString(gainFactor) + "\n"
+					"scene.textures." + emissionTexName + ".texture2 = " + texName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << scaleTexProp << "]";
+			slgScene->DefineTextures(scaleTexProp);
 		}
 
-		const RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
-		emission = slg::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
-		emissionY = spd->Y();
-
-		const float gainFactor = power * efficacy /
-			(area * M_PI * emissionY);
-		if (gainFactor > 0.f && !isinf(gainFactor))
-			emission *= gain * gainFactor;
-		else
-			emission *= gain;
-
-		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
 
 		const Primitive *p = alPrim->GetPrimitive().get();
@@ -1348,17 +1388,6 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 	prim->ExtTessellate(&meshList, &scene->tessellatedPrimitives);
 
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
-		if (!(*mesh)->HasNormals()) {
-			// SLG requires shading normals
-			Normal *normals = (*mesh)->ComputeNormals();
-
-			if (normals) {
-				// I have to keep track of memory allocated for normals so, later, it
-				// can be deleted
-				alloctedMeshNormals.push_back(normals);
-			}
-		}
-
 		const string meshName = "Mesh-" + ToString(*mesh);
 		slgScene->DefineObject(meshName, *mesh);
 	}
@@ -1557,6 +1586,13 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			;
 
 	//--------------------------------------------------------------------------
+	// Epsilon related settings
+	//--------------------------------------------------------------------------
+
+	ss << "scene.epsilon.min = " << ToString(MachineEpsilon::GetMin()) << "\n"
+			"scene.epsilon.max = " << ToString(MachineEpsilon::GetMax()) << "\n";
+
+	//--------------------------------------------------------------------------
 	// Surface integrator related settings
 	//--------------------------------------------------------------------------
 
@@ -1619,7 +1655,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 				"sampler.maxconsecutivereject = " + ToString(maxRejects) + "\n"
 				"sampler.largesteprate = " + ToString(pLarge) + "\n"
 				"sampler.imagemutationrate = " + ToString(range) + "\n";
-	} else if (dynamic_cast<LDSampler *>(scene->sampler)) {
+	} else if (dynamic_cast<LDSampler *>(scene->sampler) || dynamic_cast<SobolSampler *>(scene->sampler)) {
 		ss << "sampler.type = SOBOL\n";
 	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
 		ss << "sampler.type = RANDOM\n";
@@ -1735,7 +1771,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					slg::PER_PIXEL_NORMALIZED, pixelX, pixelY);
 
-				slg::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
 
 				(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1768,7 +1804,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					slg::PER_SCREEN_NORMALIZED, pixelX, pixelY);
 
-				slg::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousLightWeight)(pixelX, pixelY);
 
 				(*previousLightBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1924,7 +1960,7 @@ void SLGRenderer::Render(Scene *s) {
 			const u_int slgFilmHeight = session->film->GetHeight();
 
 			if (session->film->HasPerPixelNormalizedBuffer()) {
-				previousEyeBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
@@ -1937,7 +1973,7 @@ void SLGRenderer::Render(Scene *s) {
 			}
 
 			if (session->film->HasPerScreenNormalizedBuffer()) {
-				previousLightBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
 				for (u_int y = 0; y < slgFilmHeight; ++y) {
@@ -2038,10 +2074,6 @@ void SLGRenderer::Render(Scene *s) {
 	previousLightBufferRadiance = NULL;
 	delete previousLightWeight;
 	previousLightWeight = NULL;
-
-	// Free allocated normals
-	for (u_int i = 0; i < alloctedMeshNormals.size(); ++i)
-		delete[] alloctedMeshNormals[i];
 
 	SLG_LOG("Done.");
 

@@ -80,5 +80,35 @@ public:
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
+class HitPointGreyTexture : public Texture<float> {
+public:
+	HitPointGreyTexture(const u_int ch) :
+		Texture("HitPointGreyTexture-" + boost::lexical_cast<string>(this)), channel(ch) { }
+	virtual ~HitPointGreyTexture() { }
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dgs) const {
+		RGBColor color;
+		float alpha;
+		dgs.handle->GetShadingInformation(dgs, &color, &alpha);
+
+		return (channel > 2) ? color.Y() : color.c[channel];
+	}
+
+	// The following methods don't make very much sense in this case. I have no
+	// information about the color that will be delivered by DifferentialGeometry.
+	virtual float Y() const { return 1.f; }
+	virtual float Filter() const { return 1.f; }
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
+
+	u_int GetChannel() const { return channel; }
+
+	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	u_int channel;
+};
+
 }//namespace lux
 

@@ -965,11 +965,12 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	BidirIntegrator *bidir = (BidirIntegrator *)scene.surfaceIntegrator;
 
+	// Some sampler may have to use the RandomNumber generator in InitSample()
+	sample.rng = rng;
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
-	sample.rng = rng;
 
 	eyePath = new BidirStateVertex[bidir->maxEyeDepth];
 	eyePathLength = 0;

@@ -523,13 +523,16 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
 
+	const float colorGamma = params.FindOneFloat("gamma", 1.f);
+
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, shpType, proj_text, cam, Mesh::ACCEL_AUTO,
-			      plyNbVerts, p, n, uv, cols, alphas, wuv, Mesh::TRI_AUTO, plyNbTris, triVerts,
-			      Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
-			      nsubdivlevels, displacementMap, displacementMapScale,
-			      displacementMapOffset, displacementMapNormalSmooth,
-			      displacementMapSharpBoundary, normalSplit, genTangents);
+		plyNbVerts, p, n, uv, cols, alphas, wuv,  colorGamma, 
+		Mesh::TRI_AUTO, plyNbTris, triVerts,
+		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
+		nsubdivlevels, displacementMap, displacementMapScale,
+		displacementMapOffset, displacementMapNormalSmooth,
+		displacementMapSharpBoundary, normalSplit, genTangents);
 	delete[] p;
 	delete[] n;
 	delete[] uv;

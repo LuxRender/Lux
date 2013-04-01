@@ -238,6 +238,7 @@ private:
 			currentInstanceRefined = NULL;
 			currentInstanceSource = NULL;
 			currentLightInstance = NULL;
+			currentAreaLightInstance = NULL;
 			debugMode = false;
 			randomMode = true;
 		}
@@ -269,12 +270,14 @@ private:
 		// Refined primitives
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instancesRefined;
 		mutable map<string, vector<boost::shared_ptr<Light> > > lightInstances;
+		mutable map<string, vector<boost::shared_ptr<AreaLightPrimitive> > > areaLightInstances;
 		mutable vector<string> lightGroups;
 		// Refined primitives
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceSource;
 		// Unrefined primitives
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceRefined;
 		mutable vector<boost::shared_ptr<Light> > *currentLightInstance;
+		mutable vector<boost::shared_ptr<AreaLightPrimitive> > *currentAreaLightInstance;
 		bool gotSearchPath;
 		bool debugMode;
 		bool randomMode;

@@ -255,11 +255,12 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	SetState(TO_INIT);
 
+	// Some sampler may have to use the RandomNumber generator in InitSample()
+	sample.rng = rng;
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
-	sample.rng = rng;
 
 	const u_int lightGroupCount = scene.lightGroups.size();
 	L = new SWCSpectrum[lightGroupCount];

@@ -26,6 +26,7 @@
 #define CY_HAIR_FILE_THICKNESS_BIT		4
 #define CY_HAIR_FILE_TRANSPARENCY_BIT	8
 #define CY_HAIR_FILE_COLORS_BIT			16
+#define CY_HAIR_FILE_UVS_BIT			32
 
 #define CY_HAIR_FILE_INFO_SIZE			88
 
@@ -38,6 +39,7 @@
 #define	CY_HAIR_FILE_ERROR_READING_THICKNESS		-6
 #define	CY_HAIR_FILE_ERROR_READING_TRANSPARENCY		-7
 #define	CY_HAIR_FILE_ERROR_READING_COLORS			-8
+#define	CY_HAIR_FILE_ERROR_READING_UVS				-9
 
 //-------------------------------------------------------------------------------
 
@@ -63,7 +65,7 @@ struct cyHairFileHeader
 class cyHairFile
 {
 public:
-	cyHairFile() : segments(NULL), points(NULL), thickness(NULL), transparency(NULL), colors(NULL) { Initialize(); }
+	cyHairFile() : segments(NULL), points(NULL), thickness(NULL), transparency(NULL), colors(NULL), uvs(NULL) { Initialize(); }
 	~cyHairFile() { Initialize(); }
 
 
@@ -76,6 +78,7 @@ public:
 	const float* GetThicknessArray() const { return thickness; }		///< Returns thickness array (thickness at each hair point}.
 	const float* GetTransparencyArray() const { return transparency; }	///< Returns transparency array (transparency at each hair point).
 	const float* GetColorsArray() const { return colors; }				///< Returns colors array (rgb color at each hair point).
+	const float* GetUVsArray() const { return uvs; }					///< Returns uvs array (uv at each hair point).
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -86,6 +89,7 @@ public:
 	float* GetThicknessArray() { return thickness; }		///< Returns thickness array (thickness at each hair point}.
 	float* GetTransparencyArray() { return transparency; }	///< Returns transparency array (transparency at each hair point).
 	float* GetColorsArray() { return colors; }				///< Returns colors array (rgb color at each hair point).
+	float* GetUVsArray() { return uvs; }					///< Returns uvs array (uv at each hair point).
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -99,6 +103,7 @@ public:
 		if ( colors ) delete [] colors;
 		if ( thickness ) delete [] thickness;
 		if ( transparency ) delete [] transparency;
+		if ( uvs ) delete [] uvs;
 		header.signature[0] = 'H';
 		header.signature[1] = 'A';
 		header.signature[2] = 'I';
@@ -145,6 +150,10 @@ public:
 			delete [] colors;
 			colors = new float[ header.point_count*3 ];
 		}
+		if ( uvs ) {
+			delete [] uvs;
+			uvs = new float[ header.point_count*2 ];
+		}
 	}
 
 	/// Use this function to allocate/delete arrays.
@@ -163,6 +172,8 @@ public:
 		if ( ! (header.arrays & CY_HAIR_FILE_TRANSPARENCY_BIT) && transparency ) { delete [] transparency; transparency=NULL; }
 		if ( header.arrays & CY_HAIR_FILE_COLORS_BIT && !colors ) colors = new float[header.point_count*3];
 		if ( ! (header.arrays & CY_HAIR_FILE_COLORS_BIT) && colors ) { delete [] colors; colors=NULL; }
+		if ( header.arrays & CY_HAIR_FILE_UVS_BIT && !uvs ) uvs = new float[header.point_count*2];
+		if ( ! (header.arrays & CY_HAIR_FILE_UVS_BIT) && uvs ) { delete [] uvs; uvs=NULL; }
 	}
 
 	/// Sets default number of segments for all hair strands, which is used if segments array does not exist.
@@ -176,7 +187,6 @@ public:
 
 	/// Sets default hair color, which is used if color array does not exist.
 	void SetDefaultColor( float r, float g, float b ) { header.d_color[0]=r; header.d_color[1]=g; header.d_color[2]=b; }
-
 
 	//////////////////////////////////////////////////////////////////////////
 	///@name Load and Save Methods
@@ -235,6 +245,13 @@ public:
 			colors = new float[ header.point_count*3 ];
 			size_t readcount = fread( colors, sizeof(float), header.point_count*3, fp );
 			if ( readcount < header.point_count*3 ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_READING_COLORS);
+		}
+
+		// Read colors array
+		if ( header.arrays & CY_HAIR_FILE_UVS_BIT ) {
+			uvs = new float[ header.point_count*2 ];
+			size_t readcount = fread( uvs, sizeof(float), header.point_count*2, fp );
+			if ( readcount < header.point_count*2 ) _CY_FAILED_RETURN(CY_HAIR_FILE_ERROR_READING_UVS);
 		}
 
 		fclose( fp );
@@ -346,6 +363,7 @@ private:
 	float			*thickness;
 	float			*transparency;
 	float			*colors;
+	float			*uvs;
 
 	// Given point before (p0) and after (p2), computes the direction (d) at p1.
 	float ComputeDirection( float *d, float &d0len, float &d1len, const float *p0, const float *p1, const float *p2 )

@@ -106,12 +106,14 @@ bool SchlickBSDF::CoatingSampleF(const SpectrumWavelengths &sw, const Vector &wo
 	const float G = distribution->G(wo, *wi, wh);
 	if (reverse)
 		//CoatingF(sw, *wi, wo, f_);
-		*f_ *= (d * G / (4.f * coso) + 
-				(multibounce ? cosi * Clamp((1.f - G) / (4.f * coso * cosi), 0.f, 1.f) : 0.f)) / *pdf;
+		// divide d by pdf immediately, as with most distributions they are of similary or equal magnitude
+		*f_ *= ((d / *pdf) * G / (4.f * coso) + 
+				(multibounce ? cosi * Clamp((1.f - G) / (4.f * coso * cosi), 0.f, 1.f) / *pdf : 0.f));
 	else
 		//CoatingF(sw, wo, *wi, f_);
-		*f_ *= (d * G / (4.f * cosi) + 
-				(multibounce ? coso * Clamp((1.f - G) / (4.f * cosi * coso), 0.f, 1.f) : 0.f)) / *pdf;
+		// divide d by pdf immediately, as with most distributions they are of similary or equal magnitude
+		*f_ *= ((d / *pdf) * G / (4.f * cosi) + 
+				(multibounce ? coso * Clamp((1.f - G) / (4.f * cosi * coso), 0.f, 1.f) / *pdf : 0.f));
 	return true;
 }
 float SchlickBSDF::CoatingPdf(const SpectrumWavelengths &sw, const Vector &wo,

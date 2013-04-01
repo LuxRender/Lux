@@ -35,7 +35,7 @@ using namespace lux;
 Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	ShapeType shpType, bool proj, Point cam_, MeshAccelType acceltype,
 	u_int nv, const Point *P, const Normal *N, const float *UV, 
-	const float *C, const float *ALPHA, const Point *WUV,
+	const float *C, const float *ALPHA, const Point *WUV, const float colorGamma,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
@@ -125,7 +125,13 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 
 	if (C) {
 		cols = new float[3 * nverts];
-		memcpy(cols, C, 3 * nverts * sizeof(float));
+		if (colorGamma == 1.f)
+			memcpy(cols, C, 3 * nverts * sizeof(float));
+		else {
+			// Reverse gamma correction
+			for (u_int i = 0; i < 3 * nverts; ++i)
+				cols[i] = powf(C[i], colorGamma);
+		}
 	} else
 		cols = NULL;
 
@@ -317,11 +323,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
-				// TODO: add the support for vertex colors/alphas too
-
 				// Apply subdivision
 				LoopSubdiv loopsubdiv(shape_type, proj_text, cam, ntris, nverts,
-					triVertexIndex, p, uvs, n,
+					triVertexIndex, p, uvs, n, cols, alphas,
 					nSubdivLevels, displacementMap,
 					displacementMapScale,
 					displacementMapOffset,
@@ -348,6 +352,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
 				p = new Point[nverts];
 				memcpy(p, res->P, nverts * sizeof(Point));
+
 				if (res->uv) {
 					uvs = new float[2 * nverts];
 					memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
@@ -360,6 +365,17 @@ LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				} else
 					n = NULL;
 
+				if (res->cols) {
+					cols = new float[3 * nverts];
+					memcpy(cols, res->cols, 3 * nverts * sizeof(float));
+				} else
+					cols = NULL;
+
+				if (res->alphas) {
+					alphas = new float[nverts];
+					memcpy(alphas, res->alphas, nverts * sizeof(float));
+				} else
+					alphas = NULL;
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
@@ -606,7 +622,7 @@ void Mesh::ExtTessellate(vector<luxrays::ExtTriangleMesh *> *meshList, vector<co
 	// A little hack with pointers
 	luxrays::ExtTriangleMesh *tm = new luxrays::ExtTriangleMesh(
 			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex,
-			n, (luxrays::UV *)uvs);
+			n, (luxrays::UV *)uvs, (luxrays::Spectrum *)cols, alphas);
 
 	meshList->push_back(tm);
 	primitiveList->push_back(this);
@@ -770,6 +786,36 @@ void Mesh::GetShadingGeometry(const Transform &obj2world,
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
 		dndu, dndv, tangent, bitangent, sign, dg.u, dg.v, this, lscale, dg.wuv);
+	dgShading->iData = dg.iData;
+}
+
+// Used by hybrid rendering
+void Mesh::GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const {
+	const u_int triIndex = dgShading.iData.mesh.triIndex;
+	const u_int v0 = triVertexIndex[triIndex];
+	const u_int v1 = triVertexIndex[triIndex + 1];
+	const u_int v2 = triVertexIndex[triIndex + 2];
+
+	if (cols) {
+		const RGBColor *c0 = (const RGBColor *)(&cols[v0 * 3]);
+		const RGBColor *c1 = (const RGBColor *)(&cols[v1 * 3]);
+		const RGBColor *c2 = (const RGBColor *)(&cols[v2 * 3]);
+
+		*color = dgShading.iData.mesh.coords[0] * (*c0) +
+			dgShading.iData.mesh.coords[1] * (*c1) + dgShading.iData.mesh.coords[2] * (*c2);
+	} else
+		*color = RGBColor(1.f);
+
+	if (alphas) {
+		const float alpha0 = alphas[v0];
+		const float alpha1 = alphas[v1];
+		const float alpha2 = alphas[v2];
+
+		*alpha = dgShading.iData.mesh.coords[0] * alpha0 +
+			dgShading.iData.mesh.coords[1] * alpha1 + dgShading.iData.mesh.coords[2] * alpha2;
+	} else
+		*alpha = 1.f;
 }
 
 // Class for storing mesh data pointers and holding returned tangent space data
@@ -1103,8 +1149,9 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
 
-	string  type = params.FindOneString( "type", "native" );
+	const float colorGamma = params.FindOneFloat("gamma", 1.f);
 
+	string  type = params.FindOneString( "type", "native" );
 	ShapeType shpType;
 	if (type == "native")
 		shpType = ShapeType(LUX_SHAPE);
@@ -1115,9 +1162,10 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
+
 	return new Mesh(o2w, reverseOrientation, name,
 		shpType, proj_text, cam, accelType,
-		npi, P, N, UV, cols, alphas, WUV,
+		npi, P, N, UV, cols, alphas, WUV,  colorGamma,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
 		subdivType, nSubdivLevels, displacementMap,

@@ -143,11 +143,10 @@ private:
 	luxrays::Properties overwriteConfig;
 	slg::RenderEngineType renderEngineType;
 	Scene *scene;
-	vector<Normal *> alloctedMeshNormals;
 	// Used to feed LuxRender film with only the delta information from the previous update
-	BlockedArray<slg::Spectrum> *previousEyeBufferRadiance;
+	BlockedArray<luxrays::Spectrum> *previousEyeBufferRadiance;
 	BlockedArray<float> *previousEyeWeight;
-	BlockedArray<slg::Spectrum> *previousLightBufferRadiance;
+	BlockedArray<luxrays::Spectrum> *previousLightBufferRadiance;
 	BlockedArray<float> *previousLightWeight;
 	BlockedArray<float> *previousAlphaBuffer;
 	double previousSampleCount;

@@ -20,31 +20,64 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <limits>
+#include "sampling.h"
+#include "paramset.h"
+#include "film.h"
 
-#include "hitpointcolor.h"
-#include "dynload.h"
+namespace lux
+{
 
-using namespace lux;
+class SobolSampler : public Sampler
+{
+public:
+	class SobolData {
+	public:
+		SobolData(const Sampler &sampler, const Sample &sample);
+		~SobolData();
 
-Texture<float> *HitPointAlphaTexture::CreateFloatTexture(const Transform &tex2world,
-		const ParamSet &tp) {
-	return new HitPointAlphaTexture();
-}
+		u_int SobolDimension(const SobolSampler &sampler,
+			const u_int index, const u_int dimension) const;
+		float GetSample(const SobolSampler &sampler, const u_int index) const;
 
-Texture<SWCSpectrum> *HitPointRGBColorTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const ParamSet &tp) {
-	return new HitPointRGBColorTexture();
-}
+		float rng0, rng1;
+		u_int pass;
 
-Texture<float> *HitPointGreyTexture::CreateFloatTexture(const Transform &tex2world,
-		const ParamSet &tp) {
-	int channel = tp.FindOneInt("channel", -1);
+		u_int nxD;
+		float **xD;
 
-	return new HitPointGreyTexture(((channel != 0) && (channel != 1) && (channel != 2)) ?
-		std::numeric_limits<u_int>::max() : static_cast<u_int>(channel));
-}
+		boost::shared_array<float> samplingMap;		
+		u_int noiseAwareMapVersion;
+		u_int userSamplingMapVersion;
+		boost::shared_ptr<Distribution2D> samplingDistribution2D;
+	};
 
-static DynamicLoader::RegisterFloatTexture<HitPointAlphaTexture> r1("hitpointalpha");
-static DynamicLoader::RegisterSWCSpectrumTexture<HitPointRGBColorTexture> r2("hitpointcolor");
-static DynamicLoader::RegisterFloatTexture<HitPointGreyTexture> r3("hitpointgrey");
+	SobolSampler(int xstart, int xend, int ystart, int yend, bool useNoise);
+	virtual ~SobolSampler();
+
+	virtual void InitSample(Sample *sample) const;
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<SobolData *>(sample->samplerData);
+	}
+	virtual u_int GetTotalSamplePos();
+	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
+	virtual u_int RoundSize(u_int sz) const { return sz; }
+	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
+
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
+
+private:
+	// SobolSampler Private Data
+	mutable fast_mutex initDirectionsMutex;
+	mutable u_int *directions;
+	mutable vector<u_int> offset1D, offset2D, offsetxD;
+
+	u_int totalPixels;
+
+	bool useNoiseAware;
+};
+
+}//namespace lux

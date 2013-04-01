@@ -38,7 +38,7 @@ public:
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		ShapeType type, bool proj, Point cam_, MeshAccelType acceltype,
 		u_int nv, const Point *P, const Normal *N, const float *UV, 
-		const float *COLS, const float *ALPHA, const Point *WUV,
+		const float *COLS, const float *ALPHA, const Point *WUV, const float colorGamma,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,
@@ -72,6 +72,8 @@ public:
 		DifferentialGeometry *dgShading) const;
 	virtual Vector GetNormal(u_int i) const { return Vector(0.f); }
 	virtual Point GetPoint(u_int i) const { return Point(0.f); }
+	virtual void GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const;
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;

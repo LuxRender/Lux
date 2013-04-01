@@ -40,11 +40,13 @@ public:
 	~CatmullRomCurve() {
 	}
 
-	void AddPoint(const Point &p, const float size, const RGBColor &col, const float transp) {
+	void AddPoint(const Point &p, const float size, const RGBColor &col,
+			const float transp, const luxrays::UV &uv) {
 		points.push_back(p);
 		sizes.push_back(size);
 		cols.push_back(col);
 		transps.push_back(transp);
+		uvs.push_back(uv);
 	}
 
 	void AdaptiveTessellate(const u_int maxDepth, const float error, vector<float> &values) {
@@ -119,6 +121,22 @@ public:
 		return CatmullRomSpline(transps[segment - 1], transps[segment], transps[segment + 1], transps[segment + 2], ct);
 	}
 
+	luxrays::UV EvaluateUV(const float t) {
+		int count = (int)uvs.size();
+		int segment = Floor2Int((count - 1) * t);
+		segment = max(segment, 0);
+		segment = min(segment, count - 2);
+
+		const float ct = t * (count - 1) - segment;
+
+		if (segment == 0)
+			return CatmullRomSpline(uvs[0], uvs[0], uvs[1], uvs[2], ct);
+		if (segment == count - 2)
+			return CatmullRomSpline(uvs[count - 3], uvs[count - 2], uvs[count - 1], uvs[count - 1], ct);
+
+		return CatmullRomSpline(uvs[segment - 1], uvs[segment], uvs[segment + 1], uvs[segment + 2], ct);
+	}
+
 private:
 	bool AdaptiveTessellate(const u_int depth, const u_int maxDepth, const float error,
 			vector<float> &values, const float t0, const float t1) {
@@ -135,7 +153,7 @@ private:
 		const Vector v = p1 - p0;
 
 		// Check if the vectors are nearly parallel
-		if (AbsDot(Normalize(vmid), Normalize(v)) < 1.f - 0.05f) {
+		if (AbsDot(Normalize(vmid), Normalize(v)) < 1.f - .05f) {
 			// Tessellate left side too
 			const bool leftSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
 			const bool rightSide = AdaptiveTessellate(depth + 1, maxDepth, error, values, tmid, t1);
@@ -218,10 +236,17 @@ private:
 				Clamp(CatmullRomSpline(a.c[2], b.c[2], c.c[2], d.c[2], t), 0.f, 1.f));
 	}
 
+	luxrays::UV CatmullRomSpline(const luxrays::UV a, const luxrays::UV b, const luxrays::UV c, const luxrays::UV d, const float t) {
+		return luxrays::UV(
+				Clamp(CatmullRomSpline(a.u, b.u, c.u, d.u, t), 0.f, 1.f),
+				Clamp(CatmullRomSpline(a.v, b.v, c.v, d.v, t), 0.f, 1.f));
+	}
+
 	vector<Point> points;
 	vector<float> sizes;
 	vector<RGBColor> cols;
 	vector<float> transps;
+	vector<luxrays::UV> uvs;
 };
 
 //------------------------------------------------------------------------------
@@ -229,8 +254,9 @@ private:
 //------------------------------------------------------------------------------
 
 HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Point *cameraPos,
-		const string &aType,  const TessellationType tType, const u_int rAdaptiveMaxDepth,
-		const float rAdaptiveError, const u_int sSideCount,  const bool sCap,
+		const string &aType,  const TessellationType tType, const u_int aMaxDepth,
+		const float aError, const u_int sSideCount,
+		const bool sCapBottom, const bool sCapTop, const float gamma,
 		boost::shared_ptr<cyHairFile> &hair) : Shape(o2w, ro, name) {
 	hasCameraPosition = (cameraPos != NULL);
 	if (hasCameraPosition) {
@@ -240,10 +266,12 @@ HairFile::HairFile(const Transform &o2w, bool ro, const string &name, const Poin
 
 	accelType = aType;
 	tesselType = tType;
-	ribbonAdaptiveMaxDepth = rAdaptiveMaxDepth;
-	ribbonAdaptiveError = rAdaptiveError;
+	colorGamma = gamma;
+	adaptiveMaxDepth = aMaxDepth;
+	adaptiveError = aError;
 	solidSideCount = sSideCount;
-	solidCap = sCap;
+	solidCapBottom = sCapBottom;
+	solidCapTop = sCapTop;
 	hairFile = hair;
 }
 
@@ -273,33 +301,57 @@ BBox HairFile::ObjectBound() const {
 
 void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
 	// Create the mesh vertices
 	const u_int baseOffset = meshVerts.size();
+
+	Vector previousDir;
+	Vector previousX;
+	// I'm using quaternion here in order to avoid Gimbal lock problem
+	Quaternion trans;
 	for (int i = 0; i < (int)hairPoints.size(); ++i) {
-		Vector z;
+		Vector dir;
 		// I need a special case for the very last point
 		if (i == (int)hairPoints.size() - 1)
-			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+			dir = Normalize(hairPoints[i] - hairPoints[i - 1]);
 		else
-			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+			dir = Normalize(hairPoints[i + 1] - hairPoints[i]);
 
-		Vector x, y;
-		// Check if I have to face the ribbon in a specific direction
-		if (hasCameraPosition) {
-			y = Normalize(cameraPosition - hairPoints[i]);
+		if (i == 0) {
+			// Build the initial quaternion by establishing an initial (arbitrary)
+			// frame
 
-			if (AbsDot(z, y) < 1.f - 0.05f) {
-				x = Normalize(Cross(z, y));
-				y = Normalize(Cross(x, z));
-			} else
-				CoordinateSystem(z, &x, &y);
-		} else
-			CoordinateSystem(z, &x, &y);
+			// Check if I have to face the ribbon in a specific direction
+			Vector up;
+			if (hasCameraPosition)
+				up = Normalize(cameraPosition - hairPoints[i]);
+			else
+				up = Vector(1.f, 0.f, 0.f);
 
+			if (AbsDot(dir, up) > 1.f - .05f) {
+				up = Vector(0.f, 1.f, 0.f);
+				if (AbsDot(dir, up) > 1.f - .05f)
+					up = Vector(0.f, 0.f, 1.f);
+			}
+
+			const Transform dirTrans = LookAt(hairPoints[0], hairPoints[1], up);
+			trans = Quaternion(dirTrans.m);
+		} else {
+			// Compose the new delta transformation with all old one
+			trans = GetRotationBetween(previousDir, dir) * trans;
+		}
+		previousDir = dir;
+
+		const Vector newPreviousX = trans.RotateVector(Vector(1.f, 0.f, 0.f));
+
+		// Using this trick to have a section half way between previous and new one
+		const Vector x = (i == 0) ? newPreviousX : (previousX + newPreviousX) * .5;
+
+		previousX = newPreviousX;
+		
 		const Point p0 = hairPoints[i] + hairSizes[i] * x;
 		const Point p1 = hairPoints[i] - hairSizes[i] * x;
 		meshVerts.push_back(p0);
@@ -307,11 +359,10 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		meshVerts.push_back(p1);
 		meshNorms.push_back(Normal());
 
-		const float v = i / (float)hairPoints.size();
-		meshUVs.push_back(1.f);
-		meshUVs.push_back(v);
-		meshUVs.push_back(-1.f);
-		meshUVs.push_back(v);
+		meshUVs.push_back(hairUVs[i].u);
+		meshUVs.push_back(hairUVs[i].v);
+		meshUVs.push_back(hairUVs[i].u);
+		meshUVs.push_back(hairUVs[i].v);
 
 		meshCols.push_back(hairCols[i].c[0]);
 		meshCols.push_back(hairCols[i].c[1]);
@@ -355,55 +406,94 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 	}
 }
 
-void HairFile::TessellateRibbonAdaptive(const vector<Point> &hairPoints,
+void HairFile::TessellateAdaptive(const bool solid, const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
 	// Interpolate the hair segments
 	CatmullRomCurve curve;
 	for (int i = 0; i < (int)hairPoints.size(); ++i)
-		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i], hairTransps[i]);
+		curve.AddPoint(hairPoints[i], hairSizes[i], hairCols[i],
+				hairTransps[i], hairUVs[i]);
 
 	// Tessellate the curve
 	vector<float> values;
-	curve.AdaptiveTessellate(ribbonAdaptiveMaxDepth, ribbonAdaptiveError, values);
+	curve.AdaptiveTessellate(adaptiveMaxDepth, adaptiveError, values);
 
 	// Create the ribbon
 	vector<Point> tesselPoints;
 	vector<float> tesselSizes;
 	vector<RGBColor> tesselCols;
 	vector<float> tesselTransps;
+	vector<luxrays::UV> tesselUVs;
 	for (u_int i = 0; i < values.size(); ++i) {
 		tesselPoints.push_back(curve.EvaluatePoint(values[i]));
 		tesselSizes.push_back(curve.EvaluateSize(values[i]));
 		tesselCols.push_back(curve.EvaluateColor(values[i]));
 		tesselTransps.push_back(curve.EvaluateTransparency(values[i]));
+		tesselUVs.push_back(curve.EvaluateUV(values[i]));
 	}
-	TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselTransps,
-		meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
+
+	if (solid)
+		TessellateSolid(tesselPoints, tesselSizes, tesselCols, tesselUVs, tesselTransps,
+			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
+	else
+		TessellateRibbon(tesselPoints, tesselSizes, tesselCols, tesselUVs, tesselTransps,
+			meshVerts, meshNorms, meshTris, meshUVs, meshCols, meshTransps);
 }
 
 void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		const vector<float> &hairSizes, const vector<RGBColor> &hairCols,
-		const vector<float> &hairTransps,
+		const vector<luxrays::UV> &hairUVs, const vector<float> &hairTransps,
 		vector<Point> &meshVerts, vector<Normal> &meshNorms,
 		vector<int> &meshTris, vector<float> &meshUVs, vector<float> &meshCols,
 		vector<float> &meshTransps) const {
 	// Create the mesh vertices
 	const u_int baseOffset = meshVerts.size();
 	const float angleStep = Radians(360.f / solidSideCount);
+
+	Vector previousDir;
+	Vector previousX, previousY, previousZ;
+	// I'm using quaternion here in order to avoid Gimbal lock problem
+	Quaternion trans;
 	for (int i = 0; i < (int)hairPoints.size(); ++i) {
-		Vector z;
+		Vector dir;
 		// I need a special case for the very last point
 		if (i == (int)hairPoints.size() - 1)
-			z = Normalize(hairPoints[i] - hairPoints[i - 1]);
+			dir = Normalize(hairPoints[i] - hairPoints[i - 1]);
 		else
-			z = Normalize(hairPoints[i + 1] - hairPoints[i]);
+			dir = Normalize(hairPoints[i + 1] - hairPoints[i]);
 
-		Vector x, y;
-		CoordinateSystem(z, &x, &y);
+		if (i == 0) {
+			// Build the initial quaternion by establishing an initial (arbitrary)
+			// frame
+
+			Vector up(0.f, 0.f, 1.f);
+			if (AbsDot(dir, up) > 1.f - .05f)
+				up = Vector(1.f, 0.f, 0.f);
+
+			const Transform dirTrans = LookAt(hairPoints[0], hairPoints[1], up);
+			trans = Quaternion(dirTrans.m);
+		} else {
+			// Compose the new delta transformation with all old one
+			trans = GetRotationBetween(previousDir, dir) * trans;
+		}
+		previousDir = dir;
+
+		const Vector newPreviousX = trans.RotateVector(Vector(1.f, 0.f, 0.f));
+		const Vector newPreviousY = trans.RotateVector(Vector(0.f, 1.f, 0.f));
+		const Vector newPreviousZ = trans.RotateVector(Vector(0.f, 0.f, 1.f));
+
+		// Using this trick to have a section half way between previous and new one
+		const Vector x = (i == 0) ? newPreviousX : (previousX + newPreviousX) * .5;
+		const Vector y = (i == 0) ? newPreviousY : (previousY + newPreviousY) * .5;
+		const Vector z = (i == 0) ? newPreviousZ : (previousZ + newPreviousZ) * .5;
+
+		previousX = newPreviousX;
+		previousY = newPreviousY;
+		previousZ = newPreviousZ;
 
 		float angle = 0.f;
 		for (u_int j = 0; j < solidSideCount; ++j) {
@@ -415,8 +505,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 			
 			meshVerts.push_back(p);
 			meshNorms.push_back(Normal());
-			meshUVs.push_back(j / (float)solidSideCount);
-			meshUVs.push_back(i / (float)hairPoints.size());
+			meshUVs.push_back(hairUVs[i].u);
+			meshUVs.push_back(hairUVs[i].v);
 			meshCols.push_back(hairCols[i].c[0]);
 			meshCols.push_back(hairCols[i].c[1]);
 			meshCols.push_back(hairCols[i].c[2]);
@@ -458,16 +548,16 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		}
 	}
 
-	if (solidCap) {
-		// Add a fan cap
+	if (solidCapTop) {
+		// Add a top fan cap
 
 		const u_int offset = meshVerts.size();
 		const Normal n = Normal(Normalize(hairPoints[hairPoints.size() - 1] - hairPoints[hairPoints.size() - 2]));
 		for (u_int j = 0; j < solidSideCount; ++j) {
 			meshVerts.push_back(meshVerts[offset - solidSideCount + j]);
 			meshNorms.push_back(n);
-			meshUVs.push_back(j / (float)solidSideCount);
-			meshUVs.push_back(1.f);
+			meshUVs.push_back(hairUVs.back().u);
+			meshUVs.push_back(hairUVs.back().v);
 			meshCols.push_back(hairCols.back().c[0]);
 			meshCols.push_back(hairCols.back().c[1]);
 			meshCols.push_back(hairCols.back().c[2]);
@@ -477,8 +567,8 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 		// Add the fan center
 		meshVerts.push_back(hairPoints.back());
 		meshNorms.push_back(n);
-		meshUVs.push_back(0.f);
-		meshUVs.push_back(1.f);
+		meshUVs.push_back(hairUVs.back().u);
+		meshUVs.push_back(hairUVs.back().v);
 		meshCols.push_back(hairCols.back().c[0]);
 		meshCols.push_back(hairCols.back().c[1]);
 		meshCols.push_back(hairCols.back().c[2]);
@@ -491,6 +581,43 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 
 			meshTris.push_back(i0);
 			meshTris.push_back(i1);
+			meshTris.push_back(i3);
+		}
+	}
+
+	if (solidCapBottom) {
+		// Add a bottom fan cap
+
+		const u_int offset = meshVerts.size();
+		const Normal n = Normal(Normalize(hairPoints[0] - hairPoints[1]));
+		for (u_int j = 0; j < solidSideCount; ++j) {
+			meshVerts.push_back(meshVerts[baseOffset + j]);
+			meshNorms.push_back(n);
+			meshUVs.push_back(hairUVs[0].u);
+			meshUVs.push_back(hairUVs[0].v);
+			meshCols.push_back(hairCols[0].c[0]);
+			meshCols.push_back(hairCols[0].c[1]);
+			meshCols.push_back(hairCols[0].c[2]);
+			meshTransps.push_back(hairTransps[0]);
+		}
+
+		// Add the fan center
+		meshVerts.push_back(hairPoints[0]);
+		meshNorms.push_back(n);
+		meshUVs.push_back(hairUVs[0].u);
+		meshUVs.push_back(hairUVs[0].v);
+		meshCols.push_back(hairCols[0].c[0]);
+		meshCols.push_back(hairCols[0].c[1]);
+		meshCols.push_back(hairCols[0].c[2]);
+		meshTransps.push_back(hairTransps[0]);
+
+		const u_int i3 = meshVerts.size() - 1;
+		for (u_int j = 0; j < solidSideCount; ++j) {
+			const u_int i0 = offset + j;
+			const u_int i1 = (j == solidSideCount - 1) ? offset : (offset + j + 1);
+
+			meshTris.push_back(i1);
+			meshTris.push_back(i0);
 			meshTris.push_back(i3);
 		}
 	}
@@ -516,6 +643,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	const u_short *segments = hairFile->GetSegmentsArray();
 	const float *colors = hairFile->GetColorsArray();
 	const float *transparency = hairFile->GetTransparencyArray();
+	const float *uvs = hairFile->GetUVsArray();
 
 	if (segments || (header.d_segments > 0)) {
 		u_int pointIndex = 0;
@@ -524,6 +652,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		vector<float> hairSizes;
 		vector<RGBColor> hairCols;
 		vector<float> hairTransps;
+		vector<luxrays::UV> hairUVs;
 
 		vector<Point> meshVerts;
 		vector<Normal> meshNorms;
@@ -542,43 +671,47 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			hairSizes.clear();
 			hairCols.clear();
 			hairTransps.clear();
+			hairUVs.clear();
 			for (int j = 0; j <= segmentSize; ++j) {
-				hairPoints.push_back(Point(points[pointIndex], points[pointIndex + 1], points[pointIndex + 2]));
+				hairPoints.push_back(Point(points[pointIndex * 3], points[pointIndex * 3 + 1], points[pointIndex * 3 + 2]));
 				hairSizes.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
 				if (colors)
-					hairCols.push_back(RGBColor(colors[pointIndex], colors[pointIndex + 1], colors[pointIndex + 2]));
+					hairCols.push_back(RGBColor(colors[pointIndex * 3], colors[pointIndex * 3 + 1], colors[pointIndex * 3 + 2]));
 				else
 					hairCols.push_back(RGBColor(header.d_color[0], header.d_color[1], header.d_color[2]));
 				if (transparency)
 					hairTransps.push_back(1.f - transparency[pointIndex]);
 				else
 					hairTransps.push_back(1.f - header.d_transparency);
+				if (uvs)
+					hairUVs.push_back(luxrays::UV(uvs[pointIndex * 2], uvs[pointIndex * 2 + 1]));
+				else 
+					hairUVs.push_back(luxrays::UV(0.f, j / (float)segmentSize));
 
-//				if (i % 200 < 100)
-//					hairCols.push_back(RGBColor(0.65f, 0.65f, 0.65f));
-//				else
-//					hairCols.push_back(RGBColor(0.65f, 0.f, 0.f));
-//				hairTransps.push_back(1.f - j / (float)segmentSize);
-
-				pointIndex += 3;
+				++pointIndex;
 			}
 
 			switch (tesselType) {
 				case TESSEL_RIBBON:
-					TessellateRibbon(hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateRibbon(hairPoints, hairSizes, hairCols, hairUVs,
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;
 				case TESSEL_RIBBON_ADAPTIVE:
-					TessellateRibbonAdaptive(hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateAdaptive(false, hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;
 				case TESSEL_SOLID:
-					TessellateSolid(hairPoints, hairSizes, hairCols, hairTransps,
-							meshVerts, meshNorms, meshTris, meshUVs, meshCols,
-							meshTransps);
+					TessellateSolid(hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
 					break;					
+				case TESSEL_SOLID_ADAPTIVE:
+					TessellateAdaptive(true, hairPoints, hairSizes, hairCols, hairUVs, 
+							hairTransps, meshVerts, meshNorms, meshTris, meshUVs,
+							meshCols, meshTransps);
+					break;
 				default:
 					LOG(LUX_ERROR, LUX_RANGE)<< "Unknown tessellation  type in an HairFile Shape";
 			}
@@ -587,7 +720,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		// Normalize normals
 		for (u_int i = 0; i < meshNorms.size(); ++i)
 			meshNorms[i] = Normalize(meshNorms[i]);
-		
+
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Strands mesh: " << meshTris.size() / 3 << " triangles";
 
 		// Create the mesh Shape
@@ -597,6 +730,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		paramSet.AddPoint("P", &meshVerts[0], meshVerts.size());
 		paramSet.AddNormal("N", &meshNorms[0], meshNorms.size());
 		paramSet.AddString("acceltype", &accelType, 1);
+		paramSet.AddFloat("gamma", &colorGamma, 1);
 
 		// Check if I have to include vertex color too
 		bool useColor = false;
@@ -686,16 +820,21 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		tessellationType = TESSEL_RIBBON_ADAPTIVE;
 	else if (tessellationTypeStr == "solid")
 		tessellationType = TESSEL_SOLID;
+	else if (tessellationTypeStr == "solidadaptive")
+		tessellationType = TESSEL_SOLID_ADAPTIVE;
 	else {
 		SHAPE_LOG(name, LUX_WARNING, LUX_BADTOKEN) << "Tessellation type  '" << tessellationTypeStr << "' unknown. Using \"ribbon\".";
 		tessellationType = TESSEL_RIBBON;
 	}
 
-	const u_int ribbonAdaptiveMaxDepth = max(0, params.FindOneInt("ribbonadaptive_maxdepth", 8));
-	const float ribbonAdaptiveError = params.FindOneFloat("ribbonadaptive_error", 0.1f);
+	const u_int adaptiveMaxDepth = max(0, params.FindOneInt("adaptive_maxdepth", 8));
+	const float adaptiveError = params.FindOneFloat("adaptive_error", 0.1f);
 
 	const u_int solidSideCount = max(0, params.FindOneInt("solid_sidecount", 3));
-	const bool solidCap = params.FindOneBool("solid_cap", false);
+	const bool solidCapBottom = params.FindOneBool("solid_capbottom", false);
+	const bool solidCapTop = params.FindOneBool("solid_captop", false);
+	
+	
 
 	boost::shared_ptr<cyHairFile> hairFile(new cyHairFile());
 	int hairCount = hairFile->LoadFromFile(filename.c_str());
@@ -704,8 +843,11 @@ Shape *HairFile::CreateShape(const Transform &o2w, bool reverseOrientation, cons
 		return NULL;
 	}
 
+	const float colorGamma = params.FindOneFloat("gamma", 1.f);
+
 	return new HairFile(o2w, reverseOrientation, name, cameraPos, accelType, tessellationType,
-		ribbonAdaptiveMaxDepth, ribbonAdaptiveError, solidSideCount, solidCap, hairFile);
+		adaptiveMaxDepth, adaptiveError, solidSideCount, solidCapBottom, solidCapTop, colorGamma,
+		hairFile);
 }
 
 static DynamicLoader::RegisterShape<HairFile> r("hairfile");
