@@ -274,6 +274,20 @@ public:
 //! \return The color converted in RGB space
 //!
 //! Determine the contribution of each primary in a linear combination
+//! which sums to the desired chromaticity.
+//!
+	RGBColor ToRGB(const XYZColor &color) const {
+		float c[3];
+		c[0] = XYZToRGB[0][0] * color.c[0] + XYZToRGB[0][1] * color.c[1] + XYZToRGB[0][2] * color.c[2];
+		c[1] = XYZToRGB[1][0] * color.c[0] + XYZToRGB[1][1] * color.c[1] + XYZToRGB[1][2] * color.c[2];
+		c[2] = XYZToRGB[2][0] * color.c[0] + XYZToRGB[2][1] * color.c[1] + XYZToRGB[2][2] * color.c[2];
+		return RGBColor(c);
+	}
+//!
+//! \param[in] color A color in XYZ space
+//! \return The color converted in RGB space
+//!
+//! Determine the contribution of each primary in a linear combination
 //! which sums to the desired chromaticity. If the requested
 //! chromaticity falls outside the Maxwell triangle (colour gamut) formed
 //! by the three primaries, one of the R, G, or B weights will be
@@ -282,13 +296,8 @@ public:
 //! \sa Constrain
 //!
 	RGBColor ToRGBConstrained(const XYZColor &color) const {
-		const float lum = color.Y();
-		float c[3];
-		c[0] = XYZToRGB[0][0] * color.c[0] + XYZToRGB[0][1] * color.c[1] + XYZToRGB[0][2] * color.c[2];
-		c[1] = XYZToRGB[1][0] * color.c[0] + XYZToRGB[1][1] * color.c[1] + XYZToRGB[1][2] * color.c[2];
-		c[2] = XYZToRGB[2][0] * color.c[0] + XYZToRGB[2][1] * color.c[1] + XYZToRGB[2][2] * color.c[2];
-		RGBColor rgb(c);
-		Constrain(lum, rgb);
+		RGBColor rgb(ToRGB(color));
+		Constrain(color, rgb);
 		return rgb;
 	}
 //!
@@ -303,7 +312,7 @@ public:
 		return XYZColor(c);
 	}
 //protected:
-	bool Constrain(float lum, RGBColor &rgb) const;
+	bool Constrain(const XYZColor &xyz, RGBColor &rgb) const;
 	RGBColor Limit(const RGBColor &rgb, int method) const;
 	float xRed, yRed; //!<Red coordinates
 	float xGreen, yGreen; //!<Green coordinates

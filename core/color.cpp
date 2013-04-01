@@ -174,31 +174,96 @@ static inline bool HighGamut(const RGBColor &color)
 //! This function tries not to change the overall intensity, only the tint
 //! is shifted to be inside the representable gamut.
 //!
-bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
+bool ColorSystem::Constrain(const XYZColor &xyz, RGBColor &rgb) const
 {
 	bool constrain = false;
 	// Is the contribution of one of the primaries negative ?
 	if (LowGamut(rgb)) {
-		if (lum < 0.f) {
-			rgb = 0.f;
+		// Compute the xyY color coordinates
+		const float YComp = xyz.Y();
+		if (!(YComp > 0.f)) {
+			rgb = RGBColor(0.f);
 			return true;
 		}
+		float xComp = xyz.c[0] / (xyz.c[0] + xyz.c[1] + xyz.c[2]);
+		float yComp = xyz.c[1] / (xyz.c[0] + xyz.c[1] + xyz.c[2]);
 
-		// Find the primary with most negative weight and calculate the
-		// parameter of the point on the vector from the white point
-		// to the original requested colour in RGB space.
-		float l = lum / luminance;
-		float parameter;
-		if (rgb.c[0] < rgb.c[1] && rgb.c[0] < rgb.c[2]) {
-			parameter = l / (l - rgb.c[0]);
-		} else if (rgb.c[1] < rgb.c[2]) {
-			parameter = l / (l - rgb.c[1]);
-		} else {
-			parameter = l / (l - rgb.c[2]);
+		// Define the Blue to Red (BR) line equation
+		const float aBR = (yRed - yBlue) / (xRed - xBlue);
+		const float bBR = yBlue - (aBR * xBlue);
+
+		// Define the Blue to Green (BG) line equation
+		const float aBG = (yGreen - yBlue) / (xGreen - xBlue);
+		const float bBG = yBlue - (aBG * xBlue);
+
+		// Define the Green to Red (GR) line equation
+		const float aGR = (yRed - yGreen) / (xRed - xGreen);
+		const float bGR = yGreen - (aGR * xGreen);
+
+		// Color below the (BR) line
+		if (yComp < (aBR * xComp + bBR)) {
+			// Compute the orthogonal to (BR) through the color coordinates
+			const float aOrtho = -1.f / aBR;
+			const float bOrtho = -aOrtho * xComp + yComp;
+
+			// Compute the intersection point with (BR)
+			xComp = (bOrtho - bBR) / (aBR - aOrtho);
+			yComp = aBR * xComp + bBR;
+
+			// If the computed point is not on the gamut limits, clamp to a primary
+			if (xComp < xBlue) {
+				xComp = xBlue;
+				yComp = yBlue;
+			} else if (xComp > xRed) {
+				xComp = xRed;
+				yComp = yRed;
+			}
+		// Color over the (BG) line
+		} else if (yComp > (aBG * xComp + bBG)) {
+			// Compute the orthogonal to (BG) through the color coordinates
+			const float aOrtho = -1.f / aBG;
+			const float bOrtho = -aOrtho * xComp + yComp;
+
+			// Compute the intersection point with (BG)
+			xComp = (bOrtho - bBG) / (aBG - aOrtho);
+			yComp = aBG * xComp + bBG;
+
+			// If the computed point is not on the gamut limits, clamp to a primary
+			if (xComp < xBlue) {
+				xComp = xBlue;
+				yComp = yBlue;
+			} else if (xComp > xGreen) {
+				xComp = xGreen;
+				yComp = yGreen;
+			}
+		// Color over the (GR) line
+		} else if (yComp > (aGR * xComp + bGR)) {
+			// Compute the orthogonal to (GR) through the color coordinates
+			const float aOrtho = -1.f / aGR;
+			const float bOrtho = -aOrtho * xComp + yComp;
+
+			// Compute the intersection point with (GR)
+			xComp = (bOrtho - bGR) / (aGR - aOrtho);
+			yComp = aGR * xComp + bGR;
+
+			// If the computed point is not on the gamut limits, clamp to a primary
+			if (xComp < xGreen) {
+				xComp = xGreen;
+				yComp = yGreen;
+			} else if (xComp > xRed) {
+				xComp = xRed;
+				yComp = yRed;
+			}
 		}
 
-		// Now finally compute the gamut-constrained RGB weights.
-		rgb = Lerp(parameter, RGBColor(l), rgb).Clamp();
+		// Recompute the XYZ color from the xyY values
+		XYZColor disp;
+		disp.c[0] = (xComp * YComp) / yComp;
+		disp.c[1] = YComp;
+		disp.c[2] = (1.f - xComp - yComp) * YComp / yComp;
+
+		// Convert to RGB
+		rgb = ToRGB(disp);
 		constrain = true;	// Colour modified to fit RGB gamut
 	}
 
