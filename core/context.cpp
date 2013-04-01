@@ -748,7 +748,18 @@ void Context::Shape(const string &n, const ParamSet &params) {
 			// Lotus - add a decorator to set the arealight field
 			boost::shared_ptr<Primitive> pr(sh);
 			boost::shared_ptr<AreaLightPrimitive> prim(new AreaLightPrimitive(pr, area));
-			renderOptions->currentAreaLightInstance->push_back(prim);
+			if (!prim->CanIntersect()) {
+				// When refining the primitive, there's no way
+				// To tell that all refined primitives will be
+				// AreaLightPrimitive, so do some pointer tricks
+				// to add the refined primitives.
+				vector<boost::shared_ptr<Primitive> > tmp;
+				prim->Refine(tmp,
+					PrimitiveRefinementHints(true), prim);
+				for (u_int i = 0; i < tmp.size(); ++i)
+					renderOptions->currentAreaLightInstance->push_back(*((boost::shared_ptr<AreaLightPrimitive> *)(&(tmp[i]))));
+			} else
+				renderOptions->currentAreaLightInstance->push_back(prim);
 		} else {
 			renderOptions->currentInstanceSource->push_back(sh);
 			if (!sh->CanIntersect())
