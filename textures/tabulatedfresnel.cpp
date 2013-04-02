@@ -130,7 +130,7 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	const float delta = (lambda_last - lambda_first) / count;
 	for (int i = count; i >= 0; --i) {
 
-		if (!getline(fs, line).good()) {
+		if (getline(fs, line).bad()) {
 			LOG(LUX_ERROR, LUX_BADFILE) <<
 				"Not enough sopra data in '" << filename << "'";
 			return NULL;
@@ -175,7 +175,10 @@ Texture<FresnelGeneral> *LuxpopTexture::CreateFresnelTexture(const Transform &te
 	boost::regex sample_expr("(\\d*\\.?\\d+|\\d+\\.)\\s+(\\d*\\.?\\d+|\\d+\\.?)\\s+(\\d*\\.?\\d+|\\d+\\.)");
 
 	// we want lambda to go from low to high
-	while (getline(fs, line).good()) {
+	while (!getline(fs, line).eof()) {
+
+		if (fs.bad())
+			break;
 
 		// skip comments
 		if (!line.empty() && line[0] == ';')
