@@ -198,7 +198,7 @@ double HSRStatistics::getPathEfficiencyWindow() {
 
 // Returns percent of GPU efficiency, zero if no GPUs
 double HSRStatistics::getAverageGpuEfficiency() {
-	return renderer->intersectionDevice->GetLoad();
+	return 100.0 * renderer->intersectionDevice->GetLoad();
 }
 
 double HSRStatistics::getAverageSamplesPerSecond() {
