@@ -1151,7 +1151,7 @@ namespace lux
 #ifndef NDEBUG
 	int luxLogFilter = LUX_DEBUG;
 #else
-	int luxLogFitler = LUX_INFO;
+	int luxLogFilter = LUX_INFO;
 #endif
 }
 
