@@ -23,10 +23,12 @@
 #ifndef LUX_HYBRIDSAMPLERSTATISTICS_H
 #define LUX_HYBRIDSAMPLERSTATISTICS_H
 
+#include <algorithm>
+
+#include <luxrays/core/virtualdevice.h>
 #include "rendererstatistics.h"
 #include "renderers/hybridsamplerrenderer.h"
 
-#include <algorithm>
 
 namespace lux
 {
@@ -113,7 +115,13 @@ private:
 	double getPercentHaltSppComplete();
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
 
-	u_int getGpuCount() { return renderer->hardwareDevices.size(); };
+	u_int getGpuCount() {
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev)
+			return vdev->GetRealDevices().size();
+		else
+			return 1;
+	}
 	double getAverageGpuEfficiency();
 
 	double getEfficiency();

@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <boost/foreach.hpp>
+
 #include "api.h"
 #include "scene.h"
 #include "camera.h"
@@ -52,7 +54,7 @@ SurfaceIntegratorStateBuffer::SurfaceIntegratorStateBuffer(
 	rng = rngGen;
 	rayBuffer = rayBuf;
 
-	// Inititialize the first set SurfaceIntegratorState
+	// Initialize the first set SurfaceIntegratorState
 	for (size_t i = 0; i < integratorState.size(); ++i) {
 		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, rng);
 		integratorState[i]->Init(scene);
@@ -226,9 +228,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 	if (hwDeviceDescs.size() >= 1) {
 		if (hwDeviceDescs.size() == 1) {
 			// Only one device available
-			hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
-			virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
-			virtualIM2MDevice = NULL;
+			intersectionDevice = ctx->AddIntersectionDevices(hwDeviceDescs)[0];
 		} else {
 			// Multiple devices available
 
@@ -252,27 +252,24 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 
 			if (selectedDescs.size() == 1) {
 				// Multiple devices are available but only one is selected
-				hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, selectedDescs);
-				virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
-				virtualIM2MDevice = NULL;
+				intersectionDevice = ctx->AddIntersectionDevices(selectedDescs)[0];
 			} else {
-				hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, selectedDescs);
-				virtualIM2ODevice = NULL;
-				virtualIM2MDevice = ctx->GetVirtualM2MIntersectionDevices()[0];
+				ctx->AddVirtualIntersectionDevice(selectedDescs);
+				intersectionDevice = ctx->GetIntersectionDevices()[0];
 			}
 		}
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Devices used:";
-		for (size_t i = 0; i < hardwareDevices.size(); ++i)
-			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[i]->GetName() << "]";
-	} else {
-		// No device found
-		virtualIM2ODevice = NULL;
-		virtualIM2MDevice = NULL;
+		luxrays::VirtualIntersectionDevice *vdevice = dynamic_cast<luxrays::VirtualIntersectionDevice *>(intersectionDevice);
+		if (vdevice) {
+			const vector<luxrays::IntersectionDevice *> &realDevices = vdevice->GetRealDevices();
+			BOOST_FOREACH(luxrays::IntersectionDevice *rd, realDevices)
+					LOG(LUX_INFO, LUX_NOERROR) << " [" << rd->GetName() << "]";
+		} else
+			LOG(LUX_INFO, LUX_NOERROR) << " [" << intersectionDevice->GetName() << "]";
 	}
 
-	for (size_t i = 0; i < hardwareDevices.size(); ++i)
-		hardwareDevices[i]->SetMaxStackSize(qbvhStackSize);
+	intersectionDevice->SetMaxStackSize(qbvhStackSize);
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -396,6 +393,11 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene, hybridPrims);
 		if (!dataSet)
 			return;
+
+		// Create enough queues to handle the maximum thread count
+		intersectionDevice->SetQueueCount(boost::thread::hardware_concurrency());
+		intersectionDevice->SetBufferCount(stateBufferCount);
+
 		ctx->Start();
 
 		// start the timer
@@ -486,23 +488,14 @@ void HybridSamplerRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {
-		luxrays::IntersectionDevice *idev;
+		// Check if I have already used all available queues. I can not create
+		// another thread in that case.
+		if (renderThreads.size() < intersectionDevice->GetQueueCount()) {
+			RenderThread *rt = new  RenderThread(renderThreads.size(), this);
 
-		if (virtualIM2ODevice) {
-			// Add an instance to the LuxRays virtual device
-			idev = virtualIM2ODevice->AddVirtualDevice();
-		} else if (virtualIM2MDevice) {
-			// Add an instance to the LuxRays virtual device
-			idev = virtualIM2MDevice->AddVirtualDevice();
-		} else {
-			// No device found
-			return;
+			renderThreads.push_back(rt);
+			rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
 		}
-
-		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
-
-		renderThreads.push_back(rt);
-		rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
 	}
 }
 
@@ -514,14 +507,6 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 	renderThread->thread->interrupt();
 	renderThread->thread->join();
 
-	if (virtualIM2ODevice) {
-		// Add an instance to the LuxRays virtual device
-		virtualIM2ODevice->RemoveVirtualDevice(renderThread->iDevice);
-	} else if (virtualIM2MDevice) {
-		// Add an instance to the LuxRays virtual device
-		virtualIM2MDevice->RemoveVirtualDevice(renderThread->iDevice);
-	}
-
 	delete renderThread;
 	renderThreads.pop_back();
 
@@ -531,8 +516,8 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 // RenderThread methods
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRenderer *r, luxrays::IntersectionDevice * idev) :
-	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
+HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRenderer *r) :
+	n(index), thread(NULL), renderer(r), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 HybridSamplerRenderer::RenderThread::~RenderThread() {
@@ -540,132 +525,144 @@ HybridSamplerRenderer::RenderThread::~RenderThread() {
 }
 
 void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
-	HybridSamplerRenderer *renderer = renderThread->renderer;
-	Scene &scene(*(renderer->scene));
-	if (scene.IsFilmOnly())
-		return;
+	try {
+		HybridSamplerRenderer *renderer = renderThread->renderer;
+		Scene &scene(*(renderer->scene));
+		if (scene.IsFilmOnly())
+			return;
 
-	// To avoid interrupt exception
-	boost::this_thread::disable_interruption di;
+		// To avoid interrupt exception
+		boost::this_thread::disable_interruption di;
 
-	// Dade - wait the end of the preprocessing phase
-	while (!renderer->preprocessDone) {
-		boost::this_thread::sleep(boost::posix_time::seconds(1));
-	}
-
-	// ContribBuffer has to wait until the end of the preprocessing
-	// It depends on the fact that the film buffers have been created
-	// This is done during the preprocessing phase
-	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
-
-	// initialize the thread's rangen
-	u_long seed;
-	{
-		boost::mutex::scoped_lock lock(renderer->classWideMutex);
-		renderer->lastUsedSeed++;
-		seed = renderer->lastUsedSeed;
-	}
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
-
-	RandomGenerator rng(seed);
-
-	// Inititialize the first set SurfaceIntegratorState
-	const double t0 = luxrays::WallClockTime();
-
-	vector<SurfaceIntegratorStateBuffer *> stateBuffers(renderer->stateBufferCount);
-	for (size_t i = 0; i < stateBuffers.size(); ++i) {
-		luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer(renderer->rayBufferSize);
-		rayBuffer->PushUserData(i);
-
-		stateBuffers[i] = new SurfaceIntegratorStateBuffer(scene, contribBuffer, &rng, rayBuffer);
-		stateBuffers[i]->GenerateRays();
-		renderThread->iDevice->PushRayBuffer(rayBuffer);
-	}
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
-			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
-			luxrays::WallClockTime() - t0 << " secs";
-
-	for(;;) {
-		while (renderer->state == PAUSE) {
+		// Dade - wait the end of the preprocessing phase
+		while (!renderer->preprocessDone) {
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested()) {
-			// Pop left rayBuffers
-			for (size_t i = 0; i < stateBuffers.size(); ++i)
-				renderThread->iDevice->PopRayBuffer();
-			break;
+
+		// ContribBuffer has to wait until the end of the preprocessing
+		// It depends on the fact that the film buffers have been created
+		// This is done during the preprocessing phase
+		ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
+
+		// initialize the thread's rangen
+		u_long seed;
+		{
+			boost::mutex::scoped_lock lock(renderer->classWideMutex);
+			renderer->lastUsedSeed++;
+			seed = renderer->lastUsedSeed;
+		}
+		const u_int threadIndex = renderThread->n;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << threadIndex << " uses seed: " << seed;
+
+		RandomGenerator rng(seed);
+
+		// Initialize the first set SurfaceIntegratorState
+		const double t0 = luxrays::WallClockTime();
+
+		luxrays::IntersectionDevice *intersectionDevice = renderThread->renderer->intersectionDevice;
+		vector<SurfaceIntegratorStateBuffer *> stateBuffers(renderer->stateBufferCount);
+		for (size_t i = 0; i < stateBuffers.size(); ++i) {
+			luxrays::RayBuffer *rayBuffer = intersectionDevice->NewRayBuffer(renderer->rayBufferSize);
+			rayBuffer->PushUserData(i);
+
+			stateBuffers[i] = new SurfaceIntegratorStateBuffer(scene, contribBuffer, &rng, rayBuffer);
+			stateBuffers[i]->GenerateRays();
+			intersectionDevice->PushRayBuffer(rayBuffer, threadIndex);
 		}
 
-		luxrays::RayBuffer *rayBuffer = renderThread->iDevice->PopRayBuffer();
-		SurfaceIntegratorStateBuffer *stateBuffer = stateBuffers[rayBuffer->GetUserData()];
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << threadIndex << " initialization time: " <<
+				std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
+				luxrays::WallClockTime() - t0 << " secs";
 
-		//----------------------------------------------------------------------
-		// Advance the next step
-		//----------------------------------------------------------------------
-
-		bool renderIsOver = false;
-		u_int nrContribs = 0;
-		u_int nrSamples = 0;
-		// stateBuffer.NextState() returns true when the rendering is
-		// finished, false otherwise
-		while (stateBuffer->NextState(nrContribs, nrSamples)) {
-			// Dade - we have done, check what we have to do now
-			if (renderer->suspendThreadsWhenDone) {
-				renderer->Pause();
-				// Dade - wait for a resume rendering or exit
-				while (renderer->state == PAUSE) {
-					boost::this_thread::sleep(boost::posix_time::seconds(1));
-				}
-
-				if (renderer->state == TERMINATE) {
-					renderIsOver = true;
-					break;
-				} else
-					continue;
-			} else {
-				renderer->Terminate();
-				renderIsOver = true;
+		for(;;) {
+			while (renderer->state == PAUSE) {
+				boost::this_thread::sleep(boost::posix_time::seconds(1));
+			}
+			if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested()) {
+				// Pop left rayBuffers
+				for (size_t i = 0; i < stateBuffers.size(); ++i)
+					intersectionDevice->PopRayBuffer(threadIndex);
 				break;
 			}
+
+			luxrays::RayBuffer *rayBuffer = intersectionDevice->PopRayBuffer(threadIndex);
+			SurfaceIntegratorStateBuffer *stateBuffer = stateBuffers[rayBuffer->GetUserData()];
+
+			//----------------------------------------------------------------------
+			// Advance the next step
+			//----------------------------------------------------------------------
+
+			bool renderIsOver = false;
+			u_int nrContribs = 0;
+			u_int nrSamples = 0;
+			// stateBuffer.NextState() returns true when the rendering is
+			// finished, false otherwise
+			while (stateBuffer->NextState(nrContribs, nrSamples)) {
+				// Dade - we have done, check what we have to do now
+				if (renderer->suspendThreadsWhenDone) {
+					renderer->Pause();
+					// Dade - wait for a resume rendering or exit
+					while (renderer->state == PAUSE) {
+						boost::this_thread::sleep(boost::posix_time::seconds(1));
+					}
+
+					if (renderer->state == TERMINATE) {
+						renderIsOver = true;
+						break;
+					} else
+						continue;
+				} else {
+					renderer->Terminate();
+					renderIsOver = true;
+					break;
+				}
+			}
+
+			// Jeanphi - Hijack statistics until volume integrator revamp
+			{
+				// update samples statistics
+				fast_mutex::scoped_lock lockStats(renderThread->statLock);
+				renderThread->blackSamples += nrContribs;
+				if (nrContribs > 0)
+					++(renderThread->blackSamplePaths);
+				renderThread->samples += nrSamples;
+			}
+
+			if (renderIsOver) {
+				// Pop left rayBuffers (one has already been pop)
+				for (size_t i = 0; i < stateBuffers.size()- 1; ++i)
+					intersectionDevice->PopRayBuffer(threadIndex);
+				break;
+			}
+
+			//----------------------------------------------------------------------
+			// Fill the RayBuffer with the generated rays
+			//----------------------------------------------------------------------
+
+			rayBuffer->Reset();
+			stateBuffer->GenerateRays();
+
+			//----------------------------------------------------------------------
+			// Trace the RayBuffer
+			//----------------------------------------------------------------------
+
+			intersectionDevice->PushRayBuffer(rayBuffer, threadIndex);
 		}
 
-		// Jeanphi - Hijack statistics until volume integrator revamp
-		{
-			// update samples statistics
-			fast_mutex::scoped_lock lockStats(renderThread->statLock);
-			renderThread->blackSamples += nrContribs;
-			if (nrContribs > 0)
-				++(renderThread->blackSamplePaths);
-			renderThread->samples += nrSamples;
-		}
+		scene.camera()->film->contribPool->End(contribBuffer);
 
-		if (renderIsOver) {
-			// Pop left rayBuffers (one has already been pop)
-			for (size_t i = 0; i < stateBuffers.size()- 1; ++i)
-				renderThread->iDevice->PopRayBuffer();
-			break;
-		}
-
-		//----------------------------------------------------------------------
-		// Fill the RayBuffer with the generated rays
-		//----------------------------------------------------------------------
-
-		rayBuffer->Reset();
-		stateBuffer->GenerateRays();
-
-		//----------------------------------------------------------------------
-		// Trace the RayBuffer
-		//----------------------------------------------------------------------
-
-		renderThread->iDevice->PushRayBuffer(rayBuffer);
+		// Free memory
+		for (size_t i = 0; i < stateBuffers.size(); ++i)
+			delete stateBuffers[i];
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+	} catch (cl::Error err) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::oclErrorString(err.err()) << ")";
+#endif
+	} catch (std::runtime_error err) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
+	} catch (std::exception err) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "ERROR: " << err.what();
 	}
-
-	scene.camera()->film->contribPool->End(contribBuffer);
-
-	// Free memory
-	for (size_t i = 0; i < stateBuffers.size(); ++i)
-		delete stateBuffers[i];
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
