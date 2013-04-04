@@ -47,6 +47,10 @@
 #include "volume.h"
 #include "filter.h"
 
+#include "accelerators/qbvhaccel.h"
+#include "accelerators/bvhaccel.h"
+#include "accelerators/tabreckdtreeaccel.h"
+
 #include "samplers/metrosampler.h"
 #include "samplers/random.h"
 #include "samplers/lowdiscrepancy.h"
@@ -1584,6 +1588,20 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			"opencl.cpu.use = 1\n"
 			"opencl.gpu.use = 1\n"
 			;
+
+	//--------------------------------------------------------------------------
+	// Accelerator related settings
+	//--------------------------------------------------------------------------
+
+	// Try to recover the default accelerator of the scene
+	if (dynamic_cast<BVHAccel *>(scene->aggregate.get())) {
+		ss << "accelerator.type = 0" << "\n";
+	} else if (dynamic_cast<TaBRecKdTreeAccel *>(scene->aggregate.get())) {
+		ss << "accelerator.type = 3" << "\n";
+	} else {
+		// Just use the default setting (QBVH with or without image support)
+		ss << "accelerator.type = -1" << "\n";
+	}
 
 	//--------------------------------------------------------------------------
 	// Epsilon related settings
