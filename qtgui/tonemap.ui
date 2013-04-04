@@ -885,6 +885,11 @@
          <string>Clip channels individually</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>Darken color</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>

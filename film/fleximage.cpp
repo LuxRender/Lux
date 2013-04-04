@@ -1625,6 +1625,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		clampMethod = 1;
 	else if (clampMethodString == "cut")
 		clampMethod = 2;
+	else if (clampMethodString == "darken")
+		clampMethod = 3;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN)<< "LDR clamping method  '" << clampMethodString << "' unknown. Using \"cut\".";
 	}

@@ -273,27 +273,40 @@ bool ColorSystem::Constrain(const XYZColor &xyz, RGBColor &rgb) const
 RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 {
 	if (HighGamut(rgb)) {
-		if (method == 2)
+		switch (method) {
+		case 2:
 			return rgb.Clamp(0.f, 1.f);
-		const float lum = (method == 0) ? (RGBToXYZ[1][0] * rgb.c[0] + RGBToXYZ[1][1] * rgb.c[1] + RGBToXYZ[1][2] * rgb.c[2]) : (luminance / 3.f);
-		if (lum > luminance)
-			return RGBColor(1.f);
+		case 3:
+			return Lerp(1.f / max(rgb.c[0], max(rgb.c[1], rgb.c[2])),
+				RGBColor(0.f), rgb);
+		default:
+		{
+			const float lum = (method == 0) ?
+				(RGBToXYZ[1][0] * rgb.c[0] +
+				RGBToXYZ[1][1] * rgb.c[1] +
+				RGBToXYZ[1][2] * rgb.c[2]) :
+				(luminance / 3.f);
+			if (lum > luminance)
+				return RGBColor(1.f);
 
-		// Find the primary with greater weight and calculate the
-		// parameter of the point on the vector from the white point
-		// to the original requested colour in RGB space.
-		float l = lum / luminance;
-		float parameter;
-		if (rgb.c[0] > rgb.c[1] && rgb.c[0] > rgb.c[2]) {
-			parameter = (1.f - l) / (rgb.c[0] - l);
-		} else if (rgb.c[1] > rgb.c[2]) {
-			parameter = (1.f - l) / (rgb.c[1] - l);
-		} else {
-			parameter = (1.f - l) / (rgb.c[2] - l);
+			// Find the primary with greater weight and calculate
+			// the parameter of the point on the vector from
+			// the white point to the original requested colour
+			// in RGB space.
+			float l = lum / luminance;
+			float parameter;
+			if (rgb.c[0] > rgb.c[1] && rgb.c[0] > rgb.c[2]) {
+				parameter = (1.f - l) / (rgb.c[0] - l);
+			} else if (rgb.c[1] > rgb.c[2]) {
+				parameter = (1.f - l) / (rgb.c[1] - l);
+			} else {
+				parameter = (1.f - l) / (rgb.c[2] - l);
+			}
+
+			// Now finally compute the limited RGB weights.
+			return Lerp(parameter, RGBColor(l), rgb);
 		}
-
-		// Now finally compute the limited RGB weights.
-		return Lerp(parameter, RGBColor(l), rgb);
+		}
 	}
 	return rgb;
 }
