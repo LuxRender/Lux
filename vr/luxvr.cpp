@@ -318,6 +318,7 @@ int main(int argc, char **argv) {
 				" -R" // Use LuxVR name
 				" -D renderengine.type RTPATHOCL"
 				" -D sampler.type RANDOM"
+				" -D film.alphachannel.enable 0" // Alpha channel is useless for LuxVR
 				" -d \"" + slgScene + "\""
 				" render.cfg 2>&1";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;

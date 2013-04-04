@@ -1656,7 +1656,9 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		throw std::runtime_error("SLGRenderer doesn't yet support border rendering");
 
 	ss << "image.width = " + ToString(imageWidth) + "\n"
-			"image.height = " + ToString(imageHeight) + "\n";
+			"image.height = " + ToString(imageHeight) + "\n"
+			// Alpha channel is always enabled in LuxRender
+			"film.alphachannel.enable = 1\n";
 
 	//--------------------------------------------------------------------------
 	// Sampler related settings
