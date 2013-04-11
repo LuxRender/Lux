@@ -160,9 +160,9 @@ public:
 	Color Clamp(float low = 0.f,
 	               float high = INFINITY) const {
 		Color ret;
-			ret.c[0] = ::Clamp(c[0], low, high);
-			ret.c[1] = ::Clamp(c[1], low, high);
-			ret.c[2] = ::Clamp(c[2], low, high);
+			ret.c[0] = lux::Clamp(c[0], low, high);
+			ret.c[1] = lux::Clamp(c[1], low, high);
+			ret.c[2] = lux::Clamp(c[2], low, high);
 		return ret;
 	}
 	bool IsNaN() const {
