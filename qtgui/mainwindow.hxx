@@ -211,6 +211,8 @@ void updateWidgetValue(QSlider *slider, int value);
 void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
 void updateWidgetValue(QSpinBox *spinbox, int value);
 void updateWidgetValue(QCheckBox *checkbox, bool checked);
+void updateWidgetValue(QLabel *label, double value);
+void updateWidgetValue(QLineEdit *line, double value);
 
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
 void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);

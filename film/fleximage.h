@@ -38,7 +38,7 @@ class LUX_EXPORT FlexImageFilm : public Film {
 public:
 	enum OutputChannels { Y, YA, RGB, RGBA };
 	enum ZBufNormalization { None, CameraStartEnd, MinMax };
-	enum TonemapKernels { TMK_Reinhard = 0, TMK_Linear, TMK_Contrast, TMK_MaxWhite, TMK_AutoLinear };
+	enum TonemapKernels { TMK_Reinhard = 0, TMK_Linear, TMK_Contrast, TMK_MaxWhite, TMK_AutoLinear, TMK_Colors };
 
 	// FlexImageFilm Public Methods
 
@@ -51,7 +51,7 @@ public:
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime, float haltthreshold,
 		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
-		float p_ContrastDisplayAdaptionY, const string &response, float p_Gamma,
+		float p_ContrastDisplayAdaptionY, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 		bool debugmode, int outlierk, int tilecount, const double convstep, const string &samplingmapfilename);
 
@@ -135,6 +135,12 @@ private:
 	float m_LinearFStop, d_LinearFStop;
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
+	int m_FalseMethod, d_FalseMethod;
+	int m_FalseColorScale, d_FalseColorScale;
+	float m_FalseMax, m_FalseMin;
+	float m_FalseMaxSat, d_FalseMaxSat;
+	float m_FalseMinSat, d_FalseMinSat;
+	float m_FalseAvgLum, m_FalseAvgEmi;
 
 	int writeInterval;
 	boost::xtime lastWriteImageTime;

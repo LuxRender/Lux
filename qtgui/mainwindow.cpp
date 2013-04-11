@@ -140,6 +140,20 @@ void updateWidgetValue(QCheckBox *checkbox, bool checked)
 	checkbox->blockSignals (false);
 }
 
+void updateWidgetValue(QLabel *label, double value)
+{
+	label->blockSignals(true);
+	label->setText(QString::number(value));
+	label->blockSignals(false);
+}
+
+void updateWidgetValue(QLineEdit *line, double value)
+{
+	line->blockSignals(true);
+	line->setText(QString::number(value));
+	line->blockSignals(false);
+}
+
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index)
 {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
@@ -1548,8 +1562,9 @@ void MainWindow::EngineThread::run()
 
 void MainWindow::UpdateThread::run()
 {
-	luxUpdateFramebuffer ();
+	luxUpdateFramebuffer();
 	luxUpdateLogFromNetwork();
+	mainWindow->tonemapwidget->updateFilmValues();
 	qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
 }
 

@@ -31,6 +31,7 @@
 #include "mainwindow.hxx"
 #include "tonemapwidget.hxx"
 #include "ui_tonemap.h"
+#include "tonemaps/falsecolors.h"
 
 static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {6400.0f, 5000.0f, 4000.0f, 3200.0f, 2500.0f, 2000.0f, 1600.0f, 1250.0f, 1000.0f, 800.0f, 640.0f, 500.0f, 400.0f, 320.0f, 250.0f, 200.0f, 160.0f, 125.0f, 100.0f, 80.0f, 64.0f, 50.0f, 40.0f, 32.0f, 25.0f, 20.0f};
 
@@ -52,8 +53,9 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	
 	// Tonemap page - only show Reinhard frame by default
 	
-	ui->frame_toneMapLinear->hide ();
-	ui->frame_toneMapContrast->hide ();
+	ui->frame_toneMapLinear->hide();
+	ui->frame_toneMapContrast->hide();
+	ui->frame_toneMapFalse->hide();
 
 	connect(ui->comboBox_kernel, SIGNAL(currentIndexChanged(int)), this, SLOT(setTonemapKernel(int)));
 	connect(ui->comboBox_clampMethod, SIGNAL(currentIndexChanged(int)), this, SLOT(setClampMethod(int)));
@@ -78,16 +80,24 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_fstop, SIGNAL(valueChanged(double)), this, SLOT(fstopChanged(double)));
 	connect(ui->slider_gamma_linear, SIGNAL(valueChanged(int)), this, SLOT(gammaLinearChanged(int)));
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
-	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));	
+	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));
 
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
+
+	// False Colors
+	connect(ui->lineEdit_false_valuemaxsat, SIGNAL(returnPressed()), this, SLOT(falsemaxSatChanged()));
+	connect(ui->lineEdit_false_valueminsat, SIGNAL(returnPressed()), this, SLOT(falseminSatChanged()));
+	connect(ui->comboBox_false_Method, SIGNAL(currentIndexChanged(int)), this, SLOT(setFalseMethod(int)));
+	connect(ui->comboBox_false_colorscale, SIGNAL(currentIndexChanged(int)), this, SLOT(setFalseColorScale(int)));
+	connect(ui->lineEdit_false_legendeTest, SIGNAL(returnPressed()), this, SLOT(legendeChanged()));
 	
 #if defined(__APPLE__)
 	ui->frame_toneMapReinhard->setFont(QFont  ("Lucida Grande", 11));
 	ui->frame_toneMapLinear->setFont(QFont  ("Lucida Grande", 11));
 	ui->frame_toneMapContrast->setFont(QFont  ("Lucida Grande", 11));
+	ui->frame_toneMapFalse->setFont(QFont  ("Lucida Grande", 11));
 #endif
 }
 
@@ -125,6 +135,26 @@ void ToneMapWidget::updateWidgetValues()
 	// Contrast widgets
 	updateWidgetValue(ui->slider_ywa, ValueToLogSliderVal(m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES) );
 	updateWidgetValue(ui->spinBox_ywa, m_TM_contrast_ywa);
+
+	// False Colors widgets
+	updateWidgetValue(ui->label_false_valuemax, m_TM_FalseMax);
+	updateWidgetValue(ui->label_false_valuemin, m_TM_FalseMin);
+	updateWidgetValue(ui->lineEdit_false_valuemaxsat, m_TM_FalseMaxSat);
+	updateWidgetValue(ui->lineEdit_false_valueminsat, m_TM_FalseMinSat);
+	updateWidgetValue(ui->label_false_valueaverageluminance, m_TM_FalseAvgLum);
+	updateWidgetValue(ui->label_false_valueaverageluminousemittance, m_TM_FalseAvgEmi);
+	updateWidgetValue(ui->lineEdit_false_legendeTest, m_TM_FalseLegendeNumber);
+}
+
+void ToneMapWidget::updateFilmValues()
+{
+	m_TM_FalseMax = retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_MAX);
+	updateWidgetValue(ui->label_false_valuemax, m_TM_FalseMax);
+	m_TM_FalseMin = retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_MIN);
+	updateWidgetValue(ui->label_false_valuemin, m_TM_FalseMin);
+	m_TM_FalseAvgLum = luxGetFloatAttribute("film", "averageLuminance");
+	updateWidgetValue(ui->label_false_valueaverageluminance, m_TM_FalseAvgLum);
+	updateWidgetValue(ui->label_false_valueaverageluminousemittance, m_TM_FalseAvgEmi);
 }
 
 void ToneMapWidget::setSensitivityPreset(int choice)
@@ -201,6 +231,16 @@ void ToneMapWidget::resetValues()
 	m_TM_linear_gamma = 1.0;
 
 	m_TM_contrast_ywa = 0.1;
+
+	m_TM_FalseMax = 0.;
+	m_TM_FalseMin = 0.;
+	m_TM_FalseMaxSat = 0.;
+	m_TM_FalseMinSat = 0.;
+	m_TM_FalseAvgLum = 0.;
+	m_TM_FalseAvgEmi = 0.;
+	m_false_method = 0;
+	m_false_colorscale = 0;
+	m_TM_FalseLegendeNumber = 5;
 }
 
 int ToneMapWidget::sensitivityToPreset(double value)
@@ -261,6 +301,13 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 
 	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
 
+	m_TM_FalseMax = retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_MAX);
+	m_TM_FalseMin = retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_MIN);
+	m_TM_FalseMaxSat = retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_MAXSAT);
+	m_TM_FalseMinSat = retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_MINSAT);
+	m_false_method = (int)retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_METHOD);
+	m_false_colorscale = (int)retrieveParam(useDefaults, LUX_FILM, LUX_FILM_TM_FALSE_COLORSCALE);
+
 	SetFromValues();
 }
 
@@ -283,6 +330,11 @@ void ToneMapWidget::SetFromValues ()
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA, m_TM_linear_gamma);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_FALSE_MAXSAT, m_TM_FalseMaxSat);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_FALSE_MINSAT, m_TM_FalseMinSat);
+	ui->comboBox_false_Method->setCurrentIndex(m_false_method);
+	ui->comboBox_false_colorscale->setCurrentIndex(m_false_colorscale);
 }
 
 
@@ -297,31 +349,50 @@ void ToneMapWidget::setTonemapKernel(int choice)
 			ui->frame_toneMapReinhard->show();
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->hide();
 			break;
 		case 1:
 			// Linear
 			ui->frame_toneMapReinhard->hide();
 			ui->frame_toneMapLinear->show();
 			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->hide();
 			break;
 		case 2:
 			// Contrast
 			ui->frame_toneMapReinhard->hide();
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->show();
+			ui->frame_toneMapFalse->hide();
 			break;
 		case 3:
 			// MaxWhite
 			ui->frame_toneMapReinhard->hide();
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->hide();
 			break;
 		case 4:
 			// Auto Linear
 			ui->frame_toneMapReinhard->hide();
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->hide();
+			break;
+		case 5:
+			// False Colors
+			initFalseColor();
+
+			ui->frame_toneMapReinhard->hide();
+			ui->frame_toneMapLinear->hide();
+			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->show();
+			break;
 		default:
+			ui->frame_toneMapReinhard->hide();
+			ui->frame_toneMapLinear->hide();
+			ui->frame_toneMapContrast->hide();
+			ui->frame_toneMapFalse->hide();
 			break;
 	}
 
@@ -572,53 +643,237 @@ void ToneMapWidget::ywaChanged (double value)
 	emit valuesChanged();
 }
 
+void ToneMapWidget::falsemaxSatChanged()
+{
+	m_TM_FalseMaxSat = ui->lineEdit_false_valuemaxsat->text().toDouble();
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_MAXSAT, m_TM_FalseMaxSat);
+
+	falseLegend();
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falsemaxSatChanged(double value)
+{
+	m_TM_FalseMaxSat = value;
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_MAXSAT, m_TM_FalseMaxSat);
+	updateWidgetValue(ui->lineEdit_false_valuemaxsat, value);
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falseminSatChanged()
+{
+	m_TM_FalseMinSat = ui->lineEdit_false_valueminsat->text().toDouble();
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_MINSAT, m_TM_FalseMinSat);
+
+	falseLegend();
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falseminSatChanged(double value)
+{
+	m_TM_FalseMinSat = value;
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_MINSAT, m_TM_FalseMinSat);
+	updateWidgetValue(ui->lineEdit_false_valueminsat, value);
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falsemaxChanged(double value)
+{
+	m_TM_FalseMax = value;
+	updateWidgetValue(ui->label_false_valuemax, value);
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falseminChanged(double value)
+{
+	m_TM_FalseMin = value;
+	updateWidgetValue(ui->label_false_valuemin, value);
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::initFalseColor()
+{
+	updateFilmValues();
+	falsemaxSatChanged(retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_MAXSAT));
+	falseminSatChanged(retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_MINSAT));
+	setFalseMethod(retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_METHOD));
+	setFalseColorScale(retrieveParam(false, LUX_FILM, LUX_FILM_TM_FALSE_COLORSCALE));
+	legendeChanged(5);
+}
+
+void ToneMapWidget::setFalseMethod(int choice)
+{
+	ui->comboBox_false_Method->setCurrentIndex(choice);
+	m_false_method = choice;
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_METHOD, (double)m_false_method);
+
+	falseLegend();
+	emit valuesChanged();
+}
+
+void ToneMapWidget::setFalseColorScale(int choice)
+{
+	ui->comboBox_false_colorscale->setCurrentIndex(choice);
+	m_false_colorscale = choice;
+	updateParam(LUX_FILM, LUX_FILM_TM_FALSE_COLORSCALE, (double)m_false_colorscale);
+
+	falseLegend();
+	emit valuesChanged();
+}
+
+void ToneMapWidget::legendeChanged()
+{
+	m_TM_FalseLegendeNumber = Clamp(ui->lineEdit_false_legendeTest->text().toInt(), 2, 10);
+	updateWidgetValue(ui->lineEdit_false_legendeTest, m_TM_FalseLegendeNumber);
+
+	falseLegend();
+	emit valuesChanged();
+}
+void ToneMapWidget::legendeChanged(int value)
+{
+	m_TM_FalseLegendeNumber = value;
+	updateWidgetValue(ui->lineEdit_false_legendeTest, value);
+
+	falseLegend();
+	emit valuesChanged();
+}
+
+void ToneMapWidget::falseLegend()
+{
+	QPixmap pix(150, 220);
+	falseDrawLegend(&pix);
+	ui->Qlabel_image_false_legende->setPixmap(pix);
+}
+
+void ToneMapWidget::falseDrawLegend(QPaintDevice * dev)
+{
+	QPainter p(dev);
+
+	const u_int _widthPix = 80;
+	const u_int _heightPix = 200;
+
+	p.setBrush(QBrush(Qt::black));
+	p.drawRect(0, 0, dev->width(), dev->height());
+
+	QColor c;
+
+	const u_int nb = m_TM_FalseLegendeNumber;
+
+	lux::RGBColor vcolor(0.f);
+
+	if (nb <= 1) {
+		for (u_int i = 0; i <= _heightPix; ++i) {
+			c.setRgb(vcolor.c[0], vcolor.c[1], vcolor.c[2]);
+			p.setPen(QPen(c));
+			p.setBrush(QBrush(c));
+			p.drawRect(5, 10 + i, _widthPix, 1);
+		}
+	} else {
+		vector<float> tabVal(nb);
+		vector<u_int> tabPix(nb);
+		tabPix[0] = _heightPix;
+		tabVal[0] = m_TM_FalseMaxSat;
+		for (u_int i = 0; i < nb; ++i) {
+			const float coeff = 1.f - i / (nb - 1.f);
+			tabPix[i] = lux::Floor2Int(_heightPix * coeff);
+
+			tabVal[i] = Clamp<float>(lux::ValueScale(lux::FalseScaleMethod(m_false_method), coeff) *
+				(m_TM_FalseMaxSat - m_TM_FalseMinSat) +
+				m_TM_FalseMinSat, m_TM_FalseMinSat, m_TM_FalseMaxSat);
+		}
+		u_int j = 0;
+		for (u_int i = 0; i <= _heightPix; ++i) {
+			vcolor = 255.f *
+				lux::ValuetoRGB(lux::FalseColorScale(m_false_colorscale),
+				static_cast<float>(_heightPix - i) / _heightPix);
+			c.setRgb(vcolor.c[0], vcolor.c[1], vcolor.c[2]);
+
+			p.setPen(QPen(c));
+			p.setBrush(QBrush(c));
+			p.drawRect(5, 10 + i, _widthPix, 1);
+
+			if (tabPix[j] == _heightPix - i) {
+				QString s;
+				s.setNum(tabVal[j], 'g', 3);
+				if (i == _heightPix ) {
+					// Don't write in black
+					c.setRgb(128, 128, 128);
+					p.setPen(QPen(c));
+					p.setBrush(QBrush(c));
+				}
+				p.drawRect(_widthPix + 5, 10 + i, 5, 1);
+				p.drawText(_widthPix + 15, 10 + i + 4, s);
+				++j;
+			}
+		}
+	}
+}
+
 ///////////////////////////////////////////
 // Save and Load settings from a ini file.
 
-void ToneMapWidget::SaveSettings( QString fName )
+void ToneMapWidget::SaveSettings(QString fName)
 {
-	QSettings settings( fName, QSettings::IniFormat );
+	QSettings settings(fName, QSettings::IniFormat);
 
 	settings.beginGroup("tonemapping");
-	if ( settings.status() ) return;
+	if (settings.status())
+		return;
 
-	settings.setValue( "TM_kernel", m_TM_kernel );
-	settings.setValue( "clamp_method", m_clamp_method );
+	settings.setValue("TM_kernel", m_TM_kernel);
+	settings.setValue("clamp_method", m_clamp_method);
 
-	settings.setValue( "TM_reinhard_prescale", m_TM_reinhard_prescale );
-	settings.setValue( "TM_reinhard_postscale", m_TM_reinhard_postscale );
-	settings.setValue( "TM_reinhard_burn", m_TM_reinhard_burn );
+	settings.setValue("TM_reinhard_prescale", m_TM_reinhard_prescale);
+	settings.setValue("TM_reinhard_postscale", m_TM_reinhard_postscale);
+	settings.setValue("TM_reinhard_burn", m_TM_reinhard_burn);
 
-	settings.setValue( "TM_linear_exposure", m_TM_linear_exposure );
-	settings.setValue( "TM_linear_sensitivity", m_TM_linear_sensitivity );
-	settings.setValue( "TM_linear_fstop", m_TM_linear_fstop );
-	settings.setValue( "TM_linear_gamma", m_TM_linear_gamma );
+	settings.setValue("TM_linear_exposure", m_TM_linear_exposure);
+	settings.setValue("TM_linear_sensitivity", m_TM_linear_sensitivity);
+	settings.setValue("TM_linear_fstop", m_TM_linear_fstop);
+	settings.setValue("TM_linear_gamma", m_TM_linear_gamma);
 
-	settings.setValue( "TM_contrast_ywa", m_TM_contrast_ywa );
+	settings.setValue("TM_contrast_ywa", m_TM_contrast_ywa);
+
+	settings.setValue("TM_false_maxsat", m_TM_FalseMaxSat);
+	settings.setValue("TM_false_minsat", m_TM_FalseMinSat);
+	settings.setValue("TM_false_method", m_false_method);
+	settings.setValue("TM_false_colorscale", m_false_colorscale);
+	settings.setValue("TM_false_legendNumber", m_TM_FalseLegendeNumber);
 
 	settings.endGroup();
 }
 
-void ToneMapWidget::LoadSettings( QString fName )
+void ToneMapWidget::LoadSettings(QString fName)
 {
-	QSettings settings( fName, QSettings::IniFormat );
+	QSettings settings(fName, QSettings::IniFormat);
 
 	settings.beginGroup("tonemapping");
-	if ( settings.status() ) return;
+	if (settings.status())
+		return;
 
-	m_TM_kernel = settings.value("TM_kernel", 0 ).toInt();
-	m_clamp_method = settings.value("clamp_method", 0 ).toInt();
+	m_TM_kernel = settings.value("TM_kernel", 0).toInt();
+	m_clamp_method = settings.value("clamp_method", 0).toInt();
 
-	m_TM_reinhard_prescale = settings.value("TM_reinhard_prescale", 1.0 ).toDouble();
-	m_TM_reinhard_postscale = settings.value("TM_reinhard_postscale", 1.0 ).toDouble();
-	m_TM_reinhard_burn = settings.value("TM_reinhard_burn", 6.0 ).toDouble();
+	m_TM_reinhard_prescale = settings.value("TM_reinhard_prescale", 1.).toDouble();
+	m_TM_reinhard_postscale = settings.value("TM_reinhard_postscale", 1.).toDouble();
+	m_TM_reinhard_burn = settings.value("TM_reinhard_burn", 6.).toDouble();
 
-	m_TM_linear_exposure = settings.value("TM_linear_exposure", 1.0 ).toDouble();
-	m_TM_linear_sensitivity = settings.value("TM_linear_sensitivity", 50.0 ).toDouble();
-	m_TM_linear_fstop = settings.value("TM_linear_fstop", 2.8 ).toDouble();
-	m_TM_linear_gamma = settings.value("TM_linear_gamma", 1.0 ).toDouble();
+	m_TM_linear_exposure = settings.value("TM_linear_exposure", 1.).toDouble();
+	m_TM_linear_sensitivity = settings.value("TM_linear_sensitivity", 50.).toDouble();
+	m_TM_linear_fstop = settings.value("TM_linear_fstop", 2.8).toDouble();
+	m_TM_linear_gamma = settings.value("TM_linear_gamma", 1.).toDouble();
 
-	m_TM_contrast_ywa = settings.value("TM_contrast_ywa", 0.1 ).toDouble();
+	m_TM_contrast_ywa = settings.value("TM_contrast_ywa", 0.1).toDouble();
+
+	m_TM_FalseMaxSat = settings.value("TM_false_maxsat", m_TM_FalseMaxSat).toDouble();
+	m_TM_FalseMinSat = settings.value("TM_false_minsat", m_TM_FalseMinSat).toDouble();
+	m_false_method = settings.value("TM_false_method", 0).toInt();
+	m_false_colorscale = settings.value("TM_false_colorscale", 0).toInt();
+	m_TM_FalseLegendeNumber = settings.value("TM_false_legendNumber", m_TM_FalseLegendeNumber).toInt();
 
 	settings.endGroup();
 

@@ -71,6 +71,11 @@
          <string>Auto Linear</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>False Colors</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item row="1" column="0" colspan="2">
@@ -855,7 +860,213 @@
        </layout>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="4" column="0" colspan="2">
+      <widget class="QFrame" name="frame_toneMapFalse">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_18">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_26">
+          <property name="horizontalSpacing">
+           <number>5</number>
+          </property>
+          <property name="verticalSpacing">
+           <number>2</number>
+          </property>
+          <item row="0" column="0" colspan="3">
+           <widget class="QLabel" name="label_false_max">
+            <property name="text">
+             <string>Maximum: </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" colspan="4">
+           <widget class="QLabel" name="label_false_valuemax">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="3">
+           <widget class="QLabel" name="label_false_valuemaxSat">
+            <property name="text">
+             <string>Max Value: </string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" colspan="2">
+           <widget class="QLineEdit" name="lineEdit_false_valuemaxsat">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_min">
+            <property name="text">
+             <string>Minimum: </string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" colspan="2">
+           <widget class="QLabel" name="label_false_valuemin">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_valueminsat">
+            <property name="text">
+             <string>Min Value: </string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2" colspan="2">
+           <widget class="QLineEdit" name="lineEdit_false_valueminsat">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_colorscale">
+            <property name="text">
+             <string>color scale: </string>
+            </property>
+            <property name="buddy">
+             <cstring>comboBox_false_colorscale</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2" colspan="2">
+           <widget class="QComboBox" name="comboBox_false_colorscale">
+            <property name="toolTip">
+             <string>Select coloring scale</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Standard</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>LMK</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RED</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>WHITE</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>YELLOW</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SPEOS</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="6" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_Method">
+            <property name="text">
+             <string>scale method: </string>
+            </property>
+            <property name="buddy">
+             <cstring>comboBox_false_Method</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="2" colspan="2">
+           <widget class="QComboBox" name="comboBox_false_Method">
+            <property name="toolTip">
+             <string>Select scaling method</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>linear</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>log</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>log3</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="7" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_numbervalue">
+            <property name="text">
+             <string>Number of Values: </string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="2" colspan="2">
+           <widget class="QLineEdit" name="lineEdit_false_legendeTest">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_averageluminance">
+            <property name="text">
+             <string>Average luminance (cd/m²): </string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="2" colspan="2">
+           <widget class="QLabel" name="label_false_valueaverageluminance">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0" colspan="2">
+           <widget class="QLabel" name="label_false_averageluminousemittance">
+            <property name="text">
+             <string>Luminous emittance (lux): </string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="2" colspan="2">
+           <widget class="QLabel" name="label_false_valueaverageluminousemittance">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4" rowspan="11" colspan="2">
+           <widget class="QLabel" name="Qlabel_image_false_legende">
+            <property name="text">
+             <string>TEST</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="5" column="0">
       <widget class="QLabel" name="label_clampMethod">
        <property name="text">
         <string>Clamp method:</string>
@@ -865,7 +1076,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QComboBox" name="comboBox_clampMethod">
        <property name="toolTip">
         <string>Select color clamping method</string>

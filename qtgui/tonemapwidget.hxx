@@ -60,6 +60,7 @@ public:
 	//void SetWidgetsEnabled(bool enabled);
     
 	void updateWidgetValues();
+	void updateFilmValues();
 	void resetValues();
 	void resetFromFilm (bool useDefaults);
 	void SetFromValues ();
@@ -83,12 +84,27 @@ private:
 
 	double m_TM_contrast_ywa;
 
+	int m_false_method;
+	double m_false_colorscale;
+	double m_TM_FalseMax;
+	double m_TM_FalseMin;
+	double m_TM_FalseMaxSat;
+	double m_TM_FalseMinSat;
+	double m_TM_FalseAvgLum;
+	double m_TM_FalseAvgEmi;
+	int m_TM_FalseLegendeNumber;
+
 	int sensitivityToPreset(double value);
 	int exposureToPreset(double value);
 	int fstopToPreset(double value);
 
+	void falseLegend();
+	void falseDrawLegend(QPaintDevice *dev);
+
 signals:
 	void valuesChanged();
+	void returnPressed();
+	void textChanged();
 
 private slots:
 	void setTonemapKernel (int choice);
@@ -115,6 +131,18 @@ private slots:
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);
+
+	void falsemaxChanged(double value);
+	void falseminChanged(double value);
+	void falsemaxSatChanged();
+	void falsemaxSatChanged(double value);
+	void falseminSatChanged();
+	void falseminSatChanged(double value);
+	void setFalseMethod(int choice);
+	void setFalseColorScale(int choice);
+	void initFalseColor();
+	void legendeChanged();
+	void legendeChanged(int value);
 };
 
 #endif // TONEMAPWIDGET_H

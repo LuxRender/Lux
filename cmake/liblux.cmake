@@ -428,6 +428,7 @@ SET(lux_textures_all_src
 
 SET(lux_tonemaps_src
 	tonemaps/contrast.cpp
+	tonemaps/falsecolors.cpp
 	tonemaps/lineartonemap.cpp
 	tonemaps/maxwhite.cpp
 	tonemaps/nonlinear.cpp
@@ -839,6 +840,7 @@ SET(lux_textures_fresnel_hdr
 SOURCE_GROUP("Header Files\\Textures\\Fresnel" FILES ${lux_textures_fresnel_hdr})
 SET(lux_tonemaps_hdr
 	tonemaps/contrast.h
+	tonemaps/falsecolors.h
 	tonemaps/lineartonemap.h
 	tonemaps/maxwhite.h
 	tonemaps/nonlinear.h

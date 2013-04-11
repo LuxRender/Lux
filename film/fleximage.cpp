@@ -57,7 +57,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime, float haltthreshold,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
-	float p_ContrastYwa, const string &p_response, float p_Gamma,
+	float p_ContrastYwa, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
@@ -110,7 +110,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
-	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear}", 0, &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear, 5: FalseColors}", 0, &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);
 
 	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
 	AddFloatAttribute(*this, "ReinhardPreScale", "Reinhard pre-scale", &FlexImageFilm::m_ReinhardPreScale, Queryable::ReadWriteAccess);
@@ -130,6 +130,19 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	m_ContrastYwa = d_ContrastYwa = p_ContrastYwa;
 	AddFloatAttribute(*this, "ContrastYwa", "Contrast world-adaptation luminance", &FlexImageFilm::m_ContrastYwa, Queryable::ReadWriteAccess);
+
+	m_FalseMethod = d_FalseMethod = p_FalseMethod;
+	AddIntAttribute(*this, "FalseMethod", "False color scaling method : {0: Linear, 1: Log, 2: Log3}", 0, &FlexImageFilm::m_FalseMethod, Queryable::ReadWriteAccess);
+	m_FalseColorScale = d_FalseColorScale = p_FalseColorScale;
+	AddIntAttribute(*this, "FalseColorScale", "False color scaling colour : {0: STD, 1: LMK, 2:RED, 3:WHITE, 4:YELLOW, 5:SPEOS}", 0, &FlexImageFilm::m_FalseColorScale, Queryable::ReadWriteAccess);
+	m_FalseMax = 0.f;
+	AddFloatAttribute(*this, "FalseMax", "Falsecolor Max", &FlexImageFilm::m_FalseMax, Queryable::ReadOnlyAccess);
+	m_FalseMin = 0.f;
+	AddFloatAttribute(*this, "FalseMin", "Falsecolor Min", &FlexImageFilm::m_FalseMin, Queryable::ReadWriteAccess);
+	m_FalseMaxSat = d_FalseMaxSat = p_FalseMaxSat;
+	AddFloatAttribute(*this, "FalseMaxSat", "Falsecolor MaxSat", &FlexImageFilm::m_FalseMaxSat, Queryable::ReadWriteAccess);
+	m_FalseMinSat = d_FalseMinSat = p_FalseMinSat;
+	AddFloatAttribute(*this, "FalseMinSat", "Falsecolor MinSat", &FlexImageFilm::m_FalseMinSat, Queryable::ReadWriteAccess);
 
 	m_RGB_X_White = d_RGB_X_White = whitepoint[0];
 	AddFloatAttribute(*this, "RGB_X_White", "Colourspace: white point X", &FlexImageFilm::m_RGB_X_White, Queryable::ReadWriteAccess);
@@ -239,6 +252,31 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 
 		case LUX_FILM_TM_CONTRAST_YWA:
 			m_ContrastYwa = value;
+			break;
+
+		case LUX_FILM_TM_FALSE_METHOD:
+			m_FalseMethod = Floor2Int(value);
+			break;
+		case LUX_FILM_TM_FALSE_COLORSCALE:
+			m_FalseColorScale = Floor2Int(value);
+			break;
+		case LUX_FILM_TM_FALSE_MAX:
+			//m_FalseMax = value;
+			break;
+		case LUX_FILM_TM_FALSE_MIN:
+			//m_FalseMin = value;
+			break;
+		case LUX_FILM_TM_FALSE_MAXSAT:
+			m_FalseMaxSat = value;
+			break;
+		case LUX_FILM_TM_FALSE_MINSAT:
+			m_FalseMinSat = value;
+			break;
+		case LUX_FILM_TM_FALSE_AVGLUM:
+			//m_FalseAvgLum = value;
+			break;
+		case LUX_FILM_TM_FALSE_AVGEMI:
+			//m_FalseAvgEmi = value;
 			break;
 
 		case LUX_FILM_TORGB_X_WHITE:
@@ -458,6 +496,31 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 			return m_ContrastYwa;
 			break;
 
+		case LUX_FILM_TM_FALSE_METHOD:
+			return m_FalseMethod;
+			break;
+		case LUX_FILM_TM_FALSE_COLORSCALE:
+			return m_FalseColorScale;
+			break;
+		case LUX_FILM_TM_FALSE_MAX:
+			return m_FalseMax;
+			break;
+		case LUX_FILM_TM_FALSE_MIN:
+			return m_FalseMin;
+			break;
+		case LUX_FILM_TM_FALSE_MAXSAT:
+			return m_FalseMaxSat;
+			break;
+		case LUX_FILM_TM_FALSE_MINSAT:
+			return m_FalseMinSat;
+			break;
+		case LUX_FILM_TM_FALSE_AVGLUM:
+			return m_FalseAvgLum;
+			break;
+		case LUX_FILM_TM_FALSE_AVGEMI:
+			return m_FalseAvgEmi;
+			break;
+
 		case LUX_FILM_TORGB_X_WHITE:
 			return m_RGB_X_White;
 			break;
@@ -646,6 +709,31 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 
 		case LUX_FILM_TM_CONTRAST_YWA:
 			return d_ContrastYwa;
+			break;
+
+		case LUX_FILM_TM_FALSE_METHOD:
+			return d_FalseMethod;
+			break;
+		case LUX_FILM_TM_FALSE_COLORSCALE:
+			return d_FalseColorScale;
+			break;
+		case LUX_FILM_TM_FALSE_MAX:
+			return m_FalseMax;
+			break;
+		case LUX_FILM_TM_FALSE_MIN:
+			return m_FalseMin;
+			break;
+		case LUX_FILM_TM_FALSE_MAXSAT:
+			return d_FalseMaxSat;
+			break;
+		case LUX_FILM_TM_FALSE_MINSAT:
+			return d_FalseMinSat;
+			break;
+		case LUX_FILM_TM_FALSE_AVGLUM:
+			return m_FalseAvgLum;
+			break;
+		case LUX_FILM_TM_FALSE_AVGEMI:
+			return m_FalseAvgEmi;
 			break;
 
 		case LUX_FILM_TORGB_X_WHITE:
@@ -890,8 +978,38 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	} else if(m_TonemapKernel == TMK_MaxWhite) {		
 		// MaxWhite Tonemapper
 		tmkernel = "maxwhite";
-	} else { // if(m_TonemapKernel == TMK_AutoLinear) {
+	} else if(m_TonemapKernel == TMK_AutoLinear) {
 		// Auto Linear Tonemapper
+		tmkernel = "autolinear";
+	} else if (m_TonemapKernel == TMK_Colors) {
+		// False Colors Tonemapper
+		std::string method;
+		if (m_FalseMethod == 0)
+				method = "linear";
+		else if (m_FalseMethod == 1)
+				method = "log";
+		else if (m_FalseMethod == 2)
+				method = "log3";
+		toneParams.AddString("method", &method, 1);
+		std::string scalecolor;
+		if (m_FalseColorScale == 0)
+				scalecolor = "std";
+		else if (m_FalseColorScale == 1)
+				scalecolor = "lmk";
+		else if (m_FalseColorScale == 2)
+				scalecolor = "red";
+		else if (m_FalseColorScale == 3)
+				scalecolor = "white";
+		else if (m_FalseColorScale == 4)
+				scalecolor = "yellow";
+		else if (m_FalseColorScale == 5)
+				scalecolor = "speos";
+		toneParams.AddString("colorscale", &scalecolor, 1);
+		toneParams.AddFloat("max", &m_FalseMaxSat, 1);
+		toneParams.AddFloat("min", &m_FalseMinSat, 1);
+		tmkernel = "falsecolors";
+	} else {
+		// Default to Auto Linear Tonemapper
 		tmkernel = "autolinear";
 	}
 
@@ -1252,12 +1370,16 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// outside loop in order to write complete image
 	u_int pcount = 0;
 	u_int pix = 0;
+	float maxVal = -INFINITY, minVal = INFINITY;
 	for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
 		for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
 			const u_int offset = y * xResolution + x;
 			if (alphaWeight[pix] > 0.f) {
 				alpha[pix] /= alphaWeight[pix];
-				Y += pixels[pix].c[1];
+				const float YP = pixels[pix].c[1];
+				Y += YP;
+				minVal = min(minVal, YP);
+				maxVal = max(maxVal, YP);
 				pcount++;
 			}
 			alpha_buffer[offset] = alpha[pix];
@@ -1281,6 +1403,15 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 	// release pool lock before writing output
 	poolLock.unlock();
+
+	// Update false colors data
+	m_FalseMax = maxVal;
+	m_FalseMin = minVal;
+	if (m_FalseMaxSat <= 0.f) {
+		m_FalseMaxSat = maxVal;
+		m_FalseMinSat = minVal;
+	}
+	m_FalseAvgLum = Y;
 
 	WriteImage2(type, pixels, alpha, "");
 }
@@ -1797,6 +1928,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (tmkernelStr == "contrast") s_TonemapKernel = TMK_Contrast;
 	else if (tmkernelStr == "maxwhite") s_TonemapKernel = TMK_MaxWhite;
 	else if (tmkernelStr == "autolinear") s_TonemapKernel = TMK_AutoLinear;
+	else if (tmkernelStr == "falsecolors") s_TonemapKernel = TMK_Colors;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"autolinear\".";
 		s_TonemapKernel = TMK_AutoLinear;
@@ -1810,6 +1942,38 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_LinearFStop = params.FindOneFloat("linear_fstop", 2.8f);
 	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
 	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);
+	string falsemethodStr = params.FindOneString("false_method", "linear");
+	int s_FalseMethod;
+	if (falsemethodStr == "linear")
+		s_FalseMethod = 0;
+	else if (falsemethodStr == "log")
+		s_FalseMethod = 1;
+	else if (falsemethodStr == "log3")
+		s_FalseMethod = 2;
+	else {
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "False color scaling method  '" << falsemethodStr << "' unknown. Using \"linear\".";
+		s_FalseMethod = 0;
+	}
+	string falseColorscaleStr = params.FindOneString("false_colorscale", "std");
+	int s_FalseScalecolor;
+	if (falseColorscaleStr == "std")
+		s_FalseScalecolor = 0;
+	else if (falseColorscaleStr == "lmk")
+		s_FalseScalecolor = 1;
+	else if (falseColorscaleStr == "red")
+		s_FalseScalecolor = 2;
+	else if (falseColorscaleStr == "white")
+		s_FalseScalecolor = 3;
+	else if (falseColorscaleStr == "yellow")
+		s_FalseScalecolor = 4;
+	else if (falseColorscaleStr == "speos")
+		s_FalseScalecolor = 5;
+	else {
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "False color scale '" << falseColorscaleStr << "' unknown. Using \"std\".";
+		s_FalseScalecolor = 0;
+	}
+	float s_FalseMaxSat = params.FindOneFloat("false_max", 0.0f);
+	float s_FalseMinSat = params.FindOneFloat("false_min", 0.0f);
 
 	FileData::decode(params, "cameraresponse");
 	string response = AdjustFilename(params.FindOneString("cameraresponse", ""));
@@ -1825,7 +1989,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
 		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime, haltthreshold,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
-		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, response, s_Gamma,
+		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_FalseMethod, s_FalseScalecolor, s_FalseMaxSat, s_FalseMinSat, response, s_Gamma,
 		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename);
 }
 
