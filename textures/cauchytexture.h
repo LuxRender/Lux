@@ -56,5 +56,11 @@ private:
 	float index;
 };
 
+class AbbeTexture
+{
+public:
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+};
+
 }//namespace lux
 

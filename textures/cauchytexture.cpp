@@ -41,4 +41,51 @@ Texture<FresnelGeneral> *CauchyTexture::CreateFresnelTexture(const Transform &te
 	return new CauchyTexture(cauchya, cauchyb);
 }
 
+// AbbeTexture Method Definitions
+Texture<FresnelGeneral> *AbbeTexture::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp)
+{
+	// which lines to use
+	// d, D, e or custom
+	string type = tp.FindOneString("type", "d");
+	
+	// default is d type
+	float lambda_D = 587.5618f;
+	float lambda_F = 486.13f;
+	float lambda_C = 656.28f;
+	if (type == "D") {
+		lambda_D = 589.29f;
+	} else if (type == "e") {
+		lambda_D = 546.07f;
+		lambda_F = 479.99f;
+		lambda_C = 643.85f;
+	} else if (type == "custom") {
+		lambda_D = tp.FindOneFloat("lambda_D", lambda_D);
+		lambda_F = tp.FindOneFloat("lambda_F", lambda_F);
+		lambda_C = tp.FindOneFloat("lambda_C", lambda_C);
+	}
+
+	// default is V_d for BK7
+	const float V = tp.FindOneFloat("V", 64.17f);
+	const float n = tp.FindOneFloat("n", 1.51680f);
+
+	// convert to Cauchy coefficients
+
+	// convert wavelengths from nm to um
+	lambda_D *= 1e-3f;
+	lambda_F *= 1e-3f;
+	lambda_C *= 1e-3f;
+	
+	// and square
+	lambda_D *= lambda_D;
+	lambda_F *= lambda_F;
+	lambda_C *= lambda_C;
+
+	const float cauchy_B = (n - 1.f) * (lambda_C * lambda_F) / (V * (lambda_C - lambda_F));
+	const float cauchy_A = n - cauchy_B / lambda_D;
+
+	return new CauchyTexture(cauchy_A, cauchy_B);
+}
+
 static DynamicLoader::RegisterFresnelTexture<CauchyTexture> r("cauchy");
+static DynamicLoader::RegisterFresnelTexture<AbbeTexture> r2("abbe");
