@@ -85,7 +85,7 @@ private:
 	double m_TM_contrast_ywa;
 
 	int m_false_method;
-	double m_false_colorscale;
+	int m_false_colorscale;
 	double m_TM_FalseMax;
 	double m_TM_FalseMin;
 	double m_TM_FalseMaxSat;
