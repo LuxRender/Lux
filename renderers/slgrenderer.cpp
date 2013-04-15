@@ -1794,23 +1794,29 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
 
-				(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
-				(*previousEyeWeight)(pixelX, pixelY) = spNew->weight;
-
+				// I have to clamp alpha values because then can be outside the [0.0, 1.0]
+				// range (i.e. some pixel filter can have negative weights and lead
+				// to negative values)
 				const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
-					(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha) : 0.f;
+					Clamp(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha, 0.f, 1.f) : 0.f;
 				float deltaAlpha = alphaNew - (*previousAlphaBuffer)(pixelX, pixelY);
 
-				(*previousAlphaBuffer)(pixelX, pixelY) = alphaNew;
-
+				// Delay the update if deltaWeight is < 0.0
 				if (deltaWeight > 0.f) {
 					deltaRadiance /= deltaWeight;
 					deltaAlpha /= deltaWeight;
 
 					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
-					// Flip the image upside down
-					Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
-					film->AddSampleNoFiltering(&contrib);
+
+					if ((deltaAlpha >= 0.f) && (xyz.Y() >= 0.f)) {
+						// Flip the image upside down
+						Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
+						film->AddSampleNoFiltering(&contrib);
+
+						(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
+						(*previousEyeWeight)(pixelX, pixelY) = spNew->weight;
+						(*previousAlphaBuffer)(pixelX, pixelY) = alphaNew;
+					}
 				}
 			}
 		}
