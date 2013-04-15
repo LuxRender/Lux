@@ -72,6 +72,8 @@ public:
 
 	void AddPortalShape(boost::shared_ptr<Primitive> &shape);
 
+	const Transform &GetTransform() const { return LightToWorld; }
+	
 	// Light Public Data
 	const u_int nSamples;
 	u_int nrPortalShapes;

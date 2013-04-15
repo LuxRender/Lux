@@ -1249,6 +1249,9 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
 			INV_PI;
 
+		const Transform &light2World = sunLight->GetTransform();
+		const string light2WorldStr = ToString(light2World.m);
+
 		const std::string createSunLightProp = "scene.sunlight.dir = " +
 				ToString(dirX) + " " +
 				ToString(dirY) + " " +
@@ -1258,7 +1261,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			"scene.sunlight.gain = " +
 				ToString(gain) + " " +
 				ToString(gain) + " " +
-				ToString(gain) + "\n";
+				ToString(gain) + "\n" +
+			"scene.sunlight.transformation = " + light2WorldStr + "\n";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProp << "]";
 		slgScene->AddSunLight(createSunLightProp);
 	}
@@ -1291,6 +1295,9 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			// for compatibility with past scene
 			const float gain = (*sky2Light)["gain"].FloatValue() * gainAdjustFactor;
 
+			const Transform &light2World = sky2Light->GetTransform();
+			const string light2WorldStr = ToString(light2World.m);
+
 			const std::string createSkyLightProp = "scene.skylight.dir = " +
 					ToString(dirX) + " " +
 					ToString(dirY) + " " +
@@ -1299,7 +1306,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				"scene.skylight.gain = " +
 					ToString(gain) + " " +
 					ToString(gain) + " " +
-					ToString(gain) + "\n";
+					ToString(gain) + "\n" +
+				"scene.skylight.transformation = " + light2WorldStr + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
 			slgScene->AddSkyLight(createSkyLightProp);
 		} else {
@@ -1311,6 +1319,9 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			// for compatibility with past scene
 			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
 
+			const Transform &light2World = skyLight->GetTransform();
+			const string light2WorldStr = ToString(light2World.m);
+
 			const std::string createSkyLightProp = "scene.skylight.dir = " +
 					ToString(dirX) + " " +
 					ToString(dirY) + " " +
@@ -1319,7 +1330,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				"scene.skylight.gain = " +
 					ToString(gain) + " " +
 					ToString(gain) + " " +
-					ToString(gain) + "\n";
+					ToString(gain) + "\n" +
+				"scene.skylight.transformation = " + light2WorldStr + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
 			slgScene->AddSkyLight(createSkyLightProp);
 		}
@@ -1351,13 +1363,17 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
 				const string imageMapName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
+				const Transform &light2World = infiniteAreaLight->GetTransform();
+				const string light2WorldStr = ToString(light2World.m);
+
 				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + imageMapName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
-					"scene.infinitelight.shift = 0.5 0.0\n"
+					"scene.infinitelight.shift = 0.0 0.0\n"
 					"scene.infinitelight.gain = " +
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
-						ToString(gain * colorB) + "\n";
+						ToString(gain * colorB) + "\n" +
+					"scene.infinitelight.transformation = " + light2WorldStr + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
 				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			} else {
@@ -1371,13 +1387,17 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
 				const string imageMapName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
+				const Transform &light2World = infiniteAreaLightIS->GetTransform();
+				const string light2WorldStr = ToString(light2World.m);
+
 				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + imageMapName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
-					"scene.infinitelight.shift = 0.5 0.0\n"
+					"scene.infinitelight.shift = 0.0 0.0\n"
 					"scene.infinitelight.gain = " +
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
-						ToString(gain * colorB) + "\n";
+						ToString(gain * colorB) + "\n" +
+					"scene.infinitelight.transformation = " + light2WorldStr + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
 				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			}
@@ -1432,7 +1452,7 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 					continue;
 
 				// Build transformation string
-				string transString = ToString(instance->GetTransform().m);
+				const string transString = ToString(instance->GetTransform().m);
 	
 				// Add the object
 				for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
