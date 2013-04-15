@@ -122,6 +122,7 @@ SET(lux_core_reflection_src
 SOURCE_GROUP("Source Files\\Core\\Reflection" FILES ${lux_core_reflection_src})
 
 SET(lux_core_reflection_bsdf_src
+	core/reflection/bsdf/doublesidebsdf.cpp
 	core/reflection/bsdf/layeredbsdf.cpp
 	core/reflection/bsdf/mixbsdf.cpp
 	core/reflection/bsdf/multibsdf.cpp
@@ -256,6 +257,7 @@ SOURCE_GROUP("Source Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphe
 SET(lux_materials_src
 	materials/carpaint.cpp
 	materials/cloth.cpp
+	materials/doubleside.cpp
 	materials/glass.cpp
 	materials/glass2.cpp
 	materials/glossy.cpp
@@ -569,6 +571,7 @@ SET(lux_core_reflection_hdr
 	)
 SOURCE_GROUP("Header Files\\Core\\Reflection" FILES ${lux_core_reflection_hdr})
 SET(lux_core_reflection_bsdf_hdr
+	core/reflection/bsdf/doublesidebsdf.h
 	core/reflection/bsdf/layeredbsdf.h
 	core/reflection/bsdf/mixbsdf.h
 	core/reflection/bsdf/multibsdf.h
