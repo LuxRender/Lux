@@ -166,9 +166,14 @@ void lux_wrapped_context::abort()
 }
 void lux_wrapped_context::wait()
 {
-	boost::mutex::scoped_lock lock(ctxMutex);
-	checkContext();
-	ctx->Wait();
+	lux::Context *lctx;
+	{
+		// don't block other context calls
+		boost::mutex::scoped_lock lock(ctxMutex);
+		checkContext();
+		lctx = ctx;
+	}
+	lctx->Wait();
 }
 void lux_wrapped_context::exit()
 {
