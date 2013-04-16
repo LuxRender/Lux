@@ -33,8 +33,9 @@ public:
 	DoubleSideMaterial(
 		boost::shared_ptr<Material> &m1,
 		boost::shared_ptr<Material> &m2,
+		const bool afront,
 		const ParamSet &mp) : Material("DoubleSideMaterial-" + boost::lexical_cast<string>(this), mp, false),
-		mat1(m1), mat2(m2) { }
+		mat1(m1), mat2(m2), alwaysFront(afront) { }
 	virtual ~DoubleSideMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
@@ -49,6 +50,7 @@ public:
 private:
 	// DoubleSideMaterial Private Data
 	boost::shared_ptr<Material> mat1, mat2;
+	bool alwaysFront;
 };
 
 }//namespace lux

@@ -42,8 +42,18 @@ BSDF *DoubleSideMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths 
 	bsdf->SetFrontMaterial(mat1->GetBSDF(arena, sw, isect, dgS));
 
 	dgS = dgShading;
-	mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-	bsdf->SetBackMaterial(mat2->GetBSDF(arena, sw, isect, dgS));
+	if (alwaysFront) {
+		// I need to flip the geometry normal in order to fool the material
+		dgS.nn = -dgS.nn;
+		Intersection backIsect = isect;
+		backIsect.dg.nn = -backIsect.dg.nn;
+
+		mat2->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
+		bsdf->SetBackMaterial(mat2->GetBSDF(arena, sw, backIsect, dgS));
+	} else {
+		mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+		bsdf->SetBackMaterial(mat2->GetBSDF(arena, sw, isect, dgS));		
+	}
 
 	bsdf->SetCompositingParams(&compParams);
 
@@ -64,7 +74,9 @@ Material *DoubleSideMaterial::CreateMaterial(const Transform &xform,
 		return NULL;
 	}
 
-	return new DoubleSideMaterial(mat1, mat2, mp);
+	const bool alwaysFront = mp.FindOneBool("alwaysfront", true);
+
+	return new DoubleSideMaterial(mat1, mat2, alwaysFront, mp);
 }
 
 static DynamicLoader::RegisterMaterial<DoubleSideMaterial> r("doubleside");
