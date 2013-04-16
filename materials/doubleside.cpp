@@ -39,16 +39,16 @@ BSDF *DoubleSideMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths 
 
 	DifferentialGeometry dgS = dgShading;
 	if (useFrontForFrontMat) {
-		forntMat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		bsdf->SetFrontMaterial(forntMat->GetBSDF(arena, sw, isect, dgS));
+		frontMat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+		bsdf->SetFrontMaterial(frontMat->GetBSDF(arena, sw, isect, dgS));
 	} else {
 		// I need to flip the geometry normal in order to fool the material
 		dgS.nn = -dgS.nn;
 		Intersection backIsect = isect;
 		backIsect.dg.nn = -backIsect.dg.nn;
 
-		forntMat->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
-		bsdf->SetFrontMaterial(forntMat->GetBSDF(arena, sw, backIsect, dgS));
+		frontMat->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
+		bsdf->SetFrontMaterial(frontMat->GetBSDF(arena, sw, backIsect, dgS));
 	}
 
 	dgS = dgShading;

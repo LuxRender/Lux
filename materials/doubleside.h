@@ -35,13 +35,13 @@ public:
 		boost::shared_ptr<Material> &backm,
 		const bool ufront, const bool uback,
 		const ParamSet &mp) : Material("DoubleSideMaterial-" + boost::lexical_cast<string>(this), mp, false),
-		forntMat(frontm), backMat(backm), useFrontForFrontMat(ufront), useFrontForBackMat(uback) { }
+		frontMat(frontm), backMat(backm), useFrontForFrontMat(ufront), useFrontForBackMat(uback) { }
 	virtual ~DoubleSideMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
-	Material *GetFrontMaterial() { return forntMat.get(); }
+	Material *GetFrontMaterial() { return frontMat.get(); }
 	Material *GetBackMaterial() { return backMat.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
@@ -49,7 +49,7 @@ public:
 
 private:
 	// DoubleSideMaterial Private Data
-	boost::shared_ptr<Material> forntMat, backMat;
+	boost::shared_ptr<Material> frontMat, backMat;
 	bool useFrontForFrontMat, useFrontForBackMat;
 };
 
