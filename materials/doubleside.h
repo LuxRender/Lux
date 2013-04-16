@@ -31,26 +31,26 @@ class DoubleSideMaterial : public Material {
 public:
 	// DoubleSideMaterial Public Methods
 	DoubleSideMaterial(
-		boost::shared_ptr<Material> &m1,
-		boost::shared_ptr<Material> &m2,
-		const bool afront,
+		boost::shared_ptr<Material> &frontm,
+		boost::shared_ptr<Material> &backm,
+		const bool ufront, const bool uback,
 		const ParamSet &mp) : Material("DoubleSideMaterial-" + boost::lexical_cast<string>(this), mp, false),
-		mat1(m1), mat2(m2), alwaysFront(afront) { }
+		forntMat(frontm), backMat(backm), useFrontForFrontMat(ufront), useFrontForBackMat(uback) { }
 	virtual ~DoubleSideMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
-	Material *GetMaterial1() { return mat1.get(); }
-	Material *GetMaterial2() { return mat2.get(); }
+	Material *GetFrontMaterial() { return forntMat.get(); }
+	Material *GetBackMaterial() { return backMat.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 
 private:
 	// DoubleSideMaterial Private Data
-	boost::shared_ptr<Material> mat1, mat2;
-	bool alwaysFront;
+	boost::shared_ptr<Material> forntMat, backMat;
+	bool useFrontForFrontMat, useFrontForBackMat;
 };
 
 }//namespace lux

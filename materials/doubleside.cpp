@@ -38,21 +38,31 @@ BSDF *DoubleSideMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths 
 		isect.exterior, isect.interior);
 
 	DifferentialGeometry dgS = dgShading;
-	mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-	bsdf->SetFrontMaterial(mat1->GetBSDF(arena, sw, isect, dgS));
-
-	dgS = dgShading;
-	if (alwaysFront) {
+	if (useFrontForFrontMat) {
+		forntMat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+		bsdf->SetFrontMaterial(forntMat->GetBSDF(arena, sw, isect, dgS));
+	} else {
 		// I need to flip the geometry normal in order to fool the material
 		dgS.nn = -dgS.nn;
 		Intersection backIsect = isect;
 		backIsect.dg.nn = -backIsect.dg.nn;
 
-		mat2->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
-		bsdf->SetBackMaterial(mat2->GetBSDF(arena, sw, backIsect, dgS));
+		forntMat->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
+		bsdf->SetFrontMaterial(forntMat->GetBSDF(arena, sw, backIsect, dgS));
+	}
+
+	dgS = dgShading;
+	if (useFrontForBackMat) {
+		// I need to flip the geometry normal in order to fool the material
+		dgS.nn = -dgS.nn;
+		Intersection backIsect = isect;
+		backIsect.dg.nn = -backIsect.dg.nn;
+
+		backMat->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
+		bsdf->SetBackMaterial(backMat->GetBSDF(arena, sw, backIsect, dgS));
 	} else {
-		mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		bsdf->SetBackMaterial(mat2->GetBSDF(arena, sw, isect, dgS));		
+		backMat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+		bsdf->SetBackMaterial(backMat->GetBSDF(arena, sw, isect, dgS));		
 	}
 
 	bsdf->SetCompositingParams(&compParams);
@@ -74,9 +84,10 @@ Material *DoubleSideMaterial::CreateMaterial(const Transform &xform,
 		return NULL;
 	}
 
-	const bool alwaysFront = mp.FindOneBool("alwaysfront", true);
+	const bool useFrontForFront = mp.FindOneBool("usefrontforfront", true);
+	const bool useFrontForBack = mp.FindOneBool("usefrontforback", true);
 
-	return new DoubleSideMaterial(mat1, mat2, alwaysFront, mp);
+	return new DoubleSideMaterial(mat1, mat2, useFrontForFront, useFrontForBack, mp);
 }
 
 static DynamicLoader::RegisterMaterial<DoubleSideMaterial> r("doubleside");
