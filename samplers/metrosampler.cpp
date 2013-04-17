@@ -39,7 +39,7 @@ static const u_int rngA = 884;
 MetropolisSampler::MetropolisData::MetropolisData(const MetropolisSampler &sampler) :
 	consecRejects(0), stamp(0), currentStamp(0), weight(0.f),
 	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f),
-	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0),
+	noiseAwareMapVersion(0), userSamplingMapVersion(0),
 	large(true), cooldown(sampler.cooldownTime > 0)
 {
 	u_int i;

@@ -30,7 +30,7 @@ using namespace lux;
 
 RandomSampler::RandomData::RandomData(const Sampler &sampler, int xPixelStart,
 	int yPixelStart, u_int pixelSamples) :
-	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0)
+	noiseAwareMapVersion(0), userSamplingMapVersion(0)
 {
 	xPos = xPixelStart;
 	yPos = yPixelStart;

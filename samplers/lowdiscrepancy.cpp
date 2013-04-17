@@ -29,7 +29,7 @@
 using namespace lux;
 
 LDSampler::LDData::LDData(const Sampler &sampler, int xPixelStart, int yPixelStart, u_int pixelSamples) :
-	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0) {
+	noiseAwareMapVersion(0), userSamplingMapVersion(0) {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
 	samplePos = pixelSamples - 1;
