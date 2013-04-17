@@ -59,7 +59,7 @@ BSDF *DoubleSideMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths 
 		backIsect.dg.nn = -backIsect.dg.nn;
 
 		backMat->GetShadingGeometry(sw, backIsect.dg.nn, &dgS);
-		bsdf->SetBackMaterial(frontMat->GetBSDF(arena, sw, backIsect, dgS));
+		bsdf->SetBackMaterial(backMat->GetBSDF(arena, sw, backIsect, dgS));
 	} else {
 		backMat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
 		bsdf->SetBackMaterial(backMat->GetBSDF(arena, sw, isect, dgS));		
