@@ -98,7 +98,11 @@ IF(QT4_FOUND)
 
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS})
 	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
-	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
+
+	# The next OPTIONS directive prevent the moc to include some boost files
+	# because qt 4 moc parser fails on some complexes macro definiton in boost >=
+	# 1.53.
+	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED -DBOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION )
 
 	#file (GLOB TRANSLATIONS_FILES qtgui/translations/*.ts)
 	#qt4_create_translation(QM_FILES ${FILES_TO_TRANSLATE} ${TRANSLATIONS_FILES})
