@@ -73,6 +73,8 @@ public:
 	virtual void makeNamedMaterial(const char *mName, const lux_paramset* params) = 0;
 	virtual void makeNamedVolume(const char *vName, const char *vType, const lux_paramset* params) = 0;
 	virtual void material(const char *mName, const lux_paramset* params) = 0;
+	virtual void motionBegin(unsigned int n, float *t) = 0;
+	virtual void motionEnd() = 0;
 	virtual void motionInstance(const char *mName, float startTime, float endTime, const char *toTransform) = 0;
 	virtual void namedMaterial(const char *mName) = 0;
 	virtual void objectBegin(const char *oName) = 0;

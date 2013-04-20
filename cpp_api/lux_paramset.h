@@ -27,6 +27,7 @@
 #define LUX_CPP_PARAMSET_H
 
 #include "export_defs.h"
+#include <string>
 
 // This is the CPP API Interface for a LuxRender ParamSet
 CPP_EXPORT class CPP_API lux_paramset {
@@ -41,7 +42,8 @@ public:
 	virtual void AddVector(const char*, const float *, unsigned int nItems = 1) = 0;
 	virtual void AddNormal(const char*, const float *, unsigned int nItems = 1) = 0;
 	virtual void AddRGBColor(const char*, const float *, unsigned int nItems = 1) = 0;
-	virtual void AddString(const char*, const char*, unsigned int nItems = 1) = 0;
+	virtual void AddString(const char*, const char**, unsigned int nItems = 1) = 0;
+	virtual void AddString(const char*, const std::string*, unsigned int nItems = 1) = 0;
 	virtual void AddTexture(const char*, const char*) = 0;
 
 };

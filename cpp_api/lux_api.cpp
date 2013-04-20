@@ -103,7 +103,7 @@ bool lux_wrapped_context::parse(const char* filename, bool async)
 	}
 	else
 	{
-		return luxParse(filename);
+		return luxParse(filename) != 0;
 	}
 }
 bool lux_wrapped_context::parsePartial(const char* filename, bool async)
@@ -117,7 +117,7 @@ bool lux_wrapped_context::parsePartial(const char* filename, bool async)
 	}
 	else
 	{
-		return luxParsePartial(filename);
+		return luxParsePartial(filename) != 0;
 	}
 }
 bool lux_wrapped_context::parseSuccessful()
@@ -301,6 +301,18 @@ void lux_wrapped_context::material(const char *mName, const lux_paramset* params
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
 	ctx->Material(mName, UPCAST_PARAMSET);
+}
+void lux_wrapped_context::motionBegin(unsigned int n, float *t)
+{
+	boost::mutex::scoped_lock lock(ctxMutex);
+	checkContext();
+	ctx->MotionBegin(n, t);
+}
+void lux_wrapped_context::motionEnd()
+{
+	boost::mutex::scoped_lock lock(ctxMutex);
+	checkContext();
+	ctx->MotionEnd();
 }
 void lux_wrapped_context::motionInstance(const char *mName, float startTime, float endTime, const char *toTransform)
 {
@@ -634,46 +646,65 @@ void lux_wrapped_paramset::AddBool(const char* n, const bool * v, unsigned int n
 }
 void lux_wrapped_paramset::AddPoint(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Point* pts = new lux::Point[nItems/3];
-	for(unsigned int i=0; i<nItems; i+=3)
+	lux::Point* pts = new lux::Point[nItems];
+	for(unsigned int i=0; i<nItems; i++)
 	{
-		pts[i/3].x = v[i];
-		pts[i/3].y = v[i+1];
-		pts[i/3].z = v[i+2];
+		pts[i].x = v[i*3+0];
+		pts[i].y = v[i*3+1];
+		pts[i].z = v[i*3+2];
 	}
-	ps->AddPoint(n, pts, nItems/3);
+	ps->AddPoint(n, pts, nItems);
+	delete[] pts;
 }
 void lux_wrapped_paramset::AddVector(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Vector* vec = new lux::Vector[nItems/3];
-	for(unsigned int i=0; i<nItems; i+=3)
+	lux::Vector* vec = new lux::Vector[nItems];
+	for(unsigned int i=0; i<nItems; i++)
 	{
-		vec[i/3].x = v[i];
-		vec[i/3].y = v[i+1];
-		vec[i/3].z = v[i+2];
+		vec[i].x = v[i*3+0];
+		vec[i].y = v[i*3+1];
+		vec[i].z = v[i*3+2];
 	}
-	ps->AddVector(n, vec, nItems/3);
+	ps->AddVector(n, vec, nItems);
+	delete[] vec;
 }
 void lux_wrapped_paramset::AddNormal(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Normal* nor = new lux::Normal[nItems/3];
-	for(unsigned int i=0; i<nItems; i+=3)
+	lux::Normal* nor = new lux::Normal[nItems];
+	for(unsigned int i=0; i<nItems; i++)
 	{
-		nor[i/3].x = v[i];
-		nor[i/3].y = v[i+1];
-		nor[i/3].z = v[i+2];
+		nor[i].x = v[i*3+0];
+		nor[i].y = v[i*3+1];
+		nor[i].z = v[i*3+2];
 	}
-	ps->AddNormal(n, nor, nItems/3);
+	ps->AddNormal(n, nor, nItems);
+	delete[] nor;
 }
 void lux_wrapped_paramset::AddRGBColor(const char* n, const float * v, unsigned int nItems)
 {
-	lux::RGBColor* col = new lux::RGBColor(v[0],v[1],v[2]);
+	lux::RGBColor* col = new lux::RGBColor[nItems];
+	for(unsigned int i=0; i<nItems; i++)
+	{
+		col[i].c[0] = v[i*3+0];
+		col[i].c[1] = v[i*3+1];
+		col[i].c[2] = v[i*3+2];
+	}
 	ps->AddRGBColor(n, col, nItems);
+	delete[] col;
 }
-void lux_wrapped_paramset::AddString(const char* n, const char* v, unsigned int nItems)
+void lux_wrapped_paramset::AddString(const char* n, const char** v, unsigned int nItems)
 {
-	std::string* str = new std::string(v);
+	std::string* str = new std::string[nItems];
+	for(unsigned int i=0; i<nItems; i++)
+	{
+		str[i] = std::string(v[i]);
+	}
 	ps->AddString(n, str, nItems);
+	delete[] str;
+}
+void lux_wrapped_paramset::AddString(const char* n, const std::string* v, unsigned int nItems)
+{
+	ps->AddString(n, v, nItems);
 }
 void lux_wrapped_paramset::AddTexture(const char* n, const char* v)
 {

@@ -80,6 +80,8 @@ public:
 	void makeNamedMaterial(const char *mName, const lux_paramset* params);
 	void makeNamedVolume(const char *vName, const char *vType, const lux_paramset* params);
 	void material(const char *mName, const lux_paramset* params);
+	void motionBegin(u_int n, float *t);
+	void motionEnd();
 	void motionInstance(const char *mName, float startTime, float endTime, const char *toTransform);
 	void namedMaterial(const char *mName);
 	void objectBegin(const char *oName);
@@ -184,7 +186,8 @@ public:
 	void AddVector(const char*, const float *, u_int nItems = 1);
 	void AddNormal(const char*, const float *, u_int nItems = 1);
 	void AddRGBColor(const char*, const float *, u_int nItems = 1);
-	void AddString(const char*, const char*, u_int nItems = 1);
+	void AddString(const char*, const char**, u_int nItems = 1);
+	void AddString(const char*, const std::string *, unsigned int nItems = 1);
 	void AddTexture(const char*, const char*);
 
 private:
