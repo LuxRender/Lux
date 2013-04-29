@@ -200,7 +200,6 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 	for (std::vector<luxrays::Mesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh)
 		dataSet->Add(*mesh);
 
-	dataSet->Preprocess();
 	scene->dataSet = dataSet;
 	ctx->SetDataSet(dataSet);
 

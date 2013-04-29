@@ -1564,8 +1564,7 @@ void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 }
 
 slg::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace) {
-	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
-	slg::Scene *slgScene = new slg::Scene(accelType);
+	slg::Scene *slgScene = new slg::Scene();
 
 	// Tell to the cache to not delete mesh data (they are pointed by Lux
 	// primitives too and they will be deleted by Lux Context)
@@ -1608,20 +1607,6 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			"opencl.cpu.use = 1\n"
 			"opencl.gpu.use = 1\n"
 			;
-
-	//--------------------------------------------------------------------------
-	// Accelerator related settings
-	//--------------------------------------------------------------------------
-
-	// Try to recover the default accelerator of the scene
-	if (dynamic_cast<BVHAccel *>(scene->aggregate.get())) {
-		ss << "accelerator.type = 0" << "\n";
-	} else if (dynamic_cast<TaBRecKdTreeAccel *>(scene->aggregate.get())) {
-		ss << "accelerator.type = 3" << "\n";
-	} else {
-		// Just use the default setting (QBVH with or without image support)
-		ss << "accelerator.type = -1" << "\n";
-	}
 
 	//--------------------------------------------------------------------------
 	// Epsilon related settings
