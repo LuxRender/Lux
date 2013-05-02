@@ -81,6 +81,8 @@ private:
 	double m_Glare_amount, m_Glare_radius;
 	int m_Glare_blades;
 	double m_Glare_threshold;
+	bool m_Glare_map;
+	QString m_Glare_pupil, m_Glare_lashes;
 
 private slots:
 	// Lens effects slots
@@ -103,6 +105,9 @@ private slots:
 	void glareBladesChanged (int value);
 	void glareThresholdSliderChanged (int value);
 	void glareThresholdSpinBoxChanged (double value);
+	void glareMapChanged(int);
+	void glarePupilChanged();
+	void glareLashesChanged();
 	void computeGlareLayer ();
 	void deleteGlareLayer ();
 };

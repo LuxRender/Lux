@@ -213,10 +213,12 @@ void updateWidgetValue(QSpinBox *spinbox, int value);
 void updateWidgetValue(QCheckBox *checkbox, bool checked);
 void updateWidgetValue(QLabel *label, double value);
 void updateWidgetValue(QLineEdit *line, double value);
+void updateWidgetValue(QLineEdit *line, const QString &value);
 
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
 void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
 double retrieveParam (bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0);
+QString retrieveStringParam (bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0);
 
 class MainWindow : public QMainWindow
 {

@@ -837,6 +837,10 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddString(s, new string(params[i]));
 		if (s == "filtertype")
 			AddString(s, new string(params[i]));
+		if (s == "glarelashesfilename")
+			AddString(s, new string(params[i]));
+		if (s == "glarepupilfilename")
+			AddString(s, new string(params[i]));
 		if (s == "iesname")
 			AddString(s, new string(params[i]));
 		if (s == "ldr_clamp_method")

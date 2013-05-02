@@ -97,6 +97,8 @@ double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters
 		return 0.;
 }
 void Scene::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, u_int index) { 
+	if(comp == LUX_FILM)
+		camera()->film->SetStringParameterValue(param, value, index);
 }
 string Scene::GetStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)

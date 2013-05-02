@@ -62,7 +62,10 @@ LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new 
 	connect(ui->spinBox_glareThreshold, SIGNAL(valueChanged(double)), this, SLOT(glareThresholdSpinBoxChanged(double)));
 	connect(ui->button_glareComputeLayer, SIGNAL(clicked()), this, SLOT(computeGlareLayer()));
 	connect(ui->button_glareDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteGlareLayer()));
-	
+	connect(ui->checkBox_glareMap, SIGNAL(stateChanged(int)), this, SLOT(glareMapChanged(int)));
+	connect(ui->lineEdit_pupilMap, SIGNAL(returnPressed()), this, SLOT(glarePupilChanged()));
+	connect(ui->lineEdit_lashesMap, SIGNAL(returnPressed()), this, SLOT(glareLashesChanged()));
+
 #if defined(__APPLE__) // for better design on OSX
 	ui->tab_gaussianBloom->setFont(QFont  ("Lucida Grande", 11));
 	ui->tab_vignetting->setFont(QFont  ("Lucida Grande", 11));
@@ -126,6 +129,9 @@ void LensEffectsWidget::updateWidgetValues()
 	
 	updateWidgetValue(ui->slider_glareThreshold, (int)((FLOAT_SLIDER_RES / GLARE_THRESHOLD_RANGE) * m_Glare_threshold));
 	updateWidgetValue(ui->spinBox_glareThreshold, m_Glare_threshold);
+	updateWidgetValue(ui->checkBox_glareMap, m_Glare_map);
+	updateWidgetValue(ui->lineEdit_pupilMap, m_Glare_pupil);
+	updateWidgetValue(ui->lineEdit_lashesMap, m_Glare_lashes);
 }
 
 void LensEffectsWidget::resetValues()
@@ -143,6 +149,9 @@ void LensEffectsWidget::resetValues()
 	m_Glare_radius = 0.03f;
 	m_Glare_blades = 3;
 	m_Glare_threshold = 0.5f;
+	m_Glare_map = false;
+	m_Glare_pupil = "";
+	m_Glare_lashes = "";
 }
 
 void LensEffectsWidget::resetFromFilm (bool useDefaults)
@@ -163,6 +172,9 @@ void LensEffectsWidget::resetFromFilm (bool useDefaults)
 	m_Glare_amount = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_AMOUNT);
 	m_Glare_radius = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_RADIUS);
 	m_Glare_blades = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_BLADES);
+	m_Glare_map = retrieveParam(useDefaults, LUX_FILM, LUX_FILM_GLARE_MAP) != 0;
+	m_Glare_pupil = retrieveStringParam(useDefaults, LUX_FILM, LUX_FILM_GLARE_PUPIL);
+	m_Glare_lashes = retrieveStringParam(useDefaults, LUX_FILM, LUX_FILM_GLARE_LASHES);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
@@ -176,6 +188,9 @@ void LensEffectsWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_MAP, m_Glare_map);
+	luxSetStringParameterValue(LUX_FILM, LUX_FILM_GLARE_PUPIL, m_Glare_pupil.toAscii().data());
+	luxSetStringParameterValue(LUX_FILM, LUX_FILM_GLARE_LASHES, m_Glare_lashes.toAscii().data());
 }
 
 void LensEffectsWidget::gaussianAmountChanged (int value)
@@ -394,4 +409,26 @@ void LensEffectsWidget::deleteGlareLayer()
 	ui->spinBox_glareAmount->setEnabled(false);
 
 	emit forceUpdate ();
+}
+
+void LensEffectsWidget::glareMapChanged(int value)
+{
+	if (value == Qt::Checked)
+		m_Glare_map = true;
+	else
+		m_Glare_map = false;
+
+	updateParam (LUX_FILM, LUX_FILM_GLARE_MAP, m_Glare_map);
+}
+
+void LensEffectsWidget::glarePupilChanged()
+{
+	m_Glare_pupil = ui->lineEdit_pupilMap->text();
+	updateParam(LUX_FILM, LUX_FILM_GLARE_PUPIL, m_Glare_pupil.toAscii().data());
+}
+
+void LensEffectsWidget::glareLashesChanged()
+{
+	m_Glare_lashes = ui->lineEdit_lashesMap->text();
+	updateParam(LUX_FILM, LUX_FILM_GLARE_LASHES, m_Glare_lashes.toAscii().data());
 }
