@@ -36,6 +36,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/foreach.hpp>
 #include <fstream>
 
 using namespace lux;
@@ -114,7 +115,7 @@ static void PreprocessPrimitive(const Primitive *prim, Scene *scene,
 }
 
 luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scene *scene,
-			vector<HybridInstancePrimitive *> &hybridPrims) {
+			vector<HybridInstancePrimitive *> &allocatedPrims, vector<luxrays::Mesh *> &allocatedMeshes) {
 	// Compile the scene geometries in a LuxRays compatible format
 
 	LOG(LUX_INFO,LUX_NOERROR) << "Tessellating " << scene->primitives.size() << " primitives";
@@ -123,8 +124,6 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 	// To keep track of all primitive mesh lists
 	map<const Primitive *, vector<luxrays::TriangleMesh *> > primMeshLists;
 	map<const Primitive *, vector<const Primitive *> > primTessellatedLists;
-	// To keep track of the allocated instances
-	vector<luxrays::InstanceTriangleMesh *> instList;
 
 	for (size_t i = 0; i < scene->primitives.size(); ++i) {
 		const Primitive *prim = scene->primitives[i].get();
@@ -149,6 +148,10 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 					PreprocessPrimitive(instancedSource, scene, &primMeshList, &primTessellatedList);
 					primMeshLists[instancedSource] = primMeshList;
 					primTessellatedLists[instancedSource] = primTessellatedList;
+					
+					// Keep track of allocated data
+					BOOST_FOREACH(luxrays::Mesh *m, primMeshList)
+						allocatedMeshes.push_back(m);
 				} else {
 					//LOG(LUX_DEBUG, LUX_NOERROR) << "  Instanced source is not new";
 					primMeshList = primMeshLists[instancedSource];
@@ -162,11 +165,13 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 				for (u_int i = 0; i < primMeshList.size(); ++i) {
 					luxrays::InstanceTriangleMesh *itm = new luxrays::InstanceTriangleMesh(primMeshList[i], trans);
 					meshList.push_back(itm);
-					instList.push_back(itm);
 
 					HybridInstancePrimitive *hip = new HybridInstancePrimitive(instance, primTessellatedList[i]);
 					scene->tessellatedPrimitives.push_back(hip);
-					hybridPrims.push_back(hip);
+
+					// Keep track of allocated data
+					allocatedMeshes.push_back(itm);
+					allocatedPrims.push_back(hip);
 				}
 			}
 		} else {
@@ -178,6 +183,10 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 				PreprocessPrimitive(prim, scene, &primMeshList, &primTessellatedList);
 				primMeshLists[prim] = primMeshList;
 				primTessellatedLists[prim] = primTessellatedList;
+
+				// Keep track of allocated data
+				BOOST_FOREACH(luxrays::Mesh *m, primMeshList)
+					allocatedMeshes.push_back(m);
 			} else {
 				primMeshList = primMeshLists[prim];
 				primTessellatedList = primTessellatedLists[prim];
@@ -206,14 +215,6 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 	dataSet->Preprocess();
 	scene->dataSet = dataSet;
 	ctx->SetDataSet(dataSet);
-
-	// I can free temporary data
-	for (std::vector<luxrays::InstanceTriangleMesh *>::const_iterator it = instList.begin(); it != instList.end(); ++it)
-		delete *it;
-	for (std::map<const Primitive *, vector<luxrays::TriangleMesh *> >::const_iterator it = primMeshLists.begin(); it != primMeshLists.end(); ++it) {
-		for (std::vector<luxrays::TriangleMesh *>::const_iterator mesh = (*it).second.begin(); mesh != (*it).second.end(); ++mesh)
-			delete *mesh;
-	}
 
 	return dataSet;
 }

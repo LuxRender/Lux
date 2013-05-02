@@ -179,7 +179,7 @@ class HybridRenderer : public Renderer {
 public:
 	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene,
 			// Used later to free allocated memory
-			vector<HybridInstancePrimitive *> &hybridPrims);
+			vector<HybridInstancePrimitive *> &allocatedPrims, vector<luxrays::Mesh *> &allocatedMeshes);
 
 	static void LoadCfgParams(const string &configFile, ParamSet *params);
 protected:
