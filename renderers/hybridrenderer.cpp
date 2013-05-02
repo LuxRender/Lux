@@ -138,16 +138,19 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 
 			for (u_int i = 0; i < instanceSources.size(); ++i) {
 				const Primitive *instancedSource = instanceSources[i].get();
+				//LOG(LUX_DEBUG, LUX_NOERROR) << "  Instanced source: " << typeid(*instancedSource).name();
 
 				vector<luxrays::TriangleMesh *> primMeshList;
 				vector<const Primitive *> primTessellatedList;
 				// Check if I have already defined one of the original primitive
 				if (primMeshLists.count(instancedSource) < 1) {
+					//LOG(LUX_DEBUG, LUX_NOERROR) << "  Instanced source is new";
 					// I have to define the instanced primitive
 					PreprocessPrimitive(instancedSource, scene, &primMeshList, &primTessellatedList);
 					primMeshLists[instancedSource] = primMeshList;
 					primTessellatedLists[instancedSource] = primTessellatedList;
 				} else {
+					//LOG(LUX_DEBUG, LUX_NOERROR) << "  Instanced source is not new";
 					primMeshList = primMeshLists[instancedSource];
 					primTessellatedList = primTessellatedLists[instancedSource];
 				}
@@ -200,6 +203,7 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 	for (std::vector<luxrays::Mesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh)
 		dataSet->Add(*mesh);
 
+	dataSet->Preprocess();
 	scene->dataSet = dataSet;
 	ctx->SetDataSet(dataSet);
 
