@@ -291,16 +291,18 @@ ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 #############################################################################
 
 IF(APPLE)
-	SET(FFTW_ROOT ${OSX_DEPENDENCY_ROOT})
-ENDIF(APPLE)
-FIND_PACKAGE(FFTW)
-IF(FFTW_INCLUDE_DIR)
-	MESSAGE(STATUS "FFTW include directory: " ${FFTW_INCLUDE_DIR})
+	SET(FFTW_INCLUDE_DIR ${OSX_DEPENDENCY_ROOT}/include/fftw3)
+	SET(FFTW_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/libfftw3.a)
 	INCLUDE_DIRECTORIES(SYSTEM ${FFTW_INCLUDE_DIR})
-ELSE(FFTW_INCLUDE_DIR)
-	MESSAGE(FATAL_ERROR "FFTW headers not found.")
-ENDIF(FFTW_INCLUDE_DIR)
-
+ELSE(APPLE)
+	FIND_PACKAGE(FFTW)
+	IF(FFTW_INCLUDE_DIR)
+		MESSAGE(STATUS "FFTW include directory: " ${FFTW_INCLUDE_DIR})
+		INCLUDE_DIRECTORIES(SYSTEM ${FFTW_INCLUDE_DIR})
+	ELSE(FFTW_INCLUDE_DIR)
+		MESSAGE(FATAL_ERROR "FFTW headers not found.")
+	ENDIF(FFTW_INCLUDE_DIR)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
