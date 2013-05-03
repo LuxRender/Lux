@@ -170,6 +170,11 @@ SET(Boost_LIBRARIES)
 
 FIND_PACKAGE(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${Boost_COMPONENTS} REQUIRED)
 
+IF(APPLE)
+	# the searchmacro always gives confusing "NOTFOUND" on macos repo
+	SET(Boost_DIR ${OSX_DEPENDENCY_ROOT} CACHE STRING "x" FORCE)
+ENDIF(APPLE)
+
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
