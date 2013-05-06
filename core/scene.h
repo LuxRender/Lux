@@ -56,11 +56,7 @@ public:
 			return false;
 		else {
 			// Something was hit
-			const unsigned int currentTriangleIndex = rayHit.index;
-			const unsigned int currentPrimIndex = dataSet->GetMeshID(currentTriangleIndex);
-			const unsigned int triIndex = dataSet->GetMeshTriangleID(currentTriangleIndex);
-
-			tessellatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect);
+			tessellatedPrimitives[rayHit.meshIndex]->GetIntersection(rayHit, rayHit.triangleIndex, isect);
 
 			return true;
 		}
