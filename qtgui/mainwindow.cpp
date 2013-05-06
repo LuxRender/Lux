@@ -154,6 +154,13 @@ void updateWidgetValue(QLineEdit *line, double value)
 	line->blockSignals(false);
 }
 
+void updateWidgetValue(QLineEdit *line, const QString &value)
+{
+	line->blockSignals(true);
+	line->setText(value);
+	line->blockSignals(false);
+}
+
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index)
 {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
@@ -176,6 +183,16 @@ double retrieveParam(bool useDefault, luxComponent comp, luxComponentParameters 
 		return luxGetDefaultParameterValue(comp, param, index);
 	else
 		return luxGetParameterValue(comp, param, index);
+}
+
+QString retrieveStringParam(bool useDefault, luxComponent comp, luxComponentParameters param, int index)
+{
+	char tmp[32767];
+	if (useDefault)
+		luxGetDefaultStringParameterValue(comp, param, tmp, 32767, index);
+	else
+		luxGetStringParameterValue(comp, param, tmp, 32767, index);
+	return QString(tmp);
 }
 
 QWidget *MainWindow::instance;

@@ -857,7 +857,9 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels, u_int xResolution, u_int yRe
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
-	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
+	float glareAmount, float glareRadius, u_int glareBlades,
+	float glareThreshold, bool glareMap, const string &glarePupilFilename,
+	const string &glareLashesFilename,
 	const char *tonemap, const ParamSet *toneMapParams,
 	const CameraResponse *response, float dither);
 

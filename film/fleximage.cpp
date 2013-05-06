@@ -59,7 +59,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename) :
+	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename, const string &pupilmap, const string &lashesmap) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec, samplingmapfilename), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
@@ -192,6 +192,12 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
 	m_GlareThreshold = d_GlareThreshold = .5f;
 	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
+	m_GlareMap = d_GlareMap = false;
+	AddBoolAttribute(*this, "GlareMap", "Use pupil and eye lashes maps for glare", m_GlareMap, &FlexImageFilm::m_GlareMap, Queryable::ReadWriteAccess);
+	m_GlareLashesFilename = lashesmap;
+	AddStringAttribute(*this, "GlareLashesFilename", "Name of the eye lashes obstacle map", m_GlarePupilFilename, &FlexImageFilm::m_GlarePupilFilename, Queryable::ReadWriteAccess);
+	m_GlarePupilFilename = pupilmap;
+	AddStringAttribute(*this, "GlarePupilFilename", "Name of the pupil obstacle map", m_GlarePupilFilename, &FlexImageFilm::m_GlarePupilFilename, Queryable::ReadWriteAccess);
 
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
@@ -356,6 +362,9 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		case LUX_FILM_GLARE_THRESHOLD:
 			m_GlareThreshold = value;
+			break;
+		case LUX_FILM_GLARE_MAP:
+			m_GlareMap = (value != 0.f);
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -585,6 +594,9 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 		case LUX_FILM_GLARE_THRESHOLD:
 			return m_GlareThreshold;
 			break;
+		case LUX_FILM_GLARE_MAP:
+			return m_GlareMap;
+			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return m_HistogramEnabled;
@@ -800,6 +812,9 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 		case LUX_FILM_GLARE_THRESHOLD:
 			return d_GlareThreshold;
 			break;
+		case LUX_FILM_GLARE_MAP:
+			return d_GlareMap;
+			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return d_HistogramEnabled;
@@ -893,9 +908,17 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 void FlexImageFilm::SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) {
 	switch(param) {
 		case LUX_FILM_LG_NAME:
-			return SetGroupName(index, value);
+			SetGroupName(index, value);
+			break;
 		case LUX_FILM_CAMERA_RESPONSE_FILE:
 			m_CameraResponseFile = value;
+			break;
+		case LUX_FILM_GLARE_LASHES:
+			m_GlareLashesFilename = value;
+			break;
+		case LUX_FILM_GLARE_PUPIL:
+			m_GlarePupilFilename = value;
+			break;
 		default:
 			break;
 	}
@@ -912,6 +935,10 @@ string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_in
 			return GetGroupName(index);
 		case LUX_FILM_CAMERA_RESPONSE_FILE:
 			return m_CameraResponseFile;
+		case LUX_FILM_GLARE_LASHES:
+			return m_GlareLashesFilename;
+		case LUX_FILM_GLARE_PUPIL:
+			return m_GlarePupilFilename;
 		default:
 			break;
 	}
@@ -1045,7 +1072,7 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 		colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 		m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
-		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
+		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold, m_GlareMap, m_GlarePupilFilename, m_GlareLashesFilename,
 		tmkernel.c_str(), &toneParams, crf.get(), 0.f);
 
 	// Disable further bloom layer updates if used.
@@ -1982,6 +2009,10 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	int tilecount = params.FindOneInt("tilecount", 0);
 
+	// Glare maps
+	string s_GlareLashesFilename = params.FindOneString("glarelashesfilename", "");
+	string s_GlarePupilFilename = params.FindOneString("glarepupilfilename", "");
+
 	return new FlexImageFilm(xres, yres, filter, filtRes, crop,
 		filename, premultiplyAlpha, writeInterval, flmWriteInterval, displayInterval, clampMethod, 
 		w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype, w_EXR_straightcolors,
@@ -1990,7 +2021,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime, haltthreshold,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_FalseMethod, s_FalseScalecolor, s_FalseMaxSat, s_FalseMinSat, response, s_Gamma,
-		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename);
+		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename, s_GlarePupilFilename, s_GlareLashesFilename);
 }
 
 

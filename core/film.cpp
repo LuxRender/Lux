@@ -45,6 +45,8 @@
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/bessel.hpp>
 
+#include <fftw3.h>
+
 #define cimg_display_type  0
 
 #ifdef LUX_USE_CONFIG_H
@@ -61,13 +63,13 @@
 #ifdef TIFF_FOUND
 #define cimg_use_tiff 1
 #endif
-
-
 #else //LUX_USE_CONFIG_H
 #define cimg_use_png 1
 #define cimg_use_tiff 1
 #define cimg_use_jpeg 1
 #endif //LUX_USE_CONFIG_H
+
+#define cimg_use_fftw 1
 
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
 // Include the CImg Library, with the GREYCstoration plugin included
@@ -447,7 +449,9 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
-	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
+	float glareAmount, float glareRadius, u_int glareBlades,
+	float glareThreshold, bool glareMap, const string &glarePupilFilename,
+	const string &glareLashesFilename,
 	const char *toneMapName, const ParamSet *toneMapParams,
 	const CameraResponse *response, float dither)
 {
@@ -519,65 +523,172 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				glareImage = new XYZColor[nPix];
 				haveGlareImage = true;
 			}
-
-			u_int maxRes = max(xResolution, yResolution);
-			u_int nPix2 = maxRes * maxRes;
-
-			std::vector<XYZColor> rotatedImage(nPix2);
-			std::vector<XYZColor> blurredImage(nPix2);
-			std::vector<XYZColor> darkenedImage(nPix);
 			for(u_int i = 0; i < nPix; ++i)
 				glareImage[i] = XYZColor(0.f);
-			
+
 			// Search for the brightest pixel in the image
-			u_int max = 0;
+			float maxY = 0;
 			for(u_int i = 1; i < nPix; ++i) {
-				if (xyzpixels[i].c[1] > xyzpixels[max].c[1])
-					max = i;
+				if (xyzpixels[i].Y() > maxY)
+					maxY = xyzpixels[i].Y();
 			}
 			
 			// glareThreshold ranges between 0-1,
 			// but this relative value has to be converted to
 			//an absolute value fitting the image being processed
-			float glareAbsoluteThreshold = xyzpixels[max].c[1] *
-				glareThreshold;
-			// Every pixel that is not bright enough is made black
-			for(u_int i = 0; i < nPix; ++i) {
-				if(xyzpixels[i].c[1] < glareAbsoluteThreshold)
-					darkenedImage[i] = XYZColor(0.f);
-				else
-					darkenedImage[i] = xyzpixels[i];
+			float glareAbsoluteThreshold = maxY * glareThreshold;
+
+			cimg_library::CImg<double> pupil;
+			cimg_library::CImg<double> eyelashes;
+			if (glareMap) {
+				try {
+					pupil.assign(glarePupilFilename.c_str());
+					eyelashes.assign(glareLashesFilename.c_str());
+				} catch(CImgException &e) {
+					LOG(LUX_WARNING, LUX_BADFILE) << "Error loading glare files, falling to classic mode." << e.message;
+					glareMap = false;
+				}
 			}
+			if (glareMap) {
+				const int nc = 512;
+				const int nr = 512;
+				const int nout = nr * (nc / 2 + 1);
+				// Resize the pupil and eye lashes pictures
+				// for easier FFT computation
+				pupil.resize(nc, nr);
+				eyelashes.resize(nc, nr);
+				// Compose the pupil and eye lashes pictures
+				cimg_library::CImg<double> composition(pupil);
+				for (u_int i = 0; i < composition.size(); ++i) {
+					if (pupil[i] == 0.)
+						composition[i] = 0.;
+					else
+						composition[i] = eyelashes[i];
+				}
+				// Compute the 2D FFT of the composed map
+				fftw_complex *out = (fftw_complex *)fftw_alloc_complex(nout);
+				fftw_plan p = fftw_plan_dft_r2c_2d(nr, nc, composition.data, out, FFTW_ESTIMATE);
+				fftw_execute(p);
+				fftw_destroy_plan(p);
 
-			const float radius = maxRes * glareRadius;
-
-			// add rotated versions of the blurred image
-			const float invBlades = 1.f / glareBlades;
-			float angle = 0.f;
-			for (u_int i = 0; i < glareBlades; ++i) {
-				rotateImage(darkenedImage, rotatedImage, xResolution, yResolution, angle);
-				horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
-				rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
-
-				// add to output
-				for(u_int y = 0; y < yResolution; ++y) {
-					for(u_int x = 0; x < xResolution; ++x) {
-						const u_int sx = x + (maxRes - xResolution) / 2;
-						const u_int sy = y + (maxRes - yResolution) / 2;
-
-						glareImage[y * xResolution + x] += rotatedImage[sy * maxRes + sx];
+				// Compute the spectrum of the FFT
+				cimg_library::CImg<double> spect(nc / 2, nr - 1);
+				for (u_int y = 0; y < nr - 1; ++y) {
+					for (u_int x = 0; x < nc / 2; ++x) {
+						const fftw_complex &c = out[x + 1 + (y + 1) * (nc / 2 + 1)];
+						spect(x, y) = c[0] * c[0] + c[1] * c[1];
 					}
 				}
-				angle += 2.f * M_PI * invBlades;
+
+				// Recompose the glare spectrum
+				cimg_library::CImg<double> spectr(nc + 1, nr + 1);
+				for (u_int y = 0; y < nr + 1; ++y) {
+					for (u_int x = 0; x < nc + 1; ++x) {
+						if (y < nr / 2) {
+							if (x < nc / 2)
+								spectr(x, y) = spect(nc / 2 - 1 - x, nr / 2 - 1 - y);
+							else if (x > nc / 2)
+								spectr(x, y) = spect(x - 1 - nc / 2, nr / 2 - 1 + y - 1);
+							else {
+								const fftw_complex &c = out[(nr / 2 + y) * (nc / 2 + 1)];
+								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
+							}
+						} else if (y > nr / 2 ) {
+							if (x < nc / 2)
+								spectr(x, y) = spect(nc / 2 - 1 - x, nr + nr / 2 - 2 - y);
+							else if (x > nc / 2)
+								spectr(x, y) = spect(x - nc / 2, y - nr / 2);
+							else {
+								const fftw_complex &c = out[(y - nr / 2) * (nc / 2 + 1)];
+								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
+							}
+						} else {
+							if (x < nc / 2) {
+								const fftw_complex &c = out[nc / 2 - x];
+								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
+							} else if (x > nc / 2) {
+								const fftw_complex &c = out[x - nc / 2];
+								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
+							} else {
+								const fftw_complex &c = out[0];
+								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
+							}
+						}
+					}
+				}
+				fftw_free(out);
+
+				// Normalize the spectrum
+				spectr /= spectr.sum();
+				spectr /= spectr.max();
+
+				// Compute the glare layer
+				for (u_int y = 0; y < yResolution; ++y) {
+					const u_int minH = (nr / 2) < y ? 0 : nr / 2 - y;
+					const u_int maxH = (yResolution - y + nr / 2) > (nr + 1) ? nr + 1: yResolution - y + nr / 2;
+					const u_int beginH = y - (nr / 2 - minH);
+					for (u_int x = 0; x < xResolution; ++x) {
+						glareImage[x + y * xResolution] = XYZColor(0.f);
+						XYZColor &pix = xyzpixels[x + y * xResolution];
+						if (!pix.Y() > glareAbsoluteThreshold)
+							continue;
+						const u_int minW = (nc / 2) < x ? 0 : nc / 2 - x;
+						const u_int maxW = (xResolution - x + nc / 2) > (nc + 1) ? nc + 1: xResolution - x + nc / 2;
+						const u_int beginW = x - (nc / 2 - minW);
+						for (u_int yy = minH; yy < maxH; ++yy) {
+							for (u_int xx = minW; xx < maxW; ++ xx) {
+								glareImage[xx - minW + beginW + (yy - minH + beginH) * xResolution] += spectr(xx, yy) * pix;
+							}
+						}
+					}
+				}
+			} else {
+				u_int maxRes = max(xResolution, yResolution);
+				u_int nPix2 = maxRes * maxRes;
+
+				std::vector<XYZColor> rotatedImage(nPix2);
+				std::vector<XYZColor> blurredImage(nPix2);
+				std::vector<XYZColor> darkenedImage(nPix);
+
+				// Every pixel that is not bright enough is made black
+				for(u_int i = 0; i < nPix; ++i) {
+					if(xyzpixels[i].c[1] < glareAbsoluteThreshold)
+						darkenedImage[i] = XYZColor(0.f);
+					else
+						darkenedImage[i] = xyzpixels[i];
+				}
+
+				const float radius = maxRes * glareRadius;
+
+				// add rotated versions of the blurred image
+				const float invBlades = 1.f / glareBlades;
+				float angle = 0.f;
+				for (u_int i = 0; i < glareBlades; ++i) {
+					rotateImage(darkenedImage, rotatedImage, xResolution, yResolution, angle);
+					horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
+					rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
+
+					// add to output
+					for(u_int y = 0; y < yResolution; ++y) {
+						for(u_int x = 0; x < xResolution; ++x) {
+							const u_int sx = x + (maxRes - xResolution) / 2;
+							const u_int sy = y + (maxRes - yResolution) / 2;
+
+							glareImage[y * xResolution + x] += rotatedImage[sy * maxRes + sx];
+						}
+					}
+					angle += 2.f * M_PI * invBlades;
+				}
+
+				// normalize
+				for(u_int i = 0; i < nPix; ++i)
+					glareImage[i] *= invBlades;
+
+				rotatedImage.clear();
+				blurredImage.clear();
+				darkenedImage.clear();
 			}
-
-			// normalize
-			for(u_int i = 0; i < nPix; ++i)
-				glareImage[i] *= invBlades;
-
-			rotatedImage.clear();
-			blurredImage.clear();
-			darkenedImage.clear();
+			glareUpdate = false;
 		}
 
 		if (haveGlareImage && glareImage != NULL) {
@@ -2196,6 +2307,9 @@ bool Film::WriteFilmDataToStream(
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_THRESHOLD, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_MAP, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_GLARE_PUPIL, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_GLARE_LASHES, 0));
 
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));

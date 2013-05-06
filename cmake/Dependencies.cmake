@@ -170,6 +170,11 @@ SET(Boost_LIBRARIES)
 
 FIND_PACKAGE(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${Boost_COMPONENTS} REQUIRED)
 
+IF(APPLE)
+	# the searchmacro always gives confusing "NOTFOUND" on macos repo
+	SET(Boost_DIR ${OSX_DEPENDENCY_ROOT} CACHE STRING "x" FORCE)
+ENDIF(APPLE)
+
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
@@ -283,6 +288,26 @@ IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 	ENDIF(PNG_LIBRARIES)
 ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 
+
+#############################################################################
+#############################################################################
+########################### FFTW  LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+
+IF(APPLE)
+	SET(FFTW_INCLUDE_DIR ${OSX_DEPENDENCY_ROOT}/include/fftw3)
+	SET(FFTW_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/libfftw3.a)
+	INCLUDE_DIRECTORIES(SYSTEM ${FFTW_INCLUDE_DIR})
+ELSE(APPLE)
+	FIND_PACKAGE(FFTW)
+	IF(FFTW_INCLUDE_DIR)
+		MESSAGE(STATUS "FFTW include directory: " ${FFTW_INCLUDE_DIR})
+		INCLUDE_DIRECTORIES(SYSTEM ${FFTW_INCLUDE_DIR})
+	ELSE(FFTW_INCLUDE_DIR)
+		MESSAGE(FATAL_ERROR "FFTW headers not found.")
+	ENDIF(FFTW_INCLUDE_DIR)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
