@@ -97,6 +97,7 @@ int main(int argc, char **argv) {
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("version,v", "Print version string")
 			("convert-only,c", "Convert the scene in SLG format and stop")
+			("telnet,T", "Enable SLG telnet interface")
 			("help,h", "Display this help and exit");
 
 		boost::program_options::variables_map commandLineOpts;
@@ -320,6 +321,7 @@ int main(int argc, char **argv) {
 				" -D sampler.type RANDOM"
 				" -D film.alphachannel.enable 0" // Alpha channel is useless for LuxVR
 				" -d \"" + slgScene + "\""
+				+ (commandLineOpts.count("telnet") ? " -T" : "") +
 				" render.cfg 2>&1";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
 			exec(slgCmd);
