@@ -18,24 +18,82 @@
 #                                                                         #
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
+#
+# Try to find the FreeImage library and include path.
+# Once done this will define
+#
+# FFTW_FOUND
+# FFTW_INCLUDE_DIR
+# FFTW_LIBRARIES
+# 
 
-# Try to find FFTW library and include path.
+# Lookup user provide path first
+include(FindPkgMacros)
+SET(FFTW_INC_SUFFIXES include/FFTW include Include Headers Dist Source api .libs)
 
-SET(FFTW_INC_SEARCHPATH
-	/usr/include
-	/usr/include/fftw
-	/usr/local/include
-	/usr/local/include/fftw
-	/share/apps/fftw-install/include)
+FIND_PATH(FFTW_INCLUDE_DIR
+	NAMES fftw3.h
+	PATHS "${FFTW_ROOT}"
+	PATH_SUFFIXES ${FFTW_INC_SUFFIXES}
+	NO_DEFAULT_PATH
+	DOC "The directory where FFTW.h resides")
+FIND_PATH(FFTW_INCLUDE_DIR
+	NAMES fftw3.h
+	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt
+	PATH_SUFFIXES ${FFTW_INC_SUFFIXES}
+	DOC "The directory where FFTW.h resides")
 
-SET(FFTW_LIB_SEARCHPATH
-	/usr/lib
-	/usr/lib/fftw
-	/usr/local/lib
-	/usr/local/lib/fftw
-	/share/apps/fftw-install/lib)
+SET(FFTW_NAMES_REL fftw fftw3)
+SET(FFTW_LIB_SUFFIXES lib64 lib Lib lib/FFTW Libs Dist Release Debug)
+SET(FFTW_LIB_SUFFIXES_REL)
+SET(FFTW_LIB_SUFFIXES_DBG)
+FOREACH(i ${FFTW_LIB_SUFFIXES})
+	SET(FFTW_LIB_SUFFIXES_REL ${FFTW_LIB_SUFFIXES_REL}
+		"${i}" "${i}/release" "${i}/relwithdebinfo" "${i}/minsizerel" "${i}/dist")
+	SET(FFTW_LIB_SUFFIXES_DBG ${FFTW_LIB_SUFFIXES_DBG}
+		"${i}" "${i}/debug" "${i}/dist")
+ENDFOREACH(i)
+SET(FFTW_NAMES_DBG)
+FOREACH(i ${FFTW_NAMES_REL})
+	SET(FFTW_NAMES_DBG ${FFTW_NAMES_DBG} "${i}d" "${i}D" "${i}_d" "${i}_D" "${i}_debug")
+ENDFOREACH(i)
+FIND_LIBRARY(FFTW_LIBRARY_REL
+	NAMES ${FFTW_NAMES_REL}
+	PATHS "${FFTW_ROOT}"
+	PATH_SUFFIXES ${FFTW_LIB_SUFFIXES_REL}
+	NO_DEFAULT_PATH
+	DOC "The FFTW release library"
+)
+FIND_LIBRARY(FFTW_LIBRARY_REL
+	NAMES ${FFTW_NAMES_REL}
+	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt
+	PATH_SUFFIXES ${FFTW_LIB_SUFFIXES_REL}
+	DOC "The FFTW release library"
+)
+FIND_LIBRARY(FFTW_LIBRARY_DBG
+	NAMES ${FFTW_NAMES_DBG}
+	PATHS "${FFTW_ROOT}"
+	PATH_SUFFIXES ${FFTW_LIB_SUFFIXES_DBG}
+	NO_DEFAULT_PATH
+	DOC "The FFTW debug library"
+)
+FIND_LIBRARY(FFTW_LIBRARY_DBG
+	NAMES ${FFTW_NAMES_DBG}
+	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt
+	PATH_SUFFIXES ${FFTW_LIB_SUFFIXES_DBG}
+	DOC "The FFTW debug library"
+)
+IF (FFTW_LIBRARY_REL AND FFTW_LIBRARY_DBG)
+	SET(FFTW_LIBRARIES
+		optimized ${FFTW_LIBRARY_REL}
+		debug ${FFTW_LIBRARY_DBG})
+ELSEIF (FFTW_LIBRARY_REL)
+	SET(FFTW_LIBRARIES ${FFTW_LIBRARY_REL})
+ELSEIF (FFTW_LIBRARY_DBG)
+	SET(FFTW_LIBRARIES ${FFTW_LIBRARY_DBG})
+ENDIF (FFTW_LIBRARY_REL AND FFTW_LIBRARY_DBG)
 
-FIND_PATH(FFTW_INCLUDE_DIR fftw3.h ${FFTW_INC_SEARCHPATH})
-FIND_LIBRARY(FFTW_LIBRARIES fftw3 ${FFTW_LIB_SEARCHPATH})
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(FFTW  DEFAULT_MSG  FFTW_LIBRARIES FFTW_INCLUDE_DIR)
 
-MARK_AS_ADVANCED(FFTW_INCLUDE_DIR FFTW_LIBRARIES)
+MARK_AS_ADVANCED(FFTW_LIBRARIES FFTW_INCLUDE_DIR)
