@@ -94,21 +94,20 @@ void SobolSampler::InitSample(Sample *sample) const {
 
 			// First samples are for image X/Y, lens U/V, time and wavelength
 			u_int sampleCount = 6;
-			offset1D.push_back(6);
 			BOOST_FOREACH(u_int size, n1D) {
-					offset1D.push_back(size);
+					offset1D.push_back(sampleCount);
 					sampleCount += size;
 			}
 
 			offset2D.push_back(sampleCount);
 			BOOST_FOREACH(u_int size, n2D) {
-					offset2D.push_back(2 * size);
+					offset2D.push_back(sampleCount);
 					sampleCount += 2 * size;
 			}
 
 			offsetxD.push_back(sampleCount);
 			for (u_int i = 0; i < nxD.size(); ++i) {
-					offsetxD.push_back(dxD[i] * nxD[i]);
+					offsetxD.push_back(sampleCount);
 					sampleCount += dxD[i] * nxD[i];
 			}
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Total sample count: " << sampleCount;
