@@ -42,7 +42,7 @@ public:
 		Point worldCenter;
 		float worldRadius;
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		return LSPD->Y() * (havePortalShape ? PortalArea : M_PI * worldRadius * worldRadius) * 2.f * M_PI * (1.f - cosThetaMax);
+		return LSPD->Y() * (havePortalShape ? PortalArea : M_PI * worldRadius * worldRadius) * 2.f * M_PI * sin2ThetaMax / (relSize * relSize);
 	}
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,

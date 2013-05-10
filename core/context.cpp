@@ -909,7 +909,7 @@ void Context::ObjectInstance(const string &n) {
 				li));
 			ap = new AreaLightPrimitive(p, l);
 		}
-		if (renderOptions->currentLightInstance)
+		if (renderOptions->currentAreaLightInstance)
 			renderOptions->currentAreaLightInstance->push_back(boost::shared_ptr<AreaLightPrimitive>(ap));
 		else {
 			boost::shared_ptr<Primitive> sap(ap);

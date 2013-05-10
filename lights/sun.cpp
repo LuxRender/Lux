@@ -176,7 +176,7 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 			tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
-	LSPD->Scale(gain);
+	LSPD->Scale(gain / (relSize * relSize));
 
 	AddFloatAttribute(*this, "dir.x", "Sun light direction X", &SunLight::GetDirectionX);
 	AddFloatAttribute(*this, "dir.y", "Sun light direction Y", &SunLight::GetDirectionY);
