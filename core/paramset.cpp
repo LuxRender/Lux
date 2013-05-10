@@ -131,6 +131,11 @@ template <class T> inline void MarkAsUsed(const vector<ParamSetItem<T> *> &vec, 
 	}
 }
 
+template <class T> inline void MarkAllUsed(const vector<ParamSetItem<T> *> &vec) {
+	for (u_int i = 0; i < vec.size(); ++i)
+		vec[i]->lookedUp = true;
+}
+
 // ParamSet Methods
 template <> ParamSetItem<int>::~ParamSetItem()
 {
@@ -1067,7 +1072,7 @@ ParamSet &ParamSet::operator=(const ParamSet &p2) {
 	return *this;
 }
 
-void ParamSet::Add(ParamSet &params) {
+void ParamSet::Add(const ParamSet &params) {
 	for (u_int i = 0; i < params.ints.size(); ++i)
 		AddInt(params.ints[i]->name, params.ints[i]->data, params.ints[i]->nItems);
 	for (u_int i = 0; i < params.bools.size(); ++i)
@@ -1219,6 +1224,18 @@ const string &ParamSet::FindTexture(const string &name) const
 {
 	static const string empty("");
 	return LookupOne(textures, name, empty);
+}
+void ParamSet::MarkAllUsed() const {
+	// Marks all params as used
+	lux::MarkAllUsed(ints);
+	lux::MarkAllUsed(bools);
+	lux::MarkAllUsed(floats);
+	lux::MarkAllUsed(points);
+	lux::MarkAllUsed(vectors);
+	lux::MarkAllUsed(normals);
+	lux::MarkAllUsed(spectra);
+	lux::MarkAllUsed(strings);
+	lux::MarkAllUsed(textures);
 }
 void ParamSet::MarkUsed(const ParamSet &p2) const {
 	// marks any used params in p2 as used in this
