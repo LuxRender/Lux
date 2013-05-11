@@ -212,7 +212,7 @@ inline void ContributionBuffer::Add(const Contribution &c, float weight)
 		}
 	}
 
-	if (num_tiles > 1) {		
+	if (num_tiles > 1) {
 		Buffer* volatile* const buf = &(buffers[tileIndex1][c.bufferGroup]);
 		u_int i = 0;
 		while (!((*buf)->Add(c, weight)) && (i++ < 10)) {

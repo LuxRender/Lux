@@ -39,12 +39,11 @@ class  Light : public Queryable {
 public:
 	// Light Interface
 	Light(const string &name, const Transform &l2w, u_int ns = 1U)
-		: Queryable(name), nSamples(max(1U, ns)), LightToWorld(l2w) {
+		: Queryable(name), nSamples(max(1U, ns)), nrPortalShapes(0),
+		PortalArea(0.f), group(0), LightToWorld(l2w),
+		havePortalShape(false) {
 		if (LightToWorld.HasScale())
 			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in light-to-world transformation! Some lights might not support it yet.";
-		havePortalShape = false;
-		nrPortalShapes = 0;
-		PortalArea = 0;
 	}
 	virtual ~Light() { }
 	const Volume *GetVolume() const { return volume.get(); }
@@ -147,7 +146,8 @@ class  InstanceLight : public Light {
 public:
 	// Light Interface
 	InstanceLight(const Transform &l2w, boost::shared_ptr<Light> &l)
-		: Light("InstanceLight-" + boost::lexical_cast<string>(this), l2w, l->nSamples), light(l) { }
+		: Light("InstanceLight-" + boost::lexical_cast<string>(this),
+		l2w, l->nSamples), light(l) { group = light->group; }
 	virtual ~InstanceLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
@@ -181,8 +181,8 @@ class  MotionLight : public Light {
 public:
 	// Light Interface
 	MotionLight(const MotionSystem &mp, boost::shared_ptr<Light> &l)
-		: Light("MotionLight-" + boost::lexical_cast<string>(this), Transform(), l->nSamples),
-		light(l), motionPath(mp) { }
+		: Light("MotionLight-" + boost::lexical_cast<string>(this),
+		Transform(), l->nSamples), light(l), motionPath(mp) { group = light->group; }
 	virtual ~MotionLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
@@ -219,7 +219,7 @@ public:
 	// Light Interface
 	InstanceAreaLight(const Transform &l2w, boost::shared_ptr<AreaLight> &l) :
 		AreaLight("InstanceAreaLight-" + boost::lexical_cast<string>(this),
-		l2w, l->nSamples), light(l) { }
+		l2w, l->nSamples), light(l) { group = light->group; }
 	virtual ~InstanceAreaLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
@@ -261,7 +261,7 @@ public:
 	// Light Interface
 	MotionAreaLight(const MotionSystem &mp, boost::shared_ptr<AreaLight> &l) :
 		AreaLight("MotionAreaLight-" + boost::lexical_cast<string>(this),
-		Transform(), l->nSamples), light(l), motionPath(mp) { }
+		Transform(), l->nSamples), light(l), motionPath(mp) { group = light->group; }
 	virtual ~MotionAreaLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
