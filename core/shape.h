@@ -43,19 +43,19 @@ public:
 		boost::shared_ptr<Volume> &in, const string &name);
 	virtual ~Shape() { }
 
-	void SetMaterial(boost::shared_ptr<Material> &mat) {
+	void SetMaterial(const boost::shared_ptr<Material> &mat) {
 		// Create a temporary to increase shared count
 		// The assignment is just a swap
 		boost::shared_ptr<Material> m(mat);
 		material = mat;
 	}
-	void SetExterior(boost::shared_ptr<Volume> &vol) {
+	void SetExterior(const boost::shared_ptr<Volume> &vol) {
 		// Create a temporary to increase shared count
 		// The assignment is just a swap
 		boost::shared_ptr<Volume> v(vol);
 		exterior = v;
 	}
-	void SetInterior(boost::shared_ptr<Volume> &vol) {
+	void SetInterior(const boost::shared_ptr<Volume> &vol) {
 		// Create a temporary to increase shared count
 		// The assignment is just a swap
 		boost::shared_ptr<Volume> v(vol);

@@ -103,7 +103,7 @@ public:
 	ParamSet(u_int n, const char *pluginName, const char * const tokens[],
 		const char * const params[]);
 	
-	void Add(ParamSet& params);
+	void Add(const ParamSet& params);
 	void AddFloat(const string &, const float *, u_int nItems = 1);
 	void AddInt(const string &, const int *, u_int nItems = 1);
 	void AddBool(const string &, const bool *, u_int nItems = 1);
@@ -150,6 +150,7 @@ public:
 	boost::shared_ptr<Texture<FresnelGeneral> >
 		GetFresnelTexture(const string &name, float def) const;
 	boost::shared_ptr<Material> GetMaterial(const string &name) const;
+	void MarkAllUsed() const;
 	void MarkUsed(const ParamSet &p2) const;
 	void ReportUnused() const;
 	~ParamSet() {

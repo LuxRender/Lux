@@ -30,7 +30,7 @@ namespace lux
 // Torus Declarations
 class Torus: public Shape {
 public:
-	// Sphere Public Methods
+	// Torus Public Methods
 	Torus(const Transform &o2w, bool ro, const string &name, 
 	       float marad, float mirad,
 	       float zmin, float zmax, float phiMax);
