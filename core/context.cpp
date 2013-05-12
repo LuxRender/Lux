@@ -915,10 +915,10 @@ void Context::ObjectInstance(const string &n) {
 			boost::shared_ptr<Primitive> sap(ap);
 			inSource.push_back(sap);
 			if (!ap->CanIntersect())
-				sap->Refine(in, PrimitiveRefinementHints(false),
+				sap->Refine(renderOptions->primitives, PrimitiveRefinementHints(true),
 					sap);
 			else
-				in.push_back(sap);
+				renderOptions->primitives.push_back(sap);
 			renderOptions->lights.push_back(ap->GetAreaLight());
 		}
 	}
