@@ -389,7 +389,7 @@ ImageData *ReadImage(const string &name)
  * it may also be necessary to flip image data both horizonally and vertically
  */
 
-void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
+bool WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	int compressiontype, const string &name, vector<RGBColor> &pixels,
 	vector<float> &alpha, u_int xRes, u_int yRes,
 	u_int totalXRes, u_int totalYRes, u_int xOffset, u_int yOffset,
@@ -539,6 +539,7 @@ void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 			sizeof(float), xRes * sizeof(float)));
 	}
 
+	bool result = true;
 	try {
 		OutputFile file(name.c_str(), header);
 		file.setFrameBuffer(fb);
@@ -546,6 +547,7 @@ void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	} catch (const std::exception &e) {
 		LOG(LUX_SEVERE, LUX_BUG) << "Unable to write image file '" <<
 			name << "': " << e.what();
+		result = false;
 	}
 
 	// Cleanup used buffers
@@ -555,10 +557,11 @@ void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	delete[] hy;
 	delete[] hrgb;
 	delete[] ha;
+	return result;
 }
 
 // Write a single channel float EXR
-void WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *map) {
+bool WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *map) {
 	Header header(xRes, yRes);
 	header.compression() = RLE_COMPRESSION;
 
@@ -574,6 +577,7 @@ void WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *
 		(char *)map, sizeof(float),
 		xRes * sizeof(float)));
 
+	bool result = true;
 	try {
 		OutputFile file(name.c_str(), header);
 		file.setFrameBuffer(fb);
@@ -581,7 +585,9 @@ void WriteOpenEXRImage(const string &name, u_int xRes, u_int yRes, const float *
 	} catch (const std::exception &e) {
 		LOG(LUX_SEVERE, LUX_BUG) << "Unable to write image file '" <<
 			name << "': " << e.what();
+		result = false;
 	}
+	return result;
 }
 
 }

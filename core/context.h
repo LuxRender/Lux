@@ -142,7 +142,7 @@ public:
 	void OverrideFilename(const string &filename);
 
 	// Save OpenEXR image
-	void SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);	
+	bool SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 	
 	//CORE engine control
 	//user interactive thread functions

@@ -69,8 +69,8 @@ public:
 	}	
 
 	virtual void CreateBuffers();
-	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
-	virtual void WriteImage(ImageType type);
+	virtual bool SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
+	virtual bool WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
 
 	// GUI display methods
@@ -101,10 +101,10 @@ private:
 	static void ConvUpdateThreadImpl(FlexImageFilm *film);
 
 	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
-	void WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
-	void WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
-	void WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
-	void WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
+	bool WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
+	bool WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
+	bool WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
+	bool WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
 
 	// FlexImageFilm Private Data
 	// mutex is used for protecting the framebuffer pointer

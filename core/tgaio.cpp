@@ -38,7 +38,7 @@ using namespace lux;
 namespace lux
 {
 
-void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<RGBColor> &pixels,
+bool WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<RGBColor> &pixels,
         vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
         u_int xResolution, u_int yResolution,
         u_int xPixelStart, u_int yPixelStart) {
@@ -46,7 +46,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	FILE* tgaFile = fopen(name.c_str(),"wb");
 	if (!tgaFile) {
 		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open file '"<<name<<"' for output";
-		return;
+		return false;
 	}
 
 	// write the header
@@ -116,6 +116,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	}
 
 	fclose(tgaFile);
+	return true;
 }
 
 }

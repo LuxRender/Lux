@@ -48,8 +48,8 @@ boost::mutex scene_rand_mutex;
 
 using namespace lux;
 
-void Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
-	camera()->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
+bool Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
+	return camera()->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }
 
 // Framebuffer Access for GUI

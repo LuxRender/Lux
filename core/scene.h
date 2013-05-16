@@ -110,7 +110,7 @@ public:
 	float* GetFloatFramebuffer();
 	float* GetAlphaBuffer();
 	float* GetZBuffer();
-	void SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
+	bool SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width,

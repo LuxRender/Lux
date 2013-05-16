@@ -128,7 +128,7 @@ LUX_EXPORT void luxOverrideResumeFLM(const char *name);
 LUX_EXPORT void luxOverrideFilename(const char *name);
 
 /* Write film to a floating point OpenEXR image */
-LUX_EXPORT void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
+LUX_EXPORT int luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 /* User interactive thread functions */
 LUX_EXPORT void luxStart();

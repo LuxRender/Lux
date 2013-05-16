@@ -1082,8 +1082,9 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	return reinterpret_cast<vector<RGBColor> &>(xyzcolor);
 }
 
-void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
+bool FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
 {
+	bool result = true;
 	// NOTE - this method is not reentrant! 
 	// write_mutex must be aquired before calling WriteImage2
 
@@ -1121,7 +1122,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					rgbColor[i] *= alpha[i];
 			}
 
-			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
+			result &= WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
 	}
 
@@ -1142,9 +1143,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				for ( u_int i = 0; i < nPix; i++ )
 					premult_rgbcolor[i] = rgbcolor[i] * alpha[i];
 
-				WriteEXRImage(premult_rgbcolor, alpha, filename + postfix + ".exr", zBuf);
+				result &= WriteEXRImage(premult_rgbcolor, alpha, filename + postfix + ".exr", zBuf);
 			} else
-				WriteEXRImage(rgbcolor, alpha, filename + postfix + ".exr", zBuf);
+				result &= WriteEXRImage(rgbcolor, alpha, filename + postfix + ".exr", zBuf);
 		}			
 
 		// Output to low dynamic range formats
@@ -1158,9 +1159,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 			// write out tonemapped TGA
 			if ((type & IMAGE_FILEOUTPUT) && write_TGA)
-				WriteTGAImage(rgbcolor, alpha, filename + postfix + ".tga");
+				result &= WriteTGAImage(rgbcolor, alpha, filename + postfix + ".tga");
 			if ((type & IMAGE_FILEOUTPUT) && write_PNG)
-				WritePNGImage(rgbcolor, alpha, filename + postfix + ".png");
+				result &= WritePNGImage(rgbcolor, alpha, filename + postfix + ".png");
 
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
@@ -1314,9 +1315,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			}
 		}
 	}
+	return result;
 }
 
-void FlexImageFilm::WriteImage(ImageType type)
+bool FlexImageFilm::WriteImage(ImageType type)
 {
 	// ensure we dont try to perform multiple writes at once
 	// needed since we can't put the pool lock up here
@@ -1324,8 +1326,9 @@ void FlexImageFilm::WriteImage(ImageType type)
 	
 	// check if film is initialized
 	if (!contribPool)
-		return;
+		return false;
 
+	bool result = true;
 	// save the current status of the film if required
 	// do it here instead of in WriteImage2 to reduce
 	// memory usage
@@ -1333,7 +1336,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// do its own pool locking internally
 	if (type & IMAGE_FLMOUTPUT) {
 		if (writeResumeFlm)
-			WriteFilmToFile(filename + ".flm");
+			result &= WriteFilmToFile(filename + ".flm");
 	}
 
 	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)
@@ -1360,7 +1363,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 				continue;
 
 			buffer.GetData(&(pixels[0]), &(alpha[0]));
-			WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
+			result &= WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 		}
 	}
 
@@ -1440,14 +1443,15 @@ void FlexImageFilm::WriteImage(ImageType type)
 	}
 	m_FalseAvgLum = Y;
 
-	WriteImage2(type, pixels, alpha, "");
+	result &= WriteImage2(type, pixels, alpha, "");
+	return result;
 }
 
-void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
+bool FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
 	// check if film is initialized
 	if (!contribPool)
-		return;
+		return false;
 
 	//boost::mutex::scoped_lock(write_mutex);
 	// don't need the write mutex since we're just protecting the buffers
@@ -1544,12 +1548,13 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 			rgbcolor[i] *= alpha[i];
 	}
 
-	WriteEXRImage(rgbcolor, alpha, exrFilename, zBuf);
+	bool result = WriteEXRImage(rgbcolor, alpha, exrFilename, zBuf);
 
 	// Restore the write_EXR members
 	write_EXR_ZBuf = lOrigZbuf;
 	write_EXR_halftype = lOrigHalf;
 	write_EXR_compressiontype = lOrigCompression;
+	return result;
 }
 
 template <typename T>
@@ -1627,31 +1632,33 @@ float* FlexImageFilm::getZBuffer()
 	return z_buffer;
 }
 
-void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
+bool FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Write Truevision Targa TGA image
 	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped TGA image to file '"<< fullpath << "'";
-	WriteTargaImage(write_TGA_channels, write_TGA_ZBuf, filename, rgb, alpha,
+	return WriteTargaImage(write_TGA_channels, write_TGA_ZBuf,
+		filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
 }
 
-void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
+bool FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Write Portable Network Graphics PNG image
 	// Assumes colors are "straight", ie not premultiplied
 	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped PNG image to file '"<< fullpath << "'";
 
-	WritePngImage(write_PNG_channels, write_PNG_16bit, write_PNG_ZBuf, filename, rgb, alpha,
+	return WritePngImage(write_PNG_channels, write_PNG_16bit,
+		write_PNG_ZBuf, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart, colorSpace, m_Gamma);
 }
 
-void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
+bool FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
 {
 	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Assumes colors are premultiplied	
@@ -1676,17 +1683,20 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 				zBuf[i] = (zbuf[i]-min) / (max-min);
 
 			LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file '"<< fullpath << "'";
-			WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
+			return WriteOpenEXRImage(write_EXR_channels,
+				write_EXR_halftype, write_EXR_ZBuf,
+				write_EXR_compressiontype, filename, rgb, alpha,
 				xPixelCount, yPixelCount,
 				xResolution, yResolution,
 				xPixelStart, yPixelStart, zBuf);
-			return;
 		}
 	}
 
 	// Write OpenEXR RGBA image
 	LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file '"<< fullpath << "'";
-	WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
+	return WriteOpenEXRImage(write_EXR_channels,
+		write_EXR_halftype, write_EXR_ZBuf,
+		write_EXR_compressiontype, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart, zbuf);

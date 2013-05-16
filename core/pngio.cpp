@@ -110,12 +110,13 @@ void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *c
 void lux_png_error(png_structp png_, png_const_charp msg)
 {
 		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open PNG file '"<<msg<<"' for output";
+		*((bool *)(png_->error_ptr)) &= false;
 }
 #endif
 
 namespace lux {
 
-void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<RGBColor> &pixels,
+bool WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<RGBColor> &pixels,
 		vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
 		u_int xResolution, u_int yResolution,
 		u_int xPixelStart, u_int yPixelStart, ColorSystem &cSystem, float screenGamma)
@@ -137,7 +138,7 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 	
 	if (!dib) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "Error writing PNG file '" << name << "', allocation failed";
-		return;
+		return false;
 	}
 
 	const u_int bmpChannelMapping[] = {FI_RGBA_RED, FI_RGBA_GREEN, FI_RGBA_BLUE, FI_RGBA_ALPHA};
@@ -166,11 +167,14 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 		FreeImage_DeleteTag(tag);
 	}
 
+	bool result = true;
 	if (!FreeImage_Save(FIF_PNG, dib, name.c_str(), PNG_DEFAULT)) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "Error writing PNG file '" << name << "'";
+		result = false;
 	}
 
 	FreeImage_Unload(dib);
+	return result;
 }
 #else
 {
@@ -185,10 +189,11 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 	FILE *fp = fopen(name.c_str(), "wb");
 	if (!fp) {
 		LOG( LUX_SEVERE,LUX_SYSTEM) << "Cannot open PNG file '" << name << "' for output";
-		return;
+		return false;
 	}
 
-	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, lux_png_error, NULL);
+	bool result = true;
+	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, &result, lux_png_error, NULL);
 	png_infop info = png_create_info_struct(png);
 	png_init_io(png, fp);
 
@@ -436,6 +441,7 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 	png_destroy_write_struct(&png, &info);
 
 	fclose(fp);
+	return result;
 }
 
 #endif

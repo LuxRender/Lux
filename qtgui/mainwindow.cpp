@@ -1083,10 +1083,10 @@ bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 {
 	// Done inside API for now (set openExr* members to control OpenEXR format options)
 	if (ui->action_HDR_tonemapped->isChecked())
-		luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
+		return luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
 	else
-		luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
-	return true;
+		return luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
+	return false;
 }
 
 void MainWindow::outputBufferGroupsTonemapped()
@@ -1181,14 +1181,18 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 
 		if (asHDR) {
 			outputName += ".exr";
-			luxSaveEXR(qPrintable(outputName),
+			if (luxSaveEXR(qPrintable(outputName),
 				openExrHalfFloats, openExrDepthBuffer,
 				openExrCompressionType,
-				ui->action_HDR_tonemapped->isChecked());
-			statusMessage->setText(tr("HDR image saved"));
-			LOG(LUX_INFO, LUX_NOERROR) <<
-				"Light group HDR image saved to '" <<
-				qPrintable(outputName) << "'";
+				ui->action_HDR_tonemapped->isChecked())) {
+				statusMessage->setText(tr("HDR image saved"));
+				LOG(LUX_INFO, LUX_NOERROR) <<
+					"Light group HDR image saved to '" <<
+					qPrintable(outputName) << "'";
+			} else {
+				statusMessage->setText(tr("ERROR: HDR image NOT saved."));
+				LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group HDR image to '" << qPrintable(outputName) << "'";
+			}
 		} else {
 			outputName += "." + filenamePath.suffix();
 			result = saveCurrentImageTonemapped(outputName,
@@ -1627,16 +1631,21 @@ void MainWindow::BatchProcessThread::run()
 		QString outName = QDir(outDir).absoluteFilePath(f->completeBaseName() + "." + outExtension);
 
 		// Save loaded FLM
+		bool result = true;
 		if(allLightGroups)
 			mainWindow->saveAllLightGroups(outName, asHDR);
 		else {
 			luxUpdateFramebuffer();
 			if(asHDR)
-				mainWindow->saveCurrentImageHDR(outName);
+				result = mainWindow->saveCurrentImageHDR(outName);
 			else
-				saveCurrentImageTonemapped(outName);
+				result = saveCurrentImageTonemapped(outName);
 		}
-		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << qPrintable(f->path()) << "' as '" << qPrintable(outName);
+		if (result) {
+			LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << qPrintable(f->path()) << "' as '" << qPrintable(outName);
+		} else {
+			LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving '" << qPrintable(f->path()) << "' to '" << qPrintable(outName) << "'";
+		}
 
 		// Check again for cancel
 		if (batchProgress && batchProgress->wasCanceled())

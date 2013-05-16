@@ -628,10 +628,11 @@ public:
 	virtual void SetSampleCount(const double count) { numberOfLocalSamples = count; }
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
-	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
+	virtual bool SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
+		return false;
 	}
-	virtual void WriteImage(ImageType type) = 0;
+	virtual bool WriteImage(ImageType type) = 0;
 	virtual void CheckWriteOuputInterval() { }
 
 	virtual bool WriteFilmToFile(const string &filename);
