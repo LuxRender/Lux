@@ -110,7 +110,7 @@ void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *c
 void lux_png_error(png_structp png_, png_const_charp msg)
 {
 		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open PNG file '"<<msg<<"' for output";
-		*((bool *)(png_->error_ptr)) &= false;
+		*((bool *)(png_get_error_ptr(png_))) &= false;
 }
 #endif
 
