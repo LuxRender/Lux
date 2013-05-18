@@ -49,11 +49,15 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 	hasAlpha = (alphas != NULL);
 	normalSplit = normalsplit && n != NULL;
 
+	// Identify all unique vertices
+	for (u_int i = 0; i < nvertices; ++i)
+		uniqueVertices.insert(P[i]);
+
 	// Allocate _LoopSubdiv_ vertices and faces
 	SDVertex *verts = new SDVertex[nvertices];
 	vertices.reserve(nvertices);
 	for (u_int i = 0; i < nvertices; ++i) {
-		verts[i] = SDVertex(P[i],
+		verts[i] = SDVertex(&(*uniqueVertices.find(P[i])),
 				hasUV ? uv[2 * i] : 0.f,
 				hasUV ? uv[2 * i + 1] : 0.f,
 				normalSplit ? n[i] : Normal(0.f, 0.f, 0.f),
@@ -65,22 +69,30 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 
 	SDFace *fs = new SDFace[nfaces];
 	faces.reserve(nfaces);
-	for (u_int i = 0; i < nfaces; ++i)
-		faces.push_back(&fs[i]);
 	// Set face to vertex pointers
 	const int *vp = vertexIndices;
+	SDFace *fp = fs;
 	for (u_int i = 0; i < nfaces; ++i) {
-		SDFace *f = faces[i];
+		// Skip degenerate triangles
+		if (vertices[vp[0]]->P == vertices[vp[1]]->P ||
+			vertices[vp[0]]->P == vertices[vp[2]]->P ||
+			vertices[vp[1]]->P == vertices[vp[2]]->P) {
+			vp +=3;
+			continue;
+		}
 		for (u_int j = 0; j < 3; ++j) {
 			SDVertex *v = vertices[vp[j]];
-			f->v[j] = v;
-			f->f[j] = NULL;
-			f->children[j] = NULL;
-			v->startFace = f;
+			fp->v[j] = v;
+			fp->f[j] = NULL;
+			fp->children[j] = NULL;
+			v->startFace = fp;
 		}
-		f->children[3] = NULL;
+		fp->children[3] = NULL;
 		vp += 3;
+		faces.push_back(fp++);
 	}
+	// Update eral number of faces
+	nfaces = fp - fs;
 
 	// Set neighbor pointers in _faces_
 	set<SDEdge> edges;
@@ -122,6 +134,9 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 	for (u_int i = 0; i < nvertices; ++i) {
 		SDVertex *v = vertices[i];
 		SDFace *f = v->startFace;
+		// Skip unused vertices
+		if (!f)
+			continue;
 		do {
 			f = f->nextFace(v->P);
 		} while (f && f != v->startFace);
@@ -151,6 +166,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;
+	set<Point, PointCompare> u = uniqueVertices;
 	boost::object_pool<SDVertex> vertexArena;
 	boost::object_pool<SDFace> faceArena;
 
@@ -158,6 +174,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Update _f_ and _v_ for next level of subdivision
 		vector<SDFace *> newFaces;
 		vector<SDVertex *> newVertices;
+		set<Point, PointCompare> newUniqueVertices;
 
 		// Allocate next level of children in mesh tree
 		newVertices.reserve(v.size());
@@ -179,15 +196,18 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Update vertex positions for even vertices
 		for (u_int j = 0; j < v.size(); ++j) {
 			SDVertex *vert = v[j];
+			// Skip unused vertices
+			if (!vert->startFace)
+				continue;
 			if (!vert->boundary) {
 				// Apply one-ring rule for even vertex
 				if (vert->regular)
-					weightOneRing(vert->child, vert, 1.f/16.f);
+					weightOneRing(newUniqueVertices, vert->child, vert, 1.f/16.f);
 				else
-					weightOneRing(vert->child, vert, beta(vert->valence()));
+					weightOneRing(newUniqueVertices, vert->child, vert, beta(vert->valence()));
 			} else {
 				// Apply boundary rule for even vertex
-				weightBoundary(vert->child, vert, 1.f/8.f);
+				weightBoundary(newUniqueVertices, vert->child, vert, 1.f/8.f);
 			}
 			// Update even vertex face pointers
 			const SDFace *sf = vert->startFace;
@@ -228,7 +248,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 					vert->startFace = face->children[3];
 					// Apply edge rules to compute new vertex position
 					if (vert->boundary) {
-						vert->P =  0.5f * (v0->P + v1->P);
+						vert->P =  &(*(newUniqueVertices.insert(0.5f * (*(v0->P) + *(v1->P))).first));
 
 						vert->u = 0.5f * (v0->u + v1->u);
 						vert->v = 0.5f * (v0->v + v1->v);
@@ -238,8 +258,9 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 					} else {
 						SDVertex *ov1 = face->v[PREV(k)];
 						SDVertex *ov2 = f2->otherVert(edge.v[0]->P, edge.v[1]->P);
-						vert->P =  3.f/8.f * (v0->P + v1->P);
-						vert->P += 1.f/8.f * (ov1->P + ov2->P);
+						Point P = 3.f / 8.f * (*(v0->P) + *(v1->P));
+						P += 1.f / 8.f * (*(ov1->P) + *(ov2->P));
+						vert->P = &(*(newUniqueVertices.insert(P).first));
 
 						// If UV are different on each side of the edge interpolate as boundary
 						if (f2->v[f2->vnum(v0->P)]->u == v0->u &&
@@ -282,7 +303,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						f2->v[f2->vnum(v1->P)]->v != v1->v ||
 						f2->v[f2->vnum(v1->P)]->col != v1->col ||
 						f2->v[f2->vnum(v1->P)]->alpha != v1->alpha)) {
-						const Point &P(vert->P);
+						const Point *P = vert->P;
 						const Normal &N(vert->n);
 						SDFace *startFace = vert->startFace;
 						vert = vertexArena.construct();//new (vertexArena) SDVertex;
@@ -313,15 +334,21 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Prepare for next level of subdivision
 		f = newFaces;
 		v = newVertices;
+		// Swap to preserve data location since pointers are held by SDVertex
+		u.swap(newUniqueVertices);
 	}
 
 	// Push vertices to limit surface
 	SDVertex *Vlimit = new SDVertex[v.size()];
+	set<Point, PointCompare> uniqueLimit;
 	for (u_int i = 0; i < v.size(); ++i) {
+		// Skip unused vertices
+		if (!v[i]->startFace)
+			continue;
 		if (v[i]->boundary)
-			weightBoundary(&Vlimit[i], v[i], 1.f/5.f);
+			weightBoundary(uniqueLimit, &Vlimit[i], v[i], 1.f/5.f);
 		else
-			weightOneRing(&Vlimit[i], v[i], gamma(v[i]->valence()));
+			weightOneRing(uniqueLimit, &Vlimit[i], v[i], gamma(v[i]->valence()));
 	}
 	for (u_int i = 0; i < v.size(); ++i) {
 		v[i]->P = Vlimit[i].P;
@@ -332,6 +359,9 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		v[i]->alpha = Vlimit[i].alpha;
 	}
 	delete[] Vlimit;
+	// Swap to preserve data location since pointers are held by SDVertex
+	u.swap(uniqueLimit);
+	uniqueLimit.clear();
 
 	// Create _TriangleMesh_ from subdivision mesh
 	u_int ntris = f.size();
@@ -382,13 +412,18 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	if (displacementMap) {
 		// Dade - apply the displacement map
 		GenerateNormals(v);
-		ApplyDisplacementMap(v);
+		ApplyDisplacementMap(u, v);
 	}
 
 	// Dade - create trianglemesh vertices
+	// Dummy initialization for unused vertices
 	Point *Plimit = new Point[nverts];
-	for (u_int i = 0; i < nverts; ++i)
-		Plimit[i] = v[i]->P;
+	for (u_int i = 0; i < nverts; ++i) {
+		if (v[i]->startFace)
+			Plimit[i] = *(v[i]->P);
+		else
+			Plimit[i] = Point(0, 0, 0);
+	}
 
 	Normal *Ns = NULL;
 	if (displacementMapNormalSmooth) {
@@ -413,6 +448,9 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 	Point *Pring = new Point[ringSize];
 	for (u_int i = 0; i < v.size(); ++i) {
 		SDVertex *vert = v[i];
+		// Skip unused vertices
+		if (!vert->startFace)
+			continue;
 		Vector S(0,0,0), T(0,0,0);
 		u_int valence = vert->valence();
 		if (valence > ringSize) {
@@ -432,12 +470,12 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 			// Compute tangents of boundary face
 			S = Pring[valence-1] - Pring[0];
 			if (valence == 2)
-				T = Vector(Pring[0] + Pring[1] - 2 * vert->P);
+				T = Vector(Pring[0] + Pring[1] - 2 * *(vert->P));
 			else if (valence == 3)
-				T = Pring[1] - vert->P;
+				T = Pring[1] - *(vert->P);
 			else if (valence == 4) // regular
 				T = Vector(-1*Pring[0] + 2*Pring[1] + 2*Pring[2] +
-					-1*Pring[3] + -2*vert->P);
+					-1*Pring[3] + -2* *(vert->P));
 			else {
 				float theta = M_PI / static_cast<float>(valence - 1);
 				T = Vector(sinf(theta) * (Pring[0] + Pring[valence-1]));
@@ -452,85 +490,46 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 	}
 }
 
-void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
+void LoopSubdiv::ApplyDisplacementMap(set<Point, PointCompare> &unique, const vector<SDVertex *> verts) const
 {
 	// Dade - apply the displacement map
 	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Applying displacement map to " << verts.size() << " vertices";
 	SpectrumWavelengths swl;
 	swl.Sample(.5f);
 
-	for (u_int i = 0; i < verts.size(); i++) {
-		SDVertex *v = verts[i];
-		// Special use of the child member to detect that
-		// the vertex has already been displaced
-		if (v->child == v)
-			continue;
-		Vector dpdu, dpdv;
-		CoordinateSystem(Vector(v->n), &dpdu, &dpdv);
-		Vector displacement(v->n);
-
-		SDFace *face = v->startFace;
-		u_int nf = 0;
-		float dl = 0.f;
-		vector<SDVertex *> vlist;
-		vlist.reserve(v->valence());
-		if (v->boundary) {
-			do {
-				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
-					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, NULL);
-
-				dl += displacementMap->Evaluate(swl, dg);
-				++nf;
-				if (vv->child != vv) {
-					vlist.push_back(vv);
-					vv->child = vv;
-				}
-				face = face->nextFace(v->P);
-			} while (face);
-			face = v->startFace->prevFace(v->P);
-			while (face) {
-				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
-					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, NULL);
-
-				dl += displacementMap->Evaluate(swl, dg);
-				++nf;
-				if (vv->child != vv) {
-					vlist.push_back(vv);
-					vv->child = vv;
-				}
-				face = face->prevFace(v->P);
-			}
-		} else {
-			do {
-				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
-					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, NULL);
-
-				dl += displacementMap->Evaluate(swl, dg);
-				++nf;
-				if (vv->child != vv) {
-					vlist.push_back(vv);
-					vv->child = vv;
-				}
-				face = face->nextFace(v->P);
-			} while (face != v->startFace);
+	// Map old vertex to new one
+	map<const Point *, const Point *> uniqueMap;
+	set<Point, PointCompare> newUnique;
+	// Iterate over all unique vertices
+	for (set<Point, PointCompare>::iterator i = unique.begin(); i != unique.end(); ++i) {
+		Vector displacement;
+		u_int nv = 0;
+		// Iterate over all full vertices
+		for (u_int j = 0; j < verts.size(); ++j) {
+			SDVertex *v = verts[j];
+			// Skip if vertex does not match current unique vertex
+			// Or if vertex is unused
+			if (v->P != &(*i) || !v->startFace)
+				continue;
+			++nv;
+			Vector dpdu, dpdv;
+			CoordinateSystem(Vector(v->n), &dpdu, &dpdv);
+			DifferentialGeometry dg(*i, v->n, dpdu, dpdv,
+				Normal(0, 0, 0), Normal(0, 0, 0), v->u, v->v,
+				NULL);
+			displacement += (displacementMap->Evaluate(swl, dg) *
+				displacementMapScale + displacementMapOffset) *
+				Vector(v->n);
 		}
-		dl = (dl * displacementMapScale / nf + displacementMapOffset);
-		// Average the displacement
-		displacement *= dl;
-
-		// Apply displacement to all vertices in the list
-		for (u_int j = 0; j < vlist.size(); ++j)
-			vlist[j]->P += displacement;
+		uniqueMap[&(*i)] = &(*(newUnique.insert(*i + displacement / nv).first));
 	}
+	// Swap to preserve data location since pointers are held
+	unique.swap(newUnique);
+	for (u_int i = 0; i < verts.size(); ++i)
+		verts[i]->P = uniqueMap[verts[i]->P];
 }
 
-void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
+void LoopSubdiv::weightOneRing(set<Point, PointCompare> &unique, SDVertex *destVert, SDVertex *vert,
 	float beta) const
 {
 	// Put _vert_ one-ring in _Pring_
@@ -570,7 +569,7 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 			alphaSplit = true;
 	} while (face != vert->startFace);
 
-	Point P((1 - valence * beta) * vert->P);
+	Point P((1 - valence * beta) * *(vert->P));
 	float u = (1 - valence * beta) * vert->u;
 	float v = (1 - valence * beta) * vert->v;
 	RGBColor col = (1 - valence * beta) * vert->col;
@@ -578,7 +577,7 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 	Normal N((1 - valence * beta) * vert->n);
 
 	for (u_int i = 0; i < valence; ++i) {
-		P += beta * Vring[i]->P;
+		P += beta * *(Vring[i]->P);
 		u += beta * Vring[i]->u;
 		v += beta * Vring[i]->v;
 		N += beta * Vring[i]->n;
@@ -586,7 +585,7 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
 		alpha += beta * Vring[i]->alpha;
 	}
 
-	destVert->P = P;
+	destVert->P = &(*(unique.insert(P).first));
 	if (uvSplit) {
 		destVert->u = vert->u;
 		destVert->v = vert->v;
@@ -611,7 +610,7 @@ void SDVertex::oneRing(Point *Pring) const
 		// Get one ring vertices for interior vertex
 		SDFace *face = startFace;
 		do {
-			*Pring++ = face->nextVert(P)->P;
+			*Pring++ = *(face->nextVert(P)->P);
 			face = face->nextFace(P);
 		} while (face != startFace);
 	} else {
@@ -619,21 +618,21 @@ void SDVertex::oneRing(Point *Pring) const
 		SDFace *face = startFace, *f2;
 		while ((f2 = face->nextFace(P)) != NULL)
 			face = f2;
-		*Pring++ = face->nextVert(P)->P;
+		*Pring++ = *(face->nextVert(P)->P);
 		do {
-			*Pring++ = face->prevVert(P)->P;
+			*Pring++ = *(face->prevVert(P)->P);
 			face = face->prevFace(P);
 		} while (face != NULL);
 	}
 }
 
-void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
+void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *destVert,  SDVertex *vert,
 	float beta) const
 {
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
 	if (displacementMapSharpBoundary) {
-		destVert->P = vert->P;
+		destVert->P = &(*(unique.insert(*(vert->P)).first));
 		destVert->u = vert->u;
 		destVert->v = vert->v;
 		destVert->n = vert->n;
@@ -684,10 +683,10 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		}
 	} while (face != NULL);
 
-	Point P((1 - 2 * beta) * vert->P);
-	P += beta * Vring[0]->P;
-	P += beta * Vring[valence - 1]->P;
-	destVert->P = P;
+	Point P((1 - 2 * beta) * *(vert->P));
+	P += beta * *(Vring[0]->P);
+	P += beta * *(Vring[valence - 1]->P);
+	destVert->P = &(*(unique.insert(P).first));
 
 	if (uvSplit) {
 		destVert->u = vert->u;

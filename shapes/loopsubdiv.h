@@ -34,11 +34,23 @@ using std::map;
 namespace lux
 {
 
+// Comparison operator for Point, used in std::set
+class PointCompare {
+public:
+	bool operator()(const Point &a, const Point &b) {
+		if (a.x != b.x)
+			return a.x < b.x;
+		if (a.y != b.y)
+			return a.y < b.y;
+		return a.z < b.z;
+	}
+};
+
 // LoopSubdiv Local Structures
 struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
-	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f,
+	SDVertex(const Point *pt = NULL, float uu = 0.0f, float vv = 0.0f,
 		Normal nn = Normal(0, 0, 0), RGBColor cc = RGBColor(1.f), float aa = 1.f) :
 		P(pt), n(nn), u(uu), v(vv), col(cc), alpha(aa),
 		startFace(NULL), child(NULL), regular(false), boundary(false) { }
@@ -47,7 +59,7 @@ struct SDVertex {
 	u_int valence() const;
 	void oneRing(Point *P) const;
 
-	Point P;
+	const Point *P;
 	Normal n;
 	float u, v;
 	RGBColor col;
@@ -68,7 +80,7 @@ struct SDFace {
 			children[i] = NULL;
 	}
 	// SDFace Methods
-	u_int vnum(const Point &p) const {
+	u_int vnum(const Point *p) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i]->P == p)
 				return i;
@@ -76,19 +88,19 @@ struct SDFace {
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
 		return 0;
 	}
-	SDFace *nextFace(const Point &p) const {
+	SDFace *nextFace(const Point *p) const {
 		return f[vnum(p)];
 	}
-	SDFace *prevFace(const Point &p) const {
+	SDFace *prevFace(const Point *p) const {
 		return f[PREV(vnum(p))];
 	}
-	SDVertex *nextVert(const Point &p) const {
+	SDVertex *nextVert(const Point *p) const {
 		return v[NEXT(vnum(p))];
 	}
-	SDVertex *prevVert(const Point &p) const {
+	SDVertex *prevVert(const Point *p) const {
 		return v[PREV(vnum(p))];
 	}
-	SDVertex *otherVert(const Point &p0, const Point &p1) const {
+	SDVertex *otherVert(const Point *p0, const Point *p1) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i]->P != p0 && v[i]->P != p1)
 				return v[i];
@@ -115,10 +127,8 @@ struct SDEdge {
 		f0edgeNum = 0;
 	}
 	// SDEdge Comparison Function
-	bool PInf(const Point &p1, const Point &p2) const {
-		if (p1.x == p2.x)
-			return p1.y == p2.y ? p1.z < p2.z : p1.y < p2.y;
-		return p1.x < p2.x;
+	bool PInf(const Point *p1, const Point *p2) const {
+		return p1 < p2;
 	}
 	bool NInf(const Normal &n1, const Normal &n2) const {
 		if (n1.x == n2.x)
@@ -187,17 +197,18 @@ private:
 		if (valence == 3) return 3.f/16.f;
 		else return 3.f / (8.f * valence);
 	}
-	void weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const ;
-	void weightBoundary(SDVertex *destVert, SDVertex *vert, float beta) const;
+	void weightOneRing(set<Point, PointCompare> &unique, SDVertex *destVert, SDVertex *vert, float beta) const ;
+	void weightBoundary(set<Point, PointCompare> &unique, SDVertex *destVert, SDVertex *vert, float beta) const;
 	float gamma(u_int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
 	static void GenerateNormals(const vector<SDVertex *> verts);
 
-	void ApplyDisplacementMap(const vector<SDVertex *> verts) const;
+	void ApplyDisplacementMap(set<Point, PointCompare> &unique, const vector<SDVertex *> verts) const;
 
 	// LoopSubdiv Private Data
 	u_int nLevels;
+	set<Point, PointCompare> uniqueVertices;
 	vector<SDVertex *> vertices;
 	vector<SDFace *> faces;
 
