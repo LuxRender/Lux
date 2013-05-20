@@ -88,6 +88,14 @@ struct SDFace {
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
 		return 0;
 	}
+	u_int fnum(const SDFace *face) const {
+		for (u_int i = 0; i < 3; ++i) {
+			if (f[i] == face)
+				return i;
+		}
+		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::fnum()";
+		return 0;
+	}
 	SDFace *nextFace(const Point *p) const {
 		return f[vnum(p)];
 	}

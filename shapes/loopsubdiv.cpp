@@ -177,28 +177,56 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		set<Point, PointCompare> newUniqueVertices;
 
 		// Allocate next level of children in mesh tree
-		newVertices.reserve(v.size());
-		for (u_int j = 0; j < v.size(); ++j) {
-			v[j]->child = vertexArena.construct();//new (vertexArena) SDVertex;
-			v[j]->child->regular = v[j]->regular;
-			v[j]->child->boundary = v[j]->boundary;
-			newVertices.push_back(v[j]->child);
-		}
 		newFaces.reserve(f.size());
 		for (u_int j = 0; j < f.size(); ++j) {
+			SDFace *face = f[j];
+			// Verify that the face is not degenerate
+			bool degenerate = false;
+			for (u_int k = 0; k < 3; ++k) {
+				if (face->v[k] != face->v[NEXT(k)])
+					continue;
+				degenerate = true;
+				if (face->f[PREV(k)])
+					face->f[PREV(k)]->f[face->f[PREV(k)]->fnum(face)] = face->f[NEXT(k)];
+				else
+					face->v[NEXT(k)]->boundary = true;
+				if (face->f[NEXT(k)])
+					face->f[NEXT(k)]->f[PREV(face->f[NEXT(k)]->fnum(face))] = face->f[PREV(k)];
+				else
+					face->v[k]->boundary = true;
+				break;
+			}
+			// Update vertex start face if it is degenerate
+			if (degenerate) {
+				for (u_int k = 0; k < 3; ++k) {
+					if (face->v[k]->startFace != face)
+						continue;
+					if (face->f[k])
+						face->v[k]->startFace = face->f[k];
+					else if (face->f[PREV(k)])
+						face->v[k]->startFace = face->f[PREV(k)];
+					else
+						face->v[k]->startFace = NULL;
+				}
+			}
 			for (u_int k = 0; k < 4; ++k) {
-				f[j]->children[k] = faceArena.construct();//new (faceArena) SDFace;
-				newFaces.push_back(f[j]->children[k]);
+				if (degenerate) {
+					face->children[k] = NULL;
+				} else {
+					face->children[k] = faceArena.construct();
+					newFaces.push_back(face->children[k]);
+				}
 			}
 		}
-
-		// Update vertex positions and create new edge vertices
-		// Update vertex positions for even vertices
+		newVertices.reserve(v.size());
 		for (u_int j = 0; j < v.size(); ++j) {
 			SDVertex *vert = v[j];
-			// Skip unused vertices
 			if (!vert->startFace)
 				continue;
+			vert->child = vertexArena.construct();
+			vert->child->regular = v[j]->regular;
+			vert->child->boundary = v[j]->boundary;
+			// Update vertex positions for even vertices
 			if (!vert->boundary) {
 				// Apply one-ring rule for even vertex
 				if (vert->regular)
@@ -212,6 +240,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 			// Update even vertex face pointers
 			const SDFace *sf = vert->startFace;
 			vert->child->startFace = sf->children[sf->vnum(vert->P)];
+			newVertices.push_back(v[j]->child);
 		}
 
 		// Compute new odd edge vertices
@@ -219,6 +248,9 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		map<SDEdge, SDVertex *> edgeVerts;
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
+			// Skip degenerate faces
+			if (face->children[0] == NULL)
+				continue;
 			for (u_int k = 0; k < 3; ++k) {
 				// Update face neighbor pointers
 				// Update children _f_ pointers for siblings
