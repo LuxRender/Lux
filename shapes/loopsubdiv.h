@@ -245,8 +245,12 @@ inline u_int SDVertex::valence() const {
 			if (v->startFace != startFace)
 				v->startFace = startFace;
 			++nf;
+			if (f != f->nextFace(v->P)->prevFace(v->P))
+				break;
 			f = f->nextFace(v->P);
 		} while (f != startFace);
+		if (f != startFace)
+			LOG(LUX_WARNING, LUX_CONSISTENCY) << "abnormal face sequence";
 		return nf;
 	} else {
 		// Compute valence of boundary vertex

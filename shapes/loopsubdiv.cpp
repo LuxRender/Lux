@@ -155,6 +155,44 @@ LoopSubdiv::~LoopSubdiv() {
 	delete[] faces[0];
 }
 
+static bool CheckDegenerate(SDFace *face)
+{
+	bool degenerate = false;
+	for (u_int i = 0; i < 3; ++i) {
+		// If the vertex is NULL, the face has already been checked
+		// and it is degenerate
+		if (!face->v[i])
+			return true;
+		if (face->v[i] != face->v[NEXT(i)])
+			continue;
+		degenerate = true;
+		if (face->f[PREV(i)])
+			face->f[PREV(i)]->f[face->f[PREV(i)]->fnum(face)] = face->f[NEXT(i)];
+		else
+			face->v[NEXT(i)]->boundary = true;
+		if (face->f[NEXT(i)])
+			face->f[NEXT(i)]->f[PREV(face->f[NEXT(i)]->fnum(face))] = face->f[PREV(i)];
+		else
+			face->v[i]->boundary = true;
+		break;
+	}
+	// Update vertex start face if it is degenerate
+	if (degenerate) {
+		for (u_int i = 0; i < 3; ++i) {
+			SDVertex *vert = face->v[i];
+			// Clear vertex to detect the degenerate face later
+			face->v[i] = NULL;
+			if (vert->startFace != face)
+				continue;
+			if (face->f[i])
+				vert->startFace = face->f[i];
+			else
+				vert->startFace = face->f[PREV(i)];
+		}
+	}
+	return degenerate;
+}
+
 boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 	// check that we should do any subdivision
@@ -181,34 +219,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
 			// Verify that the face is not degenerate
-			bool degenerate = false;
-			for (u_int k = 0; k < 3; ++k) {
-				if (face->v[k] != face->v[NEXT(k)])
-					continue;
-				degenerate = true;
-				if (face->f[PREV(k)])
-					face->f[PREV(k)]->f[face->f[PREV(k)]->fnum(face)] = face->f[NEXT(k)];
-				else
-					face->v[NEXT(k)]->boundary = true;
-				if (face->f[NEXT(k)])
-					face->f[NEXT(k)]->f[PREV(face->f[NEXT(k)]->fnum(face))] = face->f[PREV(k)];
-				else
-					face->v[k]->boundary = true;
-				break;
-			}
-			// Update vertex start face if it is degenerate
-			if (degenerate) {
-				for (u_int k = 0; k < 3; ++k) {
-					if (face->v[k]->startFace != face)
-						continue;
-					if (face->f[k])
-						face->v[k]->startFace = face->f[k];
-					else if (face->f[PREV(k)])
-						face->v[k]->startFace = face->f[PREV(k)];
-					else
-						face->v[k]->startFace = NULL;
-				}
-			}
+			bool degenerate = CheckDegenerate(face);
 			for (u_int k = 0; k < 4; ++k) {
 				if (degenerate) {
 					face->children[k] = NULL;
@@ -368,6 +379,10 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		v = newVertices;
 		// Swap to preserve data location since pointers are held by SDVertex
 		u.swap(newUniqueVertices);
+	}
+	// Check for degenerate faces
+	for (u_int i = 0; i < f.size(); ++i) {
+		CheckDegenerate(f[i]);
 	}
 
 	// Push vertices to limit surface
@@ -590,6 +605,8 @@ void LoopSubdiv::weightOneRing(set<Point, PointCompare> &unique, SDVertex *destV
 		float va = v2->alpha;
 
 		*VR++ = v2;
+		if (face != face->nextFace(vert->P)->prevFace(vert->P))
+			break;
 		face = face->nextFace(vert->P);
 		v2 = face->prevVert(vert->P);
 
@@ -643,6 +660,8 @@ void SDVertex::oneRing(Point *Pring) const
 		SDFace *face = startFace;
 		do {
 			*Pring++ = *(face->nextVert(P)->P);
+			if (face != face->nextFace(P)->prevFace(P))
+				break;
 			face = face->nextFace(P);
 		} while (face != startFace);
 	} else {
