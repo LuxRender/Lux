@@ -437,6 +437,14 @@ static void processCommandFilm(bool isLittleEndian,
 	params.AddBool("write_tga_ZBuf", &no);
 	params.AddBool("write_resume_flm", &no);
 
+	// All halt conditions don't make very much sense on servers. In particular
+	// haltthreshold can not work because of the reset of the film at each client
+	// film update. The halt will come from the client so I just disable all of them.
+
+	params.EraseInt("haltspp");
+	params.EraseInt("halttime");
+	params.EraseFloat("haltthreshold");
+
 	(Context::GetActive()->*f)(type, params);
 }
 
@@ -492,18 +500,18 @@ static void processCommand(void (Context::*f)(float[16]), basic_istream<char> &s
 	(Context::GetActive()->*f)(t);
 }
 
-static void processCommand(void (Context::*f)(u_int, float*), basic_istream<char> &stream)
-{
-	u_int n;
-	stream >> n;
-	vector<float> data;
-	for (u_int i = 0; i < n; ++i) {
-		float v;
-		stream >> v;
-		data.push_back(v);
-	}
-	(Context::GetActive()->*f)(n, &data[0]);
-}
+//static void processCommand(void (Context::*f)(u_int, float*), basic_istream<char> &stream)
+//{
+//	u_int n;
+//	stream >> n;
+//	vector<float> data;
+//	for (u_int i = 0; i < n; ++i) {
+//		float v;
+//		stream >> v;
+//		data.push_back(v);
+//	}
+//	(Context::GetActive()->*f)(n, &data[0]);
+//}
 
 static void processCommand(void (Context::*f)(const string &, float, float, const string &), basic_istream<char> &stream)
 {

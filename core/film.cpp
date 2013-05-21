@@ -2876,7 +2876,7 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 	if (failedPercentage <= haltThreshold)
 		enoughSamplesPerPixel = true;
 
-	// NOTE: TVI is a side product of convergence test so Ithis code can be
+	// NOTE: TVI is a side product of convergence test so this code can be
 	// executed even if halttreshold is not used
 	if (enoughSamplesPerPixel && (haltThreshold >= 0.f))
 		haltThresholdComplete = 1.f - haltThreshold;
