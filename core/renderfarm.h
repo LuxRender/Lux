@@ -67,7 +67,7 @@ private:
 
 class RenderFarm : public Queryable {
 public:
-	RenderFarm();
+	RenderFarm(Context *ctx);
 	~RenderFarm();
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
@@ -119,7 +119,8 @@ public:
 	//!<Gets the log from the network
 	void updateLog();
 
-	void updateUserSamplingMap(const u_int size, const float *map);
+	// Update the user sampling map of all servers
+	void updateUserSamplingMap();
 
 	double getUpdateTimeRemaining();
 
@@ -247,6 +248,7 @@ private:
 	typedef reconnect_status::type reconnect_status_t;
 
 	static bool decodeServerName(const string &serverName, string &name, string &port);
+
 	bool connect(ExtRenderingServerInfo &serverInfo);
 	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
@@ -255,6 +257,10 @@ private:
 	void stopImpl();
 
 	u_int getSlaveNodeCount();
+	void updateServerUserSamplingMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map);
+
+	// The context, this render farm, is associated with
+	Context *ctx;
 
 	// Any operation on servers must be synchronized via this mutex
 	mutable boost::mutex serverListMutex;

@@ -221,6 +221,8 @@ public:
 
 	int currentApiState;
 
+	friend class RenderFarm;
+
 private:
 	// API Local Classes
 	struct RenderOptions {

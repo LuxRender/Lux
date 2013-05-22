@@ -37,6 +37,7 @@
 #include "streamio.h"
 #include "filedata.h"
 #include "tigerhash.h"
+#include "context.h"
 
 #include <algorithm>
 #include <fstream>
@@ -363,7 +364,7 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : Queryable("render_farm"),
+RenderFarm::RenderFarm(Context *c) : Queryable("render_farm"), ctx(c),
 		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false), doneRendering(false),
 		isLittleEndian(osIsLittleEndian()), pollingInterval(3 * 60), defaultTcpPort(18018)
 {
@@ -561,6 +562,19 @@ RenderFarm::reconnect_status_t RenderFarm::reconnect(ExtRenderingServerInfo &ser
 
 		serverInfo.active = true;
 		serverInfo.flushed = true;
+		
+		// Get the user sampling map from the film
+		const float *map = ctx->luxCurrentScene->camera()->film->GetUserSamplingMap();
+		
+		// Send also an updated user sampling map if there is one
+		if (map) {
+			const u_int size = ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+				ctx->luxCurrentScene->camera()->film->GetYPixelCount();
+
+			updateServerUserSamplingMap(serverInfo, size, map);
+
+			delete[] map;
+		}
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
@@ -743,6 +757,14 @@ bool RenderFarm::sessionReset(const string &serverName, const string &password) 
 	return true;
 }
 void RenderFarm::flushImpl() {
+	// Get the user sampling map from the film. ctx->luxCurrentScene can be NULL when
+	// this method is called for WorlEnd command. I don't need anyway to send an update of
+	// the user sampling map in this case.
+	const float *map = (ctx->luxCurrentScene && ctx->luxCurrentScene->camera() && ctx->luxCurrentScene->camera()->film) ?
+		(ctx->luxCurrentScene->camera()->film->GetUserSamplingMap()) : NULL;
+	const u_int size = (map) ? (ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+			ctx->luxCurrentScene->camera()->film->GetYPixelCount()) : 0;
+
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		if(serverInfoList[i].active && !serverInfoList[i].flushed) {
@@ -767,11 +789,17 @@ void RenderFarm::flushImpl() {
 				}
 
 				serverInfoList[i].flushed = true;
+
+				// Send also an updated user sampling map if there is one
+				if (map)
+					updateServerUserSamplingMap(serverInfoList[i], size, map);
 			} catch (exception& e) {
 				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			}
 		}
 	}
+
+	delete[] map;
 
 	// Dade - write info only if there was the communication with some server
 	if (serverInfoList.size() > 0) {
@@ -786,7 +814,7 @@ void RenderFarm::flush() {
 }
 
 void RenderFarm::reconnectFailed() {
-	// NOTE - requires serverListMutex to be aquired by caller
+	// NOTE - requires serverListMutex to be acquired by caller
 	// attempts to reconnect to all failed (inactive) servers
 
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
@@ -986,7 +1014,64 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
-void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
+void RenderFarm::updateServerUserSamplingMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map) {
+	if (!serverInfo.active)
+		// skip servers which are still down
+		return;
+
+	try {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Sending user sampling map to: " <<
+				serverInfo.name << ":" << serverInfo.port;
+
+		// Connect to the server
+		tcp::iostream stream;
+		stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
+
+		stream.connect(serverInfo.name, serverInfo.port);
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+
+		// Send the command to update the map
+		stream << "luxSetUserSamplingMap" << endl;
+		stream << serverInfo.sid << endl;
+		osWriteLittleEndianUInt(isLittleEndian, stream, size);
+
+		// Compress the map to send
+		filtering_stream<output> compressedStream;
+		compressedStream.push(gzip_compressor(4));
+		compressedStream.push(stream);
+
+		for (u_int j = 0; j < size; ++j)
+			osWriteLittleEndianFloat(isLittleEndian, compressedStream, map[j]);
+
+		compressedStream.flush();
+
+		if (!compressedStream.good())
+			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting a user sampling map";
+
+		serverInfo.timeLastContact = second_clock::local_time();
+	} catch (string s) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+		// Mark as failed (inactive)
+		serverInfo.active = false;
+	} catch (std::exception& e) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+				serverInfo.name << ":" << serverInfo.port << " ( " << e.what() << ")";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		// Mark as failed (inactive)
+		serverInfo.active = false;
+	}
+}
+
+void RenderFarm::updateUserSamplingMap() {
+	// Get the user sampling map from the film
+	const float *map = ctx->luxCurrentScene->camera()->film->GetUserSamplingMap();
+	if (!map)
+		return;
+
+	const u_int size = ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+			ctx->luxCurrentScene->camera()->film->GetYPixelCount();
+
 	// Using the mutex in order to not allow server disconnection while
 	// I'm downloading a film
 	boost::mutex::scoped_lock lock(serverListMutex);
@@ -994,57 +1079,13 @@ void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
 	// first try to reconnect to failed servers which may be up now
 	reconnectFailed();
 
-	for (size_t i = 0; i < serverInfoList.size(); i++) {
-		if (!serverInfoList[i].active)
-			// skip servers which are still down
-			continue;
-
-		try {
-			LOG( LUX_DEBUG,LUX_NOERROR) << "Sending user sampling map to: " <<
-					serverInfoList[i].name << ":" << serverInfoList[i].port;
-
-			// Connect to the server
-			tcp::iostream stream;
-			stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
-
-			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
-
-			LOG( LUX_DEBUG,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
-
-			// Send the command to update the map
-			stream << "luxSetUserSamplingMap" << endl;
-			stream << serverInfoList[i].sid << endl;
-			osWriteLittleEndianUInt(isLittleEndian, stream, size);
-
-			// Compress the map to send
-			filtering_stream<output> compressedStream;
-			compressedStream.push(gzip_compressor(4));
-			compressedStream.push(stream);
-
-			for (u_int j = 0; j < size; ++j)
-				osWriteLittleEndianFloat(isLittleEndian, compressedStream, map[j]);
-
-			compressedStream.flush();
-
-			if (!compressedStream.good())
-				LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting a user sampling map";
-
-			serverInfoList[i].timeLastContact = second_clock::local_time();
-		} catch (string s) {
-			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
-			// Mark as failed (inactive)
-			serverInfoList[i].active = false;
-		} catch (std::exception& e) {
-			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
-					serverInfoList[i].name << ":" << serverInfoList[i].port << " ( " << e.what() << ")";
-			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
-			// Mark as failed (inactive)
-			serverInfoList[i].active = false;
-		}
-	}
+	for (u_int i = 0; i < serverInfoList.size(); i++)
+		updateServerUserSamplingMap(serverInfoList[i], size, map);
 
 	// attempt to reconnect
 	reconnectFailed();
+
+	delete[] map;
 }
 
 double RenderFarm::getUpdateTimeRemaining()
@@ -1053,12 +1094,12 @@ double RenderFarm::getUpdateTimeRemaining()
 }
 
 // to catch the interrupted exception
-static void flush_thread_func(RenderFarm *renderFarm) {
-	try {
-		renderFarm->flush();
-	} catch (boost::thread_interrupted&) {
-	}
-}
+//static void flush_thread_func(RenderFarm *renderFarm) {
+//	try {
+//		renderFarm->flush();
+//	} catch (boost::thread_interrupted&) {
+//	}
+//}
 
 void RenderFarm::send(const string &command) {
 	compiledCommands.add(command);

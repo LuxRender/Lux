@@ -135,7 +135,7 @@ void Context::Init() {
 	graphicsState = new GraphicsState;
 	pushedGraphicsStates.clear();
 	pushedTransforms.clear();
-	renderFarm = new RenderFarm();
+	renderFarm = new RenderFarm(this);
 	filmOverrideParams = NULL;
 	shapeNo = 0;
 }
@@ -167,7 +167,7 @@ void Context::Free() {
 void Context::AddServer(const string &n) {
 	if (!renderFarm->connect(n))
 		return;
-
+	
 	// if this is the first server added during rendering, make sure update thread is started
 	renderFarm->start(luxCurrentScene);
 }
@@ -1423,9 +1423,7 @@ void Context::SetUserSamplingMap(const float *map) {
 	luxCurrentScene->camera()->film->SetUserSamplingMap(map);
 
 	// Transmit the new map to the slaves
-	renderFarm->updateUserSamplingMap(luxCurrentScene->camera()->film->GetXPixelCount() *
-		luxCurrentScene->camera()->film->GetYPixelCount(), map);
-	
+	renderFarm->updateUserSamplingMap();
 }
 
 float *Context::GetUserSamplingMap() {
