@@ -50,7 +50,7 @@ void DeferredLoadShape::LoadShape() const {
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Loading deferred object: " << objName;
 
 			// Remove DeferredLoadShape specific parameters
-			params->EraseFloat("shapename");
+			params->EraseString("shapename");
 			params->EraseFloat("shapebbox");
 
 			shape = MakeShape(objName, ObjectToWorld, reverseOrientation, *params);
