@@ -53,7 +53,8 @@ public:
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-		bool debugmode, int outlierk, int tilecount, const double convstep, const string &samplingmapfilename, const string &pupilmap, const string &lashesmap);
+		bool debugmode, int outlierk, int tilecount, const double convstep, const string &samplingmapfilename, const bool disableNoiseMapUpd,
+		const string &pupilmap, const string &lashesmap);
 
 	virtual ~FlexImageFilm() {
 		if (convUpdateThread) {
@@ -98,7 +99,7 @@ public:
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
-	static void ConvUpdateThreadImpl(FlexImageFilm *film);
+	static void ConvUpdateThreadImpl(FlexImageFilm *film, Context *ctx);
 
 	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
 	bool WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
@@ -197,6 +198,7 @@ private:
 	// Thread dedicated to convergence test an noise-aware map update
 	boost::thread *convUpdateThread;
 	double convUpdateStep; // Number of new samples per pixel required to trigger an update
+	bool disableNoiseMapUpdate; // This flag is used by network slaves and it is not intended to be used directly in .lxs files
 };
 
 }//namespace lux

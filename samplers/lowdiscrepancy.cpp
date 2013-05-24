@@ -74,7 +74,7 @@ LDSampler::LDData::~LDData()
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
 		int ystart, int yend, u_int ps, string pixelsampler, bool useNoise)
-	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)), useNoiseAware(useNoise) {
+	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps), useNoise) {
 	// Initialize PixelSampler
 	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 

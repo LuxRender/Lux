@@ -49,8 +49,7 @@ RandomSampler::RandomData::~RandomData()
 
 RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
 	u_int ps, string pixelsampler, bool useNoise) :
-	Sampler(xstart, xend, ystart, yend, ps), useNoiseAware(useNoise)
-{
+	Sampler(xstart, xend, ystart, yend, ps, useNoise) {
 	pixelSamples = ps;
 
 	// Initialize PixelSampler

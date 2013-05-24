@@ -564,16 +564,26 @@ RenderFarm::reconnect_status_t RenderFarm::reconnect(ExtRenderingServerInfo &ser
 		serverInfo.flushed = true;
 		
 		// Get the user sampling map from the film
-		const float *map = ctx->luxCurrentScene->camera()->film->GetUserSamplingMap();
-		
+		const float *userMap = ctx->luxCurrentScene->camera()->film->GetUserSamplingMap();
 		// Send also an updated user sampling map if there is one
-		if (map) {
+		if (userMap) {
 			const u_int size = ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
 				ctx->luxCurrentScene->camera()->film->GetYPixelCount();
 
-			updateServerUserSamplingMap(serverInfo, size, map);
+			updateServerUserSamplingMap(serverInfo, size, userMap);
+			delete[] userMap;
+		}
 
-			delete[] map;
+		// Get the noise-aware map from the film
+		const float *noiseMap = ctx->luxCurrentScene->camera()->film->GetNoiseAwareMap();
+		
+		// Send also an updated user sampling map if there is one
+		if (noiseMap) {
+			const u_int size = ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+				ctx->luxCurrentScene->camera()->film->GetYPixelCount();
+
+			updateServerNoiseAwareMap(serverInfo, size, noiseMap);
+			delete[] noiseMap;
 		}
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
@@ -760,9 +770,11 @@ void RenderFarm::flushImpl() {
 	// Get the user sampling map from the film. ctx->luxCurrentScene can be NULL when
 	// this method is called for WorlEnd command. I don't need anyway to send an update of
 	// the user sampling map in this case.
-	const float *map = (ctx->luxCurrentScene && ctx->luxCurrentScene->camera() && ctx->luxCurrentScene->camera()->film) ?
+	const float *userMap = (ctx->luxCurrentScene && ctx->luxCurrentScene->camera() && ctx->luxCurrentScene->camera()->film) ?
 		(ctx->luxCurrentScene->camera()->film->GetUserSamplingMap()) : NULL;
-	const u_int size = (map) ? (ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+	const float *noiseMap = (ctx->luxCurrentScene && ctx->luxCurrentScene->camera() && ctx->luxCurrentScene->camera()->film) ?
+		(ctx->luxCurrentScene->camera()->film->GetNoiseAwareMap()) : NULL;
+	const u_int size = (userMap || noiseMap) ? (ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
 			ctx->luxCurrentScene->camera()->film->GetYPixelCount()) : 0;
 
 	//flush network buffer
@@ -790,16 +802,19 @@ void RenderFarm::flushImpl() {
 
 				serverInfoList[i].flushed = true;
 
+				// Send also an updated noise-aware map if there is one
+				if (noiseMap)
+					updateServerNoiseAwareMap(serverInfoList[i], size, noiseMap);
 				// Send also an updated user sampling map if there is one
-				if (map)
-					updateServerUserSamplingMap(serverInfoList[i], size, map);
+				if (userMap)
+					updateServerUserSamplingMap(serverInfoList[i], size, userMap);
 			} catch (exception& e) {
 				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			}
 		}
 	}
 
-	delete[] map;
+	delete[] userMap;
 
 	// Dade - write info only if there was the communication with some server
 	if (serverInfoList.size() > 0) {
@@ -1014,6 +1029,55 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
+void RenderFarm::updateServerNoiseAwareMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map) {
+	if (!serverInfo.active)
+		// skip servers which are still down
+		return;
+
+	try {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Sending noise-aware map to: " <<
+				serverInfo.name << ":" << serverInfo.port;
+
+		// Connect to the server
+		tcp::iostream stream;
+		stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
+
+		stream.connect(serverInfo.name, serverInfo.port);
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+
+		// Send the command to update the map
+		stream << "luxSetNoiseAwareMap" << endl;
+		stream << serverInfo.sid << endl;
+		osWriteLittleEndianUInt(isLittleEndian, stream, size);
+
+		// Compress the map to send
+		filtering_stream<output> compressedStream;
+		compressedStream.push(gzip_compressor(4));
+		compressedStream.push(stream);
+
+		for (u_int j = 0; j < size; ++j)
+			osWriteLittleEndianFloat(isLittleEndian, compressedStream, map[j]);
+
+		compressedStream.flush();
+
+		if (!compressedStream.good())
+			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting a noise-aware map";
+
+		serverInfo.timeLastContact = second_clock::local_time();
+	} catch (string s) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+		// Mark as failed (inactive)
+		serverInfo.active = false;
+	} catch (std::exception& e) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+				serverInfo.name << ":" << serverInfo.port << " ( " << e.what() << ")";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		// Mark as failed (inactive)
+		serverInfo.active = false;
+	}
+}
+
 void RenderFarm::updateServerUserSamplingMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map) {
 	if (!serverInfo.active)
 		// skip servers which are still down
@@ -1081,6 +1145,31 @@ void RenderFarm::updateUserSamplingMap() {
 
 	for (u_int i = 0; i < serverInfoList.size(); i++)
 		updateServerUserSamplingMap(serverInfoList[i], size, map);
+
+	// attempt to reconnect
+	reconnectFailed();
+
+	delete[] map;
+}
+
+void RenderFarm::updateNoiseAwareMap() {
+	// Get the user sampling map from the film
+	const float *map = ctx->luxCurrentScene->camera()->film->GetNoiseAwareMap();
+	if (!map)
+		return;
+
+	const u_int size = ctx->luxCurrentScene->camera()->film->GetXPixelCount() *
+			ctx->luxCurrentScene->camera()->film->GetYPixelCount();
+
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	// first try to reconnect to failed servers which may be up now
+	reconnectFailed();
+
+	for (u_int i = 0; i < serverInfoList.size(); i++)
+		updateServerNoiseAwareMap(serverInfoList[i], size, map);
 
 	// attempt to reconnect
 	reconnectFailed();

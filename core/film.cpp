@@ -3018,6 +3018,34 @@ const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &ma
 		return false;
 }
 
+// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+float *Film::GetNoiseAwareMap() {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	if (noiseAwareMapVersion == 0)
+		return NULL;
+	
+	const u_int nPix = xPixelCount * yPixelCount;
+	float *map = new float[nPix];
+	std::copy(noiseAwareMap.get(), noiseAwareMap.get() + nPix, map);
+
+	return map;
+}
+
+void Film::SetNoiseAwareMap(const float *map) {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	const u_int nPix = xPixelCount * yPixelCount;
+	noiseAwareMap.reset(new float[nPix]);
+
+	std::copy(map, map + nPix, noiseAwareMap.get());
+	++noiseAwareMapVersion;
+
+	noiseAwareDistribution2D.reset(new Distribution2D(noiseAwareMap.get(), xPixelCount, yPixelCount));
+
+	UpdateSamplingMap();
+}
+
 const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
 		boost::shared_ptr<Distribution2D> &distrib) {
 	boost::mutex::scoped_lock lock(samplingMapMutex);

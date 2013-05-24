@@ -1419,6 +1419,22 @@ void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
 }
 
+void Context::UpdateNetworkNoiseAwareMap() {
+	// Transmit the new map to the slaves
+	renderFarm->updateNoiseAwareMap();
+}
+
+void Context::SetNoiseAwareMap(const float *map) {
+	luxCurrentScene->camera()->film->SetNoiseAwareMap(map);
+
+	// Transmit the new map to the slaves
+	renderFarm->updateNoiseAwareMap();
+}
+
+float *Context::GetNoiseAwareMap() {
+	return luxCurrentScene->camera()->film->GetNoiseAwareMap();
+}
+
 void Context::SetUserSamplingMap(const float *map) {
 	luxCurrentScene->camera()->film->SetUserSamplingMap(map);
 

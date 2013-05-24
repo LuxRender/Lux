@@ -134,10 +134,8 @@ static float fracf(const float &v) {
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool useNoise) :
-	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLarge(largeProb), range(rng),
-	useVariance(useV), useNoiseAware(useNoise)
-{
+	Sampler(xStart, xEnd, yStart, yEnd, 1, useNoise), maxRejects(maxRej),
+	pLarge(largeProb), range(rng), useVariance(useV) {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
 	rngSamples[0] = 0.f;

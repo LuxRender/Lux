@@ -76,8 +76,6 @@ private:
 	mutable vector<u_int> offset1D, offset2D, offsetxD;
 
 	u_int totalPixels;
-
-	bool useNoiseAware;
 };
 
 }//namespace lux

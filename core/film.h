@@ -695,6 +695,9 @@ public:
 	virtual void EnableNoiseAwareMap();
 	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
 		boost::shared_ptr<Distribution2D> &distrib);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	virtual float *GetNoiseAwareMap();
+	virtual void SetNoiseAwareMap(const float *map);
 	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
 	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
 	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,

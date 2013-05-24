@@ -71,8 +71,8 @@ float SobolSampler::SobolData::GetSample(const SobolSampler &sampler, const u_in
 }
 
 SobolSampler::SobolSampler(int xstart, int xend, int ystart, int yend,
-		bool useNoise) : Sampler(xstart, xend, ystart, yend, 1), directions(NULL),
-		useNoiseAware(useNoise) {
+		bool useNoise) : Sampler(xstart, xend, ystart, yend, 1, useNoise),
+		directions(NULL) {
 	totalPixels = (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
 
 	AddStringConstant(*this, "name", "Name of current sampler", "sobol");

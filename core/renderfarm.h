@@ -119,6 +119,8 @@ public:
 	//!<Gets the log from the network
 	void updateLog();
 
+	// Update noise-aware map for all servers
+	void updateNoiseAwareMap();
 	// Update the user sampling map of all servers
 	void updateUserSamplingMap();
 
@@ -257,6 +259,7 @@ private:
 	void stopImpl();
 
 	u_int getSlaveNodeCount();
+	void updateServerNoiseAwareMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map);
 	void updateServerUserSamplingMap(ExtRenderingServerInfo &serverInfo, const u_int size, const float *map);
 
 	// The context, this render farm, is associated with

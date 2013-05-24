@@ -70,13 +70,14 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 private:
 	// RandomSampler Private Data
-	bool jitterSamples, useNoiseAware;
 	u_int pixelSamples;
 	u_int totalPixels;
 	PixelSampler* pixelSampler;
 
 	fast_mutex sampPixelPosMutex;
 	u_int sampPixelPos;
+
+	bool jitterSamples;
 };
 
 }//namespace lux

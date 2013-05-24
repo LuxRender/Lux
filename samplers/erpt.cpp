@@ -108,7 +108,7 @@ ERPTSampler::ERPTData::~ERPTData()
 // Metropolis method definitions
 ERPTSampler::ERPTSampler(u_int totMutations, float rng, Sampler *sampler) :
 	Sampler(sampler->xPixelStart, sampler->xPixelEnd,
-	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel),
+	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel, false),
 	totalMutations(totMutations), range(rng), baseSampler(sampler)
 {
 	AddStringConstant(*this, "name", "Name of current sampler", "erpt");

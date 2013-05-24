@@ -32,13 +32,14 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp) : Queryable("sampler")
-{
+Sampler::Sampler(const int xstart, const int xend, const int ystart, const int yend,
+		const u_int spp, const bool noiseAware) : Queryable("sampler") {
 	xPixelStart = min(xstart, xend);
 	xPixelEnd = max(xstart, xend);
 	yPixelStart = min(ystart, yend);
 	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
+	useNoiseAware = noiseAware;
 }
 
 void Sampler::AddSample(const Sample &sample)

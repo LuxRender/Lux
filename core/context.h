@@ -211,6 +211,10 @@ public:
 
 	void SetEpsilon(const float minValue, const float maxValue);
 
+	void UpdateNetworkNoiseAwareMap();
+	void SetNoiseAwareMap(const float *map);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	float *GetNoiseAwareMap();
 	void SetUserSamplingMap(const float *map);
 	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
 	float *GetUserSamplingMap();

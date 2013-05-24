@@ -428,7 +428,7 @@ static void processCommandFilm(bool isLittleEndian,
 	params.EraseBool("write_tga_ZBuf");
 	params.EraseBool("write_resume_flm");
 
-	bool no = false;
+	const bool no = false;
 	params.AddBool("write_exr", &no);
 	params.AddBool("write_exr_ZBuf", &no);
 	params.AddBool("write_png", &no);
@@ -444,6 +444,11 @@ static void processCommandFilm(bool isLittleEndian,
 	params.EraseInt("haltspp");
 	params.EraseInt("halttime");
 	params.EraseFloat("haltthreshold");
+
+	// Disable the noise-aware map update. The map is updated by the master and
+	// sent to all slaves.
+	const bool yes = true;
+	params.AddBool("disable_noisemap_update", &yes);
 
 	(Context::GetActive()->*f)(type, params);
 }
@@ -973,6 +978,44 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 //case CMD_LUXRENDERER:
 	processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
 }
+
+void cmd_luxSetNoiseAwareMap(bool isLittleEndian, NetworkRenderServerThread *serverThread, socket_stream_t &stream, vector<string> &tmpFileList) {
+//case CMD_LUXSETNOISEAWAREMAP:
+	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		if (!serverThread->renderServer->validateAccess(stream)) {
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
+			stream.close();
+			return;
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Receiving noise-aware map";
+
+		{
+			u_int size = osReadLittleEndianUInt(isLittleEndian, stream);
+
+			filtering_stream<input> compressedStream;
+			compressedStream.push(gzip_decompressor());
+			compressedStream.push(stream);
+			
+			vector<float> map(size);
+			for (u_int i = 0; i < size; ++i)
+				map[i] = osReadLittleEndianFloat(isLittleEndian, compressedStream);
+
+			if (!stream.good()) {
+				LOG( LUX_DEBUG,LUX_NOERROR)<< "Error while receiving noise-aware map";
+			} else
+				Context::GetActive()->SetNoiseAwareMap(&map[0]);
+
+			stream.close();
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Finished receiving noise-aware map";
+	} else {
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a SetNoiseAwareMap command after a ServerDisconnect";
+		stream.close();
+	}
+}
+
 void cmd_luxSetUserSamplingMap(bool isLittleEndian, NetworkRenderServerThread *serverThread, socket_stream_t &stream, vector<string> &tmpFileList) {
 //case CMD_LUXSETUSERSAMPLINGMAP:
 	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
@@ -1085,6 +1128,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	INSERT_CMD(luxSetEpsilon);
 	INSERT_CMD(luxRenderer);
 	INSERT_CMD(luxSetUserSamplingMap);
+	INSERT_CMD(luxSetNoiseAwareMap);
 
 	#undef INSERT_CMD
 

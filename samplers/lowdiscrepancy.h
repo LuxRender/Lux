@@ -81,8 +81,6 @@ private:
 
 	fast_mutex sampPixelPosMutex;
 	u_int sampPixelPos;
-	
-	bool useNoiseAware;
 };
 
 }//namespace lux

@@ -91,7 +91,7 @@ public:
 	float pLarge, range;
 	u_int cooldownTime;
 	float *rngSamples;
-	bool useVariance, useNoiseAware;
+	bool useVariance;
 };
 
 }//namespace lux

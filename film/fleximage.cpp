@@ -41,6 +41,7 @@
 #include "dynload.h"
 #include "filedata.h"
 #include "contribution.h"
+#include "context.h"
 
 #include <boost/thread/xtime.hpp>
 #include <boost/filesystem.hpp>
@@ -59,11 +60,11 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename, const string &pupilmap, const string &lashesmap) :
+	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename, const bool disableNoiseMapUpd, const string &pupilmap, const string &lashesmap) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec, samplingmapfilename), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
-	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI), convUpdateThread(NULL), convUpdateStep(convstep)
+	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI), convUpdateThread(NULL), convUpdateStep(convstep), disableNoiseMapUpdate(disableNoiseMapUpd)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
@@ -219,9 +220,9 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 void FlexImageFilm::CreateBuffers() {
 	Film::CreateBuffers();
 		
-	if ((haltThreshold >= 0.f) || noiseAwareMap) {
+	if ((haltThreshold >= 0.f) || (noiseAwareMap && !disableNoiseMapUpdate)) {
 		// Start the convergence test/noise-aware map update thread
-		convUpdateThread = new boost::thread(boost::bind(FlexImageFilm::ConvUpdateThreadImpl, this));
+		convUpdateThread = new boost::thread(boost::bind(FlexImageFilm::ConvUpdateThreadImpl, this, Context::GetActive()));
 	}
 }
 
@@ -1711,7 +1712,7 @@ void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name
 	}
 }
 
-void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
+void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film, Context *ctx) {
 	const double nPix = film->xPixelCount * film->yPixelCount;
 
 	double lastCheckSamplesCount = 0.0;
@@ -1730,34 +1731,42 @@ void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 			// First of all I have to update the frame buffer
 			film->updateFrameBuffer();
 
-			// Lock the frame buffer
-			boost::mutex::scoped_lock(film->write_mutex);
+			bool noiseAwareMapUpdated = false;
+			{
+				// Lock the frame buffer
+				boost::mutex::scoped_lock(film->write_mutex);
 
-			bool convergenceInfoUpdated = false;
-			if (film->haltThreshold >= 0.f) {
-				// Than run the convergence test
-				film->UpdateConvergenceInfo(film->float_framebuffer);
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
-				convergenceInfoUpdated = true;
-			}
+				bool convergenceInfoUpdated = false;
+				if (film->haltThreshold >= 0.f) {
+					// Than run the convergence test
+					film->UpdateConvergenceInfo(film->float_framebuffer);
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+					convergenceInfoUpdated = true;
+				}
 
-			// Than generate the noise-aware map if required
-			if (film->noiseAwareMap) {
-				const double sppNoiseAwareDelta = (totalSamplesCount - lastCheckNoiseAwarwSamplesCount) / nPix;
-				if (sppNoiseAwareDelta > noiseAwareStep) {
-					if (!convergenceInfoUpdated) {
-						// I have to run the convergence test for TVI information
-						film->UpdateConvergenceInfo(film->float_framebuffer);
-						LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+				// Than generate the noise-aware map if required
+				if (film->noiseAwareMap && !film->disableNoiseMapUpdate) {
+					const double sppNoiseAwareDelta = (totalSamplesCount - lastCheckNoiseAwarwSamplesCount) / nPix;
+					if (sppNoiseAwareDelta > noiseAwareStep) {
+						if (!convergenceInfoUpdated) {
+							// I have to run the convergence test for TVI information
+							film->UpdateConvergenceInfo(film->float_framebuffer);
+							LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+						}
+
+						film->GenerateNoiseAwareMap();
+						noiseAwareMapUpdated = true;
+						lastCheckNoiseAwarwSamplesCount = totalSamplesCount;
+						noiseAwareStep *= 2.0;
+						LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map next step update: " <<
+								totalSamplesCount / nPix + noiseAwareStep << "spp (delta: " << noiseAwareStep << "spp)";
 					}
-					
-					film->GenerateNoiseAwareMap();
-					lastCheckNoiseAwarwSamplesCount = totalSamplesCount;
-					noiseAwareStep *= 2.0;
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map next step update: " <<
-							totalSamplesCount / nPix + noiseAwareStep << "spp (delta: " << noiseAwareStep << "spp)";
 				}
 			}
+			
+			// Outside the film lock, send the new map to all network slaves
+			if (noiseAwareMapUpdated)
+				ctx->UpdateNetworkNoiseAwareMap();
 		}
 	}
 }
@@ -1937,6 +1946,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	const int halttime = params.FindOneInt("halttime", -1);
 	const float haltthreshold = params.FindOneFloat("haltthreshold", -1.f);
 	const double convUpdateStep = max(4.0, (double)params.FindOneFloat("convergencestep", 32.f));
+	// This flag is used by network slaves and it is not intended to be used directly in .lxs files
+	const bool disableNoiseMapUpdate = params.FindOneBool("disable_noisemap_update", false);
 
 	// User sampling map
 	string samplingmapfilename = params.FindOneString("usersamplingmap_filename", "");
@@ -2031,7 +2042,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime, haltthreshold,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_FalseMethod, s_FalseScalecolor, s_FalseMaxSat, s_FalseMinSat, response, s_Gamma,
-		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename, s_GlarePupilFilename, s_GlareLashesFilename);
+		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename, disableNoiseMapUpdate,
+		s_GlarePupilFilename, s_GlareLashesFilename);
 }
 
 

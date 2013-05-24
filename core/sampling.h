@@ -65,7 +65,8 @@ public:
 class  Sampler : public Queryable {
 public:
 	// Sampler Interface
-	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
+	Sampler(const int xstart, const int xend, const int ystart, const int yend,
+			const u_int spp, const bool noiseAware);
 	virtual ~Sampler() {}
 	virtual void InitSample(Sample *sample) const = 0;
 	virtual void FreeSample(Sample *sample) const = 0;
@@ -109,6 +110,8 @@ public:
 	//Shape of sampled data
 	vector<u_int> n1D, n2D, nxD, dxD;
 	vector<vector<u_int> > sxD;
+
+	bool useNoiseAware;
 };
 
 // PxLoc X and Y pixel coordinate struct
