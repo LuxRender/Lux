@@ -80,11 +80,6 @@ if (inMotionBlock) { \
 	return; \
 }
 
-Context::Context(std::string n) : Queryable("context"), name(n)
-{
-	AddStringAttribute(*this, "name", "Context name", boost::bind(boost::mem_fn(&Context::GetName), this));
-}
-
 boost::shared_ptr<lux::Texture<float> > Context::GetFloatTexture(const string &n) const
 {
 	if (n != "") {

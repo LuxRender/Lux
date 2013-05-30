@@ -43,10 +43,10 @@ using std::map;
 
 namespace lux {
 
-class LUX_EXPORT Context : public Queryable {
+class LUX_EXPORT Context {
 public:
 
-	Context(std::string n = "Lux default context");
+	Context(std::string n = "Lux default context") : name(n) {}
 
 	~Context() {
 		Free();
@@ -81,6 +81,8 @@ public:
 	void Init();
 	void Cleanup();
 	void Free();
+
+	std::string GetName() { return name; }
 
 	// API Function Declarations
 	void Accelerator(const string &name, const ParamSet &params);
@@ -224,9 +226,6 @@ public:
 	int currentApiState;
 
 	friend class RenderFarm;
-
-protected:
-	std::string GetName() { return name; }
 
 private:
 	// API Local Classes
