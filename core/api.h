@@ -54,6 +54,11 @@ LUX_EXPORT void luxInit();
 LUX_EXPORT int luxParse(const char *filename);
 /* allows for parsing of partial files, caller does error handling */
 LUX_EXPORT int luxParsePartial(const char *filename);
+// Set if to start the rendering after the end of parsing phase (default is true)
+// NOTE: this feature is not currently supported by network rendering
+LUX_EXPORT void luxStartRenderingAfterParse(const bool start);
+// Used to end the parse phase with luxStartRenderingAfterParse(false);
+LUX_EXPORT void luxParseEnd();
 LUX_EXPORT void luxCleanup();
 
 /* Basic control flow, scoping, stacks */

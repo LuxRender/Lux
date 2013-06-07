@@ -27,6 +27,7 @@
 #include "textures/constant.h"
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace lux {
 
@@ -190,7 +191,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 	// NOTE - radiance - THIS NEEDS TO BE UPDATED! :)
 
 	std::string pn(pluginName);
-	
+
 	for(u_int i = 0; i < n; ++i)
 	{
 		ParamType type;
@@ -275,7 +276,33 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 				break;
 			}
 			case PARAM_TYPE_STRING: {
-				AddString(s, new std::string((char*)(params[i])));
+				// Special code for handling SLGRenderer config parameter
+				if (s == "config" && pn == "slg") {
+					const char *first = params[i];
+					vector<string> opts;
+					for (;;) {
+						// Look for the first quote
+						while (*first != '\"' && *first != '\0')
+							++first;
+						if (*first == '\0')
+							break;
+
+						// Look for the second quote
+						const char *second = first + 1;
+						while (*second != '\"' && *second != '\0')
+							++second;
+						if (*second == '\0')
+							break;
+
+						const string opt(first + 1, second - first - 1);
+						opts.push_back(opt);
+
+						first = second + 1;
+					}
+
+					AddString(s, &opts[0], opts.size());
+				} else
+					AddString(s, new std::string((char*)(params[i])));
 				break;
 			}
 			case PARAM_TYPE_TEXTURE: {

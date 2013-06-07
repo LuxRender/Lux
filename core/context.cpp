@@ -126,6 +126,7 @@ void Context::Init() {
 	aborted = false;
 	terminated = false;
 	currentApiState = STATE_OPTIONS_BLOCK;
+	startRenderingAfterParse = true;
 	inMotionBlock = false;
 	luxCurrentRenderer = NULL;
 	luxCurrentScene = NULL;
@@ -314,6 +315,11 @@ void Context::SetEpsilon(const float minValue, const float maxValue)
 	renderFarm->send("luxSetEpsilon", minValue, maxValue);
 	MachineEpsilon::SetMin(minValue);
 	MachineEpsilon::SetMax(maxValue);
+}
+void Context::StartRenderingAfterParse(const bool start) {
+	VERIFY_INITIALIZED("StartRenderingAfterParse");
+	// NOTE: this feature is not currently supported by network rendering
+	startRenderingAfterParse = start;
 }
 void Context::EnableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode");
@@ -1066,6 +1072,17 @@ void Context::WorldEnd() {
 		pushedTransforms.pop_back();
 	}
 
+	// Clean up
+	currentApiState = STATE_OPTIONS_BLOCK;
+	curTransform = lux::Transform();
+	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
+		namedCoordinateSystems.end());
+
+	if (startRenderingAfterParse)
+		ParseEnd();
+}
+
+void Context::ParseEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
@@ -1101,13 +1118,6 @@ void Context::WorldEnd() {
 			}
 		}
 	}
-
-	//delete scene;
-	// Clean up after rendering
-	currentApiState = STATE_OPTIONS_BLOCK;
-	curTransform = lux::Transform();
-	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
-		namedCoordinateSystems.end());
 }
 
 Scene *Context::RenderOptions::MakeScene() const {

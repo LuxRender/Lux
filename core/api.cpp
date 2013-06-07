@@ -475,7 +475,9 @@ extern "C" void luxWorldEnd() {
 	srand(time(NULL));
 	Context::GetActive()->WorldEnd();
 }
-
+extern "C" void luxParseEnd() {
+	Context::GetActive()->ParseEnd();
+}
 extern "C" const char *luxVersion()
 {
 	static const char version[] = LUX_VERSION_STRING;
@@ -585,6 +587,10 @@ int luxParsePartial(const char *filename)
 {
 	// caller does error handling
 	return parseFile(filename);
+}
+
+void luxStartRenderingAfterParse(const bool start) {
+	Context::GetActive()->StartRenderingAfterParse(start);
 }
 
 // Load/save FLM file

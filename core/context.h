@@ -134,6 +134,8 @@ public:
 	void VolumeIntegrator(const string &name, const ParamSet &params);
 	void WorldBegin();
 	void WorldEnd();
+	// Used to end the parse phase after StartRenderingAfterParse(false)
+	void ParseEnd();
 
 	// Load/save FLM file
 	void LoadFLM(const string &name);
@@ -210,6 +212,8 @@ public:
 	void DisableRandomMode();
 
 	void SetEpsilon(const float minValue, const float maxValue);
+	// NOTE: this feature is not currently supported by network rendering
+	void StartRenderingAfterParse(const bool start);
 
 	void UpdateNetworkNoiseAwareMap();
 	void SetNoiseAwareMap(const float *map);
@@ -337,6 +341,7 @@ private:
 	
 	// Dade - mutex used to wait the end of the rendering
 	mutable boost::mutex renderingMutex;
+	bool startRenderingAfterParse;
 	bool terminated;
 	bool aborted; // abort rendering
 };
