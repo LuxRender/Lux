@@ -280,14 +280,21 @@ private:
 		// Refined primitives
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instancesRefined;
 		mutable map<string, vector<boost::shared_ptr<Light> > > lightInstances;
-		mutable map<string, vector<boost::shared_ptr<AreaLightPrimitive> > > areaLightInstances;
+		// Area light instances
+		// Use a vector of vector to hold the list of refined primitives
+		// for each light source
+		// This way there is one vector item per instanced light source
+		// and only one light source will get added when instancing
+		// And all primitives are already refined
+		// and can be instanced right away
+		mutable map<string, vector<vector<boost::shared_ptr<AreaLightPrimitive> > > > areaLightInstances;
 		mutable vector<string> lightGroups;
 		// Refined primitives
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceSource;
 		// Unrefined primitives
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceRefined;
 		mutable vector<boost::shared_ptr<Light> > *currentLightInstance;
-		mutable vector<boost::shared_ptr<AreaLightPrimitive> > *currentAreaLightInstance;
+		mutable vector<vector<boost::shared_ptr<AreaLightPrimitive> > > *currentAreaLightInstance;
 		bool gotSearchPath;
 		bool debugMode;
 		bool randomMode;
