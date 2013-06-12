@@ -544,31 +544,39 @@ void LoopSubdiv::ApplyDisplacementMap(set<Point, PointCompare> &unique, const ve
 	SpectrumWavelengths swl;
 	swl.Sample(.5f);
 
+	// Compute vertex displacement
+	map<const Point *, std::pair<Vector, u_int> > dispMap;
+	for (u_int i = 0; i < verts.size(); ++i) {
+		SDVertex *v = verts[i];
+		if (!v->startFace)
+			continue;
+		Vector dpdu, dpdv;
+		CoordinateSystem(Vector(v->n), &dpdu, &dpdv);
+		DifferentialGeometry dg(*(v->P), v->n, dpdu, dpdv,
+			Normal(0, 0, 0), Normal(0, 0, 0), v->u, v->v,
+			NULL);
+		Vector displacement((displacementMap->Evaluate(swl, dg) *
+			displacementMapScale + displacementMapOffset) *
+			Vector(v->n));
+		map<const Point *, std::pair<Vector, u_int> >::iterator d = dispMap.find(v->P);
+		if (d == dispMap.end()) {
+			// If the point hasn't been found yet
+			// add the displacement vector
+			dispMap[v->P] = std::pair<Vector, u_int>(displacement, 1U);
+		} else {
+			// If the point has already been found
+			// update the displacement vector
+			d->second.first += displacement;
+			++(d->second.second);
+		}
+	}
 	// Map old vertex to new one
 	map<const Point *, const Point *> uniqueMap;
 	set<Point, PointCompare> newUnique;
 	// Iterate over all unique vertices
 	for (set<Point, PointCompare>::iterator i = unique.begin(); i != unique.end(); ++i) {
-		Vector displacement;
-		u_int nv = 0;
-		// Iterate over all full vertices
-		for (u_int j = 0; j < verts.size(); ++j) {
-			SDVertex *v = verts[j];
-			// Skip if vertex does not match current unique vertex
-			// Or if vertex is unused
-			if (v->P != &(*i) || !v->startFace)
-				continue;
-			++nv;
-			Vector dpdu, dpdv;
-			CoordinateSystem(Vector(v->n), &dpdu, &dpdv);
-			DifferentialGeometry dg(*i, v->n, dpdu, dpdv,
-				Normal(0, 0, 0), Normal(0, 0, 0), v->u, v->v,
-				NULL);
-			displacement += (displacementMap->Evaluate(swl, dg) *
-				displacementMapScale + displacementMapOffset) *
-				Vector(v->n);
-		}
-		uniqueMap[&(*i)] = &(*(newUnique.insert(*i + displacement / nv).first));
+		map<const Point *, std::pair<Vector, u_int> >::iterator d = dispMap.find(&(*i));
+		uniqueMap[&(*i)] = &(*(newUnique.insert(*i + d->second.first / d->second.second).first));
 	}
 	// Swap to preserve data location since pointers are held
 	unique.swap(newUnique);
