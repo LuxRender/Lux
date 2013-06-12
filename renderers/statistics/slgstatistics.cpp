@@ -37,12 +37,17 @@
 
 using namespace lux;
 
+#define MAX_DEVICE_COUNT 16
+
 SLGStatistics::SLGStatistics(SLGRenderer* renderer)
-	: renderer(renderer) {
+	: deviceMaxMemory(MAX_DEVICE_COUNT, 0), deviceMemoryUsed(MAX_DEVICE_COUNT, 0),
+	deviceRaySecs(MAX_DEVICE_COUNT, 0.0), renderer(renderer) {
 	resetDerived();
 
 	averageSampleSec = 0.0;
+	triangleCount = 0;
 	deviceCount = 0;
+	deviceNames = "";
 
 	formattedLong = new SLGStatistics::FormattedLong(this);
 	formattedShort = new SLGStatistics::FormattedShort(this);
@@ -62,6 +67,62 @@ SLGStatistics::SLGStatistics(SLGRenderer* renderer)
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SLGStatistics::getTotalAverageSamplesPerSecond);
 
 	AddIntAttribute(*this, "deviceCount", "Number of OpenCL devices in use", &SLGStatistics::getDeviceCount);
+	AddStringAttribute(*this, "deviceNames", "A comma separated list of names of OpenCL devices in use", &SLGStatistics::getDeviceNames);
+
+	AddDoubleAttribute(*this, "triangleCount", "total number of triangles in the scene", &SLGStatistics::getTriangleCount);
+
+	// Register up to MAX_DEVICE_COUNT devices
+
+	AddDoubleAttribute(*this, "device.0.raysecs", "OpenCL device 0 ray traced per second", &SLGStatistics::getDevice00RaySecs);
+	AddDoubleAttribute(*this, "device.1.raysecs", "OpenCL device 1 ray traced per second", &SLGStatistics::getDevice01RaySecs);
+	AddDoubleAttribute(*this, "device.2.raysecs", "OpenCL device 2 ray traced per second", &SLGStatistics::getDevice02RaySecs);
+	AddDoubleAttribute(*this, "device.3.raysecs", "OpenCL device 3 ray traced per second", &SLGStatistics::getDevice03RaySecs);
+	AddDoubleAttribute(*this, "device.4.raysecs", "OpenCL device 4 ray traced per second", &SLGStatistics::getDevice04RaySecs);
+	AddDoubleAttribute(*this, "device.5.raysecs", "OpenCL device 5 ray traced per second", &SLGStatistics::getDevice05RaySecs);
+	AddDoubleAttribute(*this, "device.6.raysecs", "OpenCL device 6 ray traced per second", &SLGStatistics::getDevice06RaySecs);
+	AddDoubleAttribute(*this, "device.7.raysecs", "OpenCL device 7 ray traced per second", &SLGStatistics::getDevice07RaySecs);
+	AddDoubleAttribute(*this, "device.8.raysecs", "OpenCL device 8 ray traced per second", &SLGStatistics::getDevice08RaySecs);
+	AddDoubleAttribute(*this, "device.9.raysecs", "OpenCL device 9 ray traced per second", &SLGStatistics::getDevice09RaySecs);
+	AddDoubleAttribute(*this, "device.10.raysecs", "OpenCL device 10 ray traced per second", &SLGStatistics::getDevice10RaySecs);
+	AddDoubleAttribute(*this, "device.11.raysecs", "OpenCL device 11 ray traced per second", &SLGStatistics::getDevice11RaySecs);
+	AddDoubleAttribute(*this, "device.12.raysecs", "OpenCL device 12 ray traced per second", &SLGStatistics::getDevice12RaySecs);
+	AddDoubleAttribute(*this, "device.13.raysecs", "OpenCL device 13 ray traced per second", &SLGStatistics::getDevice13RaySecs);
+	AddDoubleAttribute(*this, "device.14.raysecs", "OpenCL device 14 ray traced per second", &SLGStatistics::getDevice14RaySecs);
+	AddDoubleAttribute(*this, "device.15.raysecs", "OpenCL device 15 ray traced per second", &SLGStatistics::getDevice15RaySecs);
+
+	AddDoubleAttribute(*this, "device.0.maxmem", "OpenCL device 0 memory available", &SLGStatistics::getDevice00MaxMemory);
+	AddDoubleAttribute(*this, "device.1.maxmem", "OpenCL device 1 memory available", &SLGStatistics::getDevice01MaxMemory);
+	AddDoubleAttribute(*this, "device.2.maxmem", "OpenCL device 2 memory available", &SLGStatistics::getDevice02MaxMemory);
+	AddDoubleAttribute(*this, "device.3.maxmem", "OpenCL device 3 memory available", &SLGStatistics::getDevice03MaxMemory);
+	AddDoubleAttribute(*this, "device.4.maxmem", "OpenCL device 4 memory available", &SLGStatistics::getDevice04MaxMemory);
+	AddDoubleAttribute(*this, "device.5.maxmem", "OpenCL device 5 memory available", &SLGStatistics::getDevice05MaxMemory);
+	AddDoubleAttribute(*this, "device.6.maxmem", "OpenCL device 6 memory available", &SLGStatistics::getDevice06MaxMemory);
+	AddDoubleAttribute(*this, "device.7.maxmem", "OpenCL device 7 memory available", &SLGStatistics::getDevice07MaxMemory);
+	AddDoubleAttribute(*this, "device.8.maxmem", "OpenCL device 8 memory available", &SLGStatistics::getDevice08MaxMemory);
+	AddDoubleAttribute(*this, "device.9.maxmem", "OpenCL device 9 memory available", &SLGStatistics::getDevice09MaxMemory);
+	AddDoubleAttribute(*this, "device.10.maxmem", "OpenCL device 10 memory available", &SLGStatistics::getDevice10MaxMemory);
+	AddDoubleAttribute(*this, "device.11.maxmem", "OpenCL device 11 memory available", &SLGStatistics::getDevice11MaxMemory);
+	AddDoubleAttribute(*this, "device.12.maxmem", "OpenCL device 12 memory available", &SLGStatistics::getDevice12MaxMemory);
+	AddDoubleAttribute(*this, "device.13.maxmem", "OpenCL device 13 memory available", &SLGStatistics::getDevice13MaxMemory);
+	AddDoubleAttribute(*this, "device.14.maxmem", "OpenCL device 14 memory available", &SLGStatistics::getDevice14MaxMemory);
+	AddDoubleAttribute(*this, "device.15.maxmem", "OpenCL device 15 memory available", &SLGStatistics::getDevice15MaxMemory);
+
+	AddDoubleAttribute(*this, "device.0.memusage", "OpenCL device 0 memory used", &SLGStatistics::getDevice00MemoryUsed);
+	AddDoubleAttribute(*this, "device.1.memusage", "OpenCL device 1 memory used", &SLGStatistics::getDevice01MemoryUsed);
+	AddDoubleAttribute(*this, "device.2.memusage", "OpenCL device 2 memory used", &SLGStatistics::getDevice02MemoryUsed);
+	AddDoubleAttribute(*this, "device.3.memusage", "OpenCL device 3 memory used", &SLGStatistics::getDevice03MemoryUsed);
+	AddDoubleAttribute(*this, "device.4.memusage", "OpenCL device 4 memory used", &SLGStatistics::getDevice04MemoryUsed);
+	AddDoubleAttribute(*this, "device.5.memusage", "OpenCL device 5 memory used", &SLGStatistics::getDevice05MemoryUsed);
+	AddDoubleAttribute(*this, "device.6.memusage", "OpenCL device 6 memory used", &SLGStatistics::getDevice06MemoryUsed);
+	AddDoubleAttribute(*this, "device.7.memusage", "OpenCL device 7 memory used", &SLGStatistics::getDevice07MemoryUsed);
+	AddDoubleAttribute(*this, "device.8.memusage", "OpenCL device 8 memory used", &SLGStatistics::getDevice08MemoryUsed);
+	AddDoubleAttribute(*this, "device.9.memusage", "OpenCL device 9 memory used", &SLGStatistics::getDevice09MemoryUsed);
+	AddDoubleAttribute(*this, "device.10.memusage", "OpenCL device 10 memory used", &SLGStatistics::getDevice10MemoryUsed);
+	AddDoubleAttribute(*this, "device.11.memusage", "OpenCL device 11 memory used", &SLGStatistics::getDevice11MemoryUsed);
+	AddDoubleAttribute(*this, "device.12.memusage", "OpenCL device 12 memory used", &SLGStatistics::getDevice12MemoryUsed);
+	AddDoubleAttribute(*this, "device.13.memusage", "OpenCL device 13 memory used", &SLGStatistics::getDevice13MemoryUsed);
+	AddDoubleAttribute(*this, "device.14.memusage", "OpenCL device 14 memory used", &SLGStatistics::getDevice14MemoryUsed);
+	AddDoubleAttribute(*this, "device.15.memusage", "OpenCL device 15 memory used", &SLGStatistics::getDevice15MemoryUsed);
 }
 
 SLGStatistics::~SLGStatistics() {
@@ -180,7 +241,7 @@ SLGStatistics::FormattedLong::FormattedLong(SLGStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
 
 	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", &FL::getDeviceCount);
-	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory usage", &FL::getDeviceMemoryUsage);
+	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory used", &FL::getDeviceMemoryUsed);
 }
 
 std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -192,7 +253,7 @@ std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
 	stringTemplate += " %samplesPerSecond%";
 
 	stringTemplate += " %deviceCount%";
-	if (rs->deviceMemoryUsed > 0)
+	if ((rs->deviceMemoryUsed.size() > 0) && (rs->deviceMemoryUsed[0] > 0))
 		stringTemplate += " %memoryUsage%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
@@ -264,8 +325,10 @@ std::string SLGStatistics::FormattedLong::getDeviceCount() {
 	return boost::str(boost::format(boost::format("%1% %2%") % dc % Pluralize("Device", dc)));
 }
 
-std::string SLGStatistics::FormattedLong::getDeviceMemoryUsage() {
-	const size_t m = rs->deviceMemoryUsed;
+std::string SLGStatistics::FormattedLong::getDeviceMemoryUsed() {
+	// I assume the amount of used memory is the same on all devices. It is
+	// always true for the moment.
+	const size_t m = rs->deviceMemoryUsed[0];
 	return boost::str(boost::format(boost::format("%1$0.2f %2%bytes") % MagnitudeReduce(m) % MagnitudePrefix(m)));
 }
 
@@ -290,7 +353,7 @@ SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
 
 	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", boost::bind(boost::mem_fn(&FL::getDeviceCount), fl));
-	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory usage", boost::bind(boost::mem_fn(&FL::getDeviceMemoryUsage), fl));
+	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory used", boost::bind(boost::mem_fn(&FL::getDeviceMemoryUsed), fl));
 }
 
 std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
@@ -301,7 +364,7 @@ std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
 	stringTemplate += " %samplesPerSecond%";
 
 	stringTemplate += " %deviceCount%";
-	if (rs->deviceMemoryUsed > 0)
+	if ((rs->deviceMemoryUsed.size() > 0) && (rs->deviceMemoryUsed[0] > 0))
 		stringTemplate += " %memoryUsage%";
 	
 	if (rs->getNetworkSampleCount() != 0.0)

@@ -27,10 +27,12 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "luxrays/core/context.h"
 #include "luxrays/core/exttrianglemesh.h"
 #include "luxrays/utils/ocl.h"
+#include "luxrays/core/virtualdevice.h"
 #include "slg/rendersession.h"
 #include "slg/engines/filesaver/filesaver.h"
 
@@ -1950,13 +1952,43 @@ void SLGRenderer::Render(Scene *s) {
 		slg::RenderEngine *engine = session->renderEngine;
 		engine->SetSeed(scene->seedBase);
 
-		const vector<luxrays::IntersectionDevice *> &devices = engine->GetIntersectionDevices();
-		slgStats->deviceCount = devices.size();
-		if (slgStats->deviceCount) {
-			// I assume the amount of used memory is the same on all devices. It is
-			// always true for the moment.
-			slgStats->deviceMemoryUsed = devices[0]->GetUsedMemory();
+		//----------------------------------------------------------------------
+		// Initialize the statistics
+		//----------------------------------------------------------------------
+
+		// Intersection devices
+		const vector<luxrays::IntersectionDevice *> &idevices = engine->GetIntersectionDevices();
+
+		// Replace all virtual devices with real
+		vector<luxrays::IntersectionDevice *> realDevices;
+		for (size_t i = 0; i < idevices.size(); ++i) {
+			luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(idevices[i]);
+			if (vdev) {
+				const vector<luxrays::IntersectionDevice *> &realDevs = vdev->GetRealDevices();
+				realDevices.insert(realDevices.end(), realDevs.begin(), realDevs.end());
+			} else
+				realDevices.push_back(idevices[i]);
 		}
+
+		slgStats->deviceCount = realDevices.size();
+		if (slgStats->deviceCount) {
+			// Build the list of device names used
+			stringstream ss;
+			for (u_int i = 0; i < realDevices.size(); ++i) {
+				if (i != 0)
+					ss << ",";
+
+				// I'm paranoid...
+				string name = realDevices[i]->GetName();
+				boost::replace_all(name, ",", "_");
+				ss << name;
+				
+				slgStats->deviceMaxMemory[i] = realDevices[i]->GetMaxMemory();
+			}
+			slgStats->deviceNames = ss.str();
+		}
+
+		//----------------------------------------------------------------------
 
 		// start the timer
 		slgStats->start();
@@ -2071,6 +2103,13 @@ void SLGRenderer::Render(Scene *s) {
 
 				// Update statistics
 				slgStats->averageSampleSec = engine->GetTotalSamplesSec();
+				for (u_int i = 0; i < realDevices.size(); ++i) {
+					slgStats->triangleCount = session->renderConfig->scene->dataSet->GetTotalTriangleCount();
+
+					slgStats->deviceRaySecs[i] = realDevices[i]->GetSerialPerformance() + 
+							realDevices[i]->GetDataParallelPerformance();
+					slgStats->deviceMemoryUsed[i] = realDevices[i]->GetUsedMemory();
+				}
 
 				// Print some information about the rendering progress
 				sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",

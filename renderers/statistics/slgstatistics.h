@@ -23,6 +23,9 @@
 #ifndef LUX_SLGSTATISTICS_H
 #define LUX_SLGSTATISTICS_H
 
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
 #include "renderers/slgrenderer.h"
 #include "rendererstatistics.h"
 
@@ -52,7 +55,7 @@ public:
 		std::string getResumedAverageSamplesPerPixel();
 
 		std::string getDeviceCount();
-		std::string getDeviceMemoryUsage();
+		std::string getDeviceMemoryUsed();
 
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
@@ -82,8 +85,11 @@ public:
 
 protected:
 	double averageSampleSec;
+	size_t triangleCount;
 	u_int deviceCount;
-	size_t deviceMemoryUsed;
+	string deviceNames;
+	vector<size_t> deviceMaxMemory, deviceMemoryUsed;
+	vector<double> deviceRaySecs;
 
 private:
 	SLGRenderer *renderer;
@@ -101,6 +107,62 @@ private:
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
 
 	u_int getDeviceCount() { return deviceCount; }
+	string getDeviceNames() { return deviceNames; }
+	double getTriangleCount() { return triangleCount; }
+
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00MemoryUsed() { return deviceMemoryUsed[0]; }
+	double getDevice01MemoryUsed() { return deviceMemoryUsed[1]; }
+	double getDevice02MemoryUsed() { return deviceMemoryUsed[2]; }
+	double getDevice03MemoryUsed() { return deviceMemoryUsed[3]; }
+	double getDevice04MemoryUsed() { return deviceMemoryUsed[4]; }
+	double getDevice05MemoryUsed() { return deviceMemoryUsed[5]; }
+	double getDevice06MemoryUsed() { return deviceMemoryUsed[6]; }
+	double getDevice07MemoryUsed() { return deviceMemoryUsed[7]; }
+	double getDevice08MemoryUsed() { return deviceMemoryUsed[8]; }
+	double getDevice09MemoryUsed() { return deviceMemoryUsed[9]; }
+	double getDevice10MemoryUsed() { return deviceMemoryUsed[10]; }
+	double getDevice11MemoryUsed() { return deviceMemoryUsed[11]; }
+	double getDevice12MemoryUsed() { return deviceMemoryUsed[12]; }
+	double getDevice13MemoryUsed() { return deviceMemoryUsed[13]; }
+	double getDevice14MemoryUsed() { return deviceMemoryUsed[14]; }
+	double getDevice15MemoryUsed() { return deviceMemoryUsed[15]; }
+
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00MaxMemory() { return deviceMaxMemory[0]; }
+	double getDevice01MaxMemory() { return deviceMaxMemory[1]; }
+	double getDevice02MaxMemory() { return deviceMaxMemory[2]; }
+	double getDevice03MaxMemory() { return deviceMaxMemory[3]; }
+	double getDevice04MaxMemory() { return deviceMaxMemory[4]; }
+	double getDevice05MaxMemory() { return deviceMaxMemory[5]; }
+	double getDevice06MaxMemory() { return deviceMaxMemory[6]; }
+	double getDevice07MaxMemory() { return deviceMaxMemory[7]; }
+	double getDevice08MaxMemory() { return deviceMaxMemory[8]; }
+	double getDevice09MaxMemory() { return deviceMaxMemory[9]; }
+	double getDevice10MaxMemory() { return deviceMaxMemory[10]; }
+	double getDevice11MaxMemory() { return deviceMaxMemory[11]; }
+	double getDevice12MaxMemory() { return deviceMaxMemory[12]; }
+	double getDevice13MaxMemory() { return deviceMaxMemory[13]; }
+	double getDevice14MaxMemory() { return deviceMaxMemory[14]; }
+	double getDevice15MaxMemory() { return deviceMaxMemory[15]; }
+
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00RaySecs() { return deviceRaySecs[0]; }
+	double getDevice01RaySecs() { return deviceRaySecs[1]; }
+	double getDevice02RaySecs() { return deviceRaySecs[2]; }
+	double getDevice03RaySecs() { return deviceRaySecs[3]; }
+	double getDevice04RaySecs() { return deviceRaySecs[4]; }
+	double getDevice05RaySecs() { return deviceRaySecs[5]; }
+	double getDevice06RaySecs() { return deviceRaySecs[6]; }
+	double getDevice07RaySecs() { return deviceRaySecs[7]; }
+	double getDevice08RaySecs() { return deviceRaySecs[8]; }
+	double getDevice09RaySecs() { return deviceRaySecs[9]; }
+	double getDevice10RaySecs() { return deviceRaySecs[10]; }
+	double getDevice11RaySecs() { return deviceRaySecs[11]; }
+	double getDevice12RaySecs() { return deviceRaySecs[12]; }
+	double getDevice13RaySecs() { return deviceRaySecs[13]; }
+	double getDevice14RaySecs() { return deviceRaySecs[14]; }
+	double getDevice15RaySecs() { return deviceRaySecs[15]; }
 
 	double getEfficiency() { return 0.0; }
 	double getEfficiencyWindow() { return 0.0; }
