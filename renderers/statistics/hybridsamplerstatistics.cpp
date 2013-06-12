@@ -37,9 +37,12 @@
 
 using namespace lux;
 
+#define MAX_DEVICE_COUNT 16
+
 HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
-	: renderer(renderer)
-{
+	: renderer(renderer) {
+	triangleCount = 0;
+
 	resetDerived();
 
 	formattedLong = new HSRStatistics::FormattedLong(this);
@@ -50,7 +53,7 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	AddDoubleAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &HSRStatistics::getPercentHaltSppComplete);
 	AddDoubleAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &HSRStatistics::getResumedAverageSamplesPerPixel);
 
-	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::getGpuCount);
+	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::getDeviceCount); // A deprecated alias (look for "deviceCount" instead)
 	AddDoubleAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::getAverageGpuEfficiency);
 
 	AddDoubleAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &HSRStatistics::getPathEfficiency);
@@ -68,6 +71,64 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &HSRStatistics::getTotalAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &HSRStatistics::getTotalAverageSamplesPerSecond);
 	AddDoubleAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &HSRStatistics::getTotalAverageSamplesPerSecondWindow);
+
+	AddIntAttribute(*this, "deviceCount", "Number of OpenCL devices in use", &HSRStatistics::getDeviceCount);
+	AddStringAttribute(*this, "deviceNames", "A comma separated list of names of OpenCL devices in use", &HSRStatistics::getDeviceNames);
+
+	AddDoubleAttribute(*this, "triangleCount", "total number of triangles in the scene", &HSRStatistics::getTriangleCount);
+
+	// Register up to MAX_DEVICE_COUNT devices
+
+	AddDoubleAttribute(*this, "device.0.raysecs", "OpenCL device 0 ray traced per second", &HSRStatistics::getDevice00RaySecs);
+	AddDoubleAttribute(*this, "device.1.raysecs", "OpenCL device 1 ray traced per second", &HSRStatistics::getDevice01RaySecs);
+	AddDoubleAttribute(*this, "device.2.raysecs", "OpenCL device 2 ray traced per second", &HSRStatistics::getDevice02RaySecs);
+	AddDoubleAttribute(*this, "device.3.raysecs", "OpenCL device 3 ray traced per second", &HSRStatistics::getDevice03RaySecs);
+	AddDoubleAttribute(*this, "device.4.raysecs", "OpenCL device 4 ray traced per second", &HSRStatistics::getDevice04RaySecs);
+	AddDoubleAttribute(*this, "device.5.raysecs", "OpenCL device 5 ray traced per second", &HSRStatistics::getDevice05RaySecs);
+	AddDoubleAttribute(*this, "device.6.raysecs", "OpenCL device 6 ray traced per second", &HSRStatistics::getDevice06RaySecs);
+	AddDoubleAttribute(*this, "device.7.raysecs", "OpenCL device 7 ray traced per second", &HSRStatistics::getDevice07RaySecs);
+	AddDoubleAttribute(*this, "device.8.raysecs", "OpenCL device 8 ray traced per second", &HSRStatistics::getDevice08RaySecs);
+	AddDoubleAttribute(*this, "device.9.raysecs", "OpenCL device 9 ray traced per second", &HSRStatistics::getDevice09RaySecs);
+	AddDoubleAttribute(*this, "device.10.raysecs", "OpenCL device 10 ray traced per second", &HSRStatistics::getDevice10RaySecs);
+	AddDoubleAttribute(*this, "device.11.raysecs", "OpenCL device 11 ray traced per second", &HSRStatistics::getDevice11RaySecs);
+	AddDoubleAttribute(*this, "device.12.raysecs", "OpenCL device 12 ray traced per second", &HSRStatistics::getDevice12RaySecs);
+	AddDoubleAttribute(*this, "device.13.raysecs", "OpenCL device 13 ray traced per second", &HSRStatistics::getDevice13RaySecs);
+	AddDoubleAttribute(*this, "device.14.raysecs", "OpenCL device 14 ray traced per second", &HSRStatistics::getDevice14RaySecs);
+	AddDoubleAttribute(*this, "device.15.raysecs", "OpenCL device 15 ray traced per second", &HSRStatistics::getDevice15RaySecs);
+
+	AddDoubleAttribute(*this, "device.0.maxmem", "OpenCL device 0 memory available", &HSRStatistics::getDevice00MaxMemory);
+	AddDoubleAttribute(*this, "device.1.maxmem", "OpenCL device 1 memory available", &HSRStatistics::getDevice01MaxMemory);
+	AddDoubleAttribute(*this, "device.2.maxmem", "OpenCL device 2 memory available", &HSRStatistics::getDevice02MaxMemory);
+	AddDoubleAttribute(*this, "device.3.maxmem", "OpenCL device 3 memory available", &HSRStatistics::getDevice03MaxMemory);
+	AddDoubleAttribute(*this, "device.4.maxmem", "OpenCL device 4 memory available", &HSRStatistics::getDevice04MaxMemory);
+	AddDoubleAttribute(*this, "device.5.maxmem", "OpenCL device 5 memory available", &HSRStatistics::getDevice05MaxMemory);
+	AddDoubleAttribute(*this, "device.6.maxmem", "OpenCL device 6 memory available", &HSRStatistics::getDevice06MaxMemory);
+	AddDoubleAttribute(*this, "device.7.maxmem", "OpenCL device 7 memory available", &HSRStatistics::getDevice07MaxMemory);
+	AddDoubleAttribute(*this, "device.8.maxmem", "OpenCL device 8 memory available", &HSRStatistics::getDevice08MaxMemory);
+	AddDoubleAttribute(*this, "device.9.maxmem", "OpenCL device 9 memory available", &HSRStatistics::getDevice09MaxMemory);
+	AddDoubleAttribute(*this, "device.10.maxmem", "OpenCL device 10 memory available", &HSRStatistics::getDevice10MaxMemory);
+	AddDoubleAttribute(*this, "device.11.maxmem", "OpenCL device 11 memory available", &HSRStatistics::getDevice11MaxMemory);
+	AddDoubleAttribute(*this, "device.12.maxmem", "OpenCL device 12 memory available", &HSRStatistics::getDevice12MaxMemory);
+	AddDoubleAttribute(*this, "device.13.maxmem", "OpenCL device 13 memory available", &HSRStatistics::getDevice13MaxMemory);
+	AddDoubleAttribute(*this, "device.14.maxmem", "OpenCL device 14 memory available", &HSRStatistics::getDevice14MaxMemory);
+	AddDoubleAttribute(*this, "device.15.maxmem", "OpenCL device 15 memory available", &HSRStatistics::getDevice15MaxMemory);
+
+	AddDoubleAttribute(*this, "device.0.memusage", "OpenCL device 0 memory used", &HSRStatistics::getDevice00MemoryUsed);
+	AddDoubleAttribute(*this, "device.1.memusage", "OpenCL device 1 memory used", &HSRStatistics::getDevice01MemoryUsed);
+	AddDoubleAttribute(*this, "device.2.memusage", "OpenCL device 2 memory used", &HSRStatistics::getDevice02MemoryUsed);
+	AddDoubleAttribute(*this, "device.3.memusage", "OpenCL device 3 memory used", &HSRStatistics::getDevice03MemoryUsed);
+	AddDoubleAttribute(*this, "device.4.memusage", "OpenCL device 4 memory used", &HSRStatistics::getDevice04MemoryUsed);
+	AddDoubleAttribute(*this, "device.5.memusage", "OpenCL device 5 memory used", &HSRStatistics::getDevice05MemoryUsed);
+	AddDoubleAttribute(*this, "device.6.memusage", "OpenCL device 6 memory used", &HSRStatistics::getDevice06MemoryUsed);
+	AddDoubleAttribute(*this, "device.7.memusage", "OpenCL device 7 memory used", &HSRStatistics::getDevice07MemoryUsed);
+	AddDoubleAttribute(*this, "device.8.memusage", "OpenCL device 8 memory used", &HSRStatistics::getDevice08MemoryUsed);
+	AddDoubleAttribute(*this, "device.9.memusage", "OpenCL device 9 memory used", &HSRStatistics::getDevice09MemoryUsed);
+	AddDoubleAttribute(*this, "device.10.memusage", "OpenCL device 10 memory used", &HSRStatistics::getDevice10MemoryUsed);
+	AddDoubleAttribute(*this, "device.11.memusage", "OpenCL device 11 memory used", &HSRStatistics::getDevice11MemoryUsed);
+	AddDoubleAttribute(*this, "device.12.memusage", "OpenCL device 12 memory used", &HSRStatistics::getDevice12MemoryUsed);
+	AddDoubleAttribute(*this, "device.13.memusage", "OpenCL device 13 memory used", &HSRStatistics::getDevice13MemoryUsed);
+	AddDoubleAttribute(*this, "device.14.memusage", "OpenCL device 14 memory used", &HSRStatistics::getDevice14MemoryUsed);
+	AddDoubleAttribute(*this, "device.15.memusage", "OpenCL device 15 memory used", &HSRStatistics::getDevice15MemoryUsed);
 }
 
 HSRStatistics::~HSRStatistics()
@@ -308,13 +369,13 @@ HSRStatistics::FormattedLong::FormattedLong(HSRStatistics* rs)
 std::string HSRStatistics::FormattedLong::getRecommendedStringTemplate()
 {
 	std::string stringTemplate = RendererStatistics::FormattedLong::getRecommendedStringTemplate();
-	if (rs->getGpuCount() != 0)
+	if (rs->getDeviceCount() != 0)
 		stringTemplate += " %gpuCount%";
 	stringTemplate += ": %samplesPerPixel%";
 	if (rs->getHaltSpp() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltSppComplete%)";
 	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
-	if (rs->getGpuCount() != 0)
+	if (rs->getDeviceCount() != 0)
 		stringTemplate += " %gpuEfficiency%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
@@ -352,7 +413,7 @@ std::string HSRStatistics::FormattedLong::getResumedAverageSamplesPerPixel() {
 }
 
 std::string HSRStatistics::FormattedLong::getGpuCount() {
-	u_int gc = rs->getGpuCount();
+	u_int gc = rs->getDeviceCount();
 	return boost::str(boost::format("%1% %2%") % gc % Pluralize("GPU", gc));
 }
 
@@ -454,13 +515,13 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 {
 	std::string stringTemplate = RendererStatistics::FormattedShort::getRecommendedStringTemplate();
-	if (rs->getGpuCount() != 0)
+	if (rs->getDeviceCount() != 0)
 		stringTemplate += " %gpuCount%";
 	stringTemplate += ": %samplesPerPixel%";
 	if (rs->getHaltSpp() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltSppComplete%)";
 	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
-	if (rs->getGpuCount() != 0)
+	if (rs->getDeviceCount() != 0)
 		stringTemplate += " %gpuEfficiency%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
@@ -484,7 +545,7 @@ std::string HSRStatistics::FormattedShort::getProgress() {
 }
 
 std::string HSRStatistics::FormattedShort::getGpuCount() {
-	return boost::str(boost::format("%1% G") % rs->getGpuCount());
+	return boost::str(boost::format("%1% G") % rs->getDeviceCount());
 }
 
 std::string HSRStatistics::FormattedShort::getAverageGpuEfficiency() {

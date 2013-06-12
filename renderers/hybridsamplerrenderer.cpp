@@ -394,6 +394,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene, allocatedPrims, allocatedMeshes);
 		if (!dataSet)
 			return;
+		((HSRStatistics *)rendererStatistics)->triangleCount = dataSet->GetTotalTriangleCount();
 
 		// Create enough queues to handle the maximum thread count
 		intersectionDevice->SetQueueCount(boost::thread::hardware_concurrency());

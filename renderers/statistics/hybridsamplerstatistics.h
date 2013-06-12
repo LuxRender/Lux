@@ -23,6 +23,7 @@
 #ifndef LUX_HYBRIDSAMPLERSTATISTICS_H
 #define LUX_HYBRIDSAMPLERSTATISTICS_H
 
+#include <string>
 #include <algorithm>
 
 #include <luxrays/core/virtualdevice.h>
@@ -93,6 +94,11 @@ public:
 		std::string getPathEfficiencyWindow();
 	};
 
+	friend class HybridSamplerRenderer;
+
+protected:
+	u_longlong triangleCount;
+
 private:
 	HybridSamplerRenderer* renderer;
 
@@ -114,15 +120,6 @@ private:
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
-
-	u_int getGpuCount() {
-		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
-		if (vdev)
-			return vdev->GetRealDevices().size();
-		else
-			return 1;
-	}
-	double getAverageGpuEfficiency();
 
 	double getEfficiency();
 	double getEfficiencyWindow();
@@ -146,6 +143,117 @@ private:
 	double getResumedSampleCount();
 	double getSampleCount();
 	double getNetworkSampleCount(bool estimate = true);
+	
+	u_int getDeviceCount() {
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev)
+			return vdev->GetRealDevices().size();
+		else
+			return 1;
+	}
+	double getAverageGpuEfficiency();
+	string getDeviceNames() {
+		vector<luxrays::IntersectionDevice *> realDevices;
+
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev) {
+			const vector<luxrays::IntersectionDevice *> &realDevs = vdev->GetRealDevices();
+			realDevices.insert(realDevices.end(), realDevs.begin(), realDevs.end());
+		} else
+			realDevices.push_back(renderer->intersectionDevice);
+
+		// Build the list of device names used
+		std::stringstream ss;
+		for (u_int i = 0; i < realDevices.size(); ++i) {
+			if (i != 0)
+				ss << ",";
+
+			// I'm paranoid...
+			string name = realDevices[i]->GetName();
+			boost::replace_all(name, ",", "_");
+			ss << name;
+		}
+
+		return ss.str();
+	}
+	double getTriangleCount() { return triangleCount; }
+
+	double getDeviceMemoryUsed(const u_int deviceIndex) {
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev)
+			return vdev->GetRealDevices()[deviceIndex]->GetUsedMemory();
+		else
+			return renderer->intersectionDevice->GetUsedMemory();
+	}
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00MemoryUsed() { return getDeviceMemoryUsed(0); }
+	double getDevice01MemoryUsed() { return getDeviceMemoryUsed(0); }
+	double getDevice02MemoryUsed() { return getDeviceMemoryUsed(0); }
+	double getDevice03MemoryUsed() { return getDeviceMemoryUsed(3); }
+	double getDevice04MemoryUsed() { return getDeviceMemoryUsed(4); }
+	double getDevice05MemoryUsed() { return getDeviceMemoryUsed(5); }
+	double getDevice06MemoryUsed() { return getDeviceMemoryUsed(6); }
+	double getDevice07MemoryUsed() { return getDeviceMemoryUsed(7); }
+	double getDevice08MemoryUsed() { return getDeviceMemoryUsed(8); }
+	double getDevice09MemoryUsed() { return getDeviceMemoryUsed(9); }
+	double getDevice10MemoryUsed() { return getDeviceMemoryUsed(10); }
+	double getDevice11MemoryUsed() { return getDeviceMemoryUsed(11); }
+	double getDevice12MemoryUsed() { return getDeviceMemoryUsed(12); }
+	double getDevice13MemoryUsed() { return getDeviceMemoryUsed(13); }
+	double getDevice14MemoryUsed() { return getDeviceMemoryUsed(14); }
+	double getDevice15MemoryUsed() { return getDeviceMemoryUsed(15); }
+
+	double getDeviceMaxMemory(const u_int deviceIndex) {
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev)
+			return vdev->GetRealDevices()[deviceIndex]->GetMaxMemory();
+		else
+			return renderer->intersectionDevice->GetMaxMemory();
+	}
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00MaxMemory() { return getDeviceMaxMemory(0); }
+	double getDevice01MaxMemory() { return getDeviceMaxMemory(1); }
+	double getDevice02MaxMemory() { return getDeviceMaxMemory(2); }
+	double getDevice03MaxMemory() { return getDeviceMaxMemory(3); }
+	double getDevice04MaxMemory() { return getDeviceMaxMemory(4); }
+	double getDevice05MaxMemory() { return getDeviceMaxMemory(5); }
+	double getDevice06MaxMemory() { return getDeviceMaxMemory(6); }
+	double getDevice07MaxMemory() { return getDeviceMaxMemory(7); }
+	double getDevice08MaxMemory() { return getDeviceMaxMemory(8); }
+	double getDevice09MaxMemory() { return getDeviceMaxMemory(9); }
+	double getDevice10MaxMemory() { return getDeviceMaxMemory(10); }
+	double getDevice11MaxMemory() { return getDeviceMaxMemory(11); }
+	double getDevice12MaxMemory() { return getDeviceMaxMemory(12); }
+	double getDevice13MaxMemory() { return getDeviceMaxMemory(13); }
+	double getDevice14MaxMemory() { return getDeviceMaxMemory(14); }
+	double getDevice15MaxMemory() { return getDeviceMaxMemory(15); }
+
+	double getDeviceRaySecs(const u_int deviceIndex) {
+		luxrays::VirtualIntersectionDevice *vdev = dynamic_cast<luxrays::VirtualIntersectionDevice *>(renderer->intersectionDevice);
+		if (vdev)
+			return vdev->GetRealDevices()[deviceIndex]->GetSerialPerformance() +
+					vdev->GetRealDevices()[deviceIndex]->GetDataParallelPerformance();
+		else
+			return renderer->intersectionDevice->GetSerialPerformance() +
+					renderer->intersectionDevice->GetDataParallelPerformance();
+	}
+	// It looks like this kind of problem can not be solved with boost::bind
+	double getDevice00RaySecs() { return getDeviceRaySecs(0); }
+	double getDevice01RaySecs() { return getDeviceRaySecs(1); }
+	double getDevice02RaySecs() { return getDeviceRaySecs(2); }
+	double getDevice03RaySecs() { return getDeviceRaySecs(3); }
+	double getDevice04RaySecs() { return getDeviceRaySecs(4); }
+	double getDevice05RaySecs() { return getDeviceRaySecs(5); }
+	double getDevice06RaySecs() { return getDeviceRaySecs(6); }
+	double getDevice07RaySecs() { return getDeviceRaySecs(7); }
+	double getDevice08RaySecs() { return getDeviceRaySecs(8); }
+	double getDevice09RaySecs() { return getDeviceRaySecs(9); }
+	double getDevice10RaySecs() { return getDeviceRaySecs(10); }
+	double getDevice11RaySecs() { return getDeviceRaySecs(11); }
+	double getDevice12RaySecs() { return getDeviceRaySecs(12); }
+	double getDevice13RaySecs() { return getDeviceRaySecs(13); }
+	double getDevice14RaySecs() { return getDeviceRaySecs(14); }
+	double getDevice15RaySecs() { return getDeviceRaySecs(15); }
 };
 
 }//namespace lux
