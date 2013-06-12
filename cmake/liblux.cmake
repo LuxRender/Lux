@@ -443,6 +443,7 @@ SET(lux_volumes_src
 	volumes/clearvolume.cpp
 	volumes/cloud.cpp
 	volumes/exponential.cpp
+	volumes/heterogeneous.cpp
 	volumes/homogeneous.cpp
 	volumes/volumegrid.cpp
 	)
@@ -855,6 +856,7 @@ SET(lux_volumes_hdr
 	volumes/clearvolume.h
 	volumes/cloud.h
 	volumes/exponential.h
+	volumes/heterogeneous.h
 	volumes/homogeneous.h
 	volumes/volumegrid.h
 	)
