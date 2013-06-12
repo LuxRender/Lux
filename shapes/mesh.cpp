@@ -1074,6 +1074,7 @@ static Shape *CreateShape(const Transform &o2w, bool reverseOrientation, const P
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
+		LOG(LUX_WARNING, LUX_SYNTAX) << "The \"string displacementmap\" syntax is now deprecated, use \"texture displacementmap\" instead";
 		// Lotus - read subdivision data
 		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
 
@@ -1083,7 +1084,8 @@ static Shape *CreateShape(const Transform &o2w, bool reverseOrientation, const P
 		if (!displacementMap) {
 			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "'.";
 		}
-	}
+	} else
+		displacementMap = params.GetFloatTexture("displacementmap");
 
 	Mesh::MeshSubdivType subdivType;
 	if (subdivSchemeStr == "loop")
