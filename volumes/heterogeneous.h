@@ -117,6 +117,7 @@ public:
 			*pdf = 1.f;
 		if (pdfBack)
 			*pdfBack = 1.f;
+		bool scatter = false;
 		for (float s = 1; s <= steps; ++s) {
 			// Compute the mean scattering over the current step
 			dg.p = ray(ray.mint + s * ss);
@@ -139,7 +140,7 @@ public:
 				if (s == 1 && scatteredStart)
 					*pdfBack *= sigma;
 			}
-			const bool scatter = d > ray.mint - ray.maxt;
+			scatter = d > ray.mint - ray.maxt;
 			if (!scatter) {
 				sigma = sigma2;
 				// Update the random variable to account for
@@ -167,7 +168,7 @@ public:
 		}
 		if (L)
 			*L *= Exp(-Tau(sample.swl, ray));
-		return isect->dg.scattered;
+		return scatter;
 	}
 	// HeterogeneousVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
