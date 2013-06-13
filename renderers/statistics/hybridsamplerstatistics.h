@@ -26,6 +26,8 @@
 #include <string>
 #include <algorithm>
 
+#include <boost/algorithm/string/replace.hpp>
+
 #include <luxrays/core/virtualdevice.h>
 #include "rendererstatistics.h"
 #include "renderers/hybridsamplerrenderer.h"
