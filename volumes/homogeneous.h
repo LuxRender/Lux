@@ -64,6 +64,7 @@ public:
 		DifferentialGeometry dg;
 		dg.p = ray.o;
 		dg.nn = Normal(-ray.d);
+		dg.handle = &primitive;
 		const SWCSpectrum sigma(SigmaT(sw, dg));
 		if (sigma.Black())
 			return SWCSpectrum(0.f);
@@ -92,6 +93,7 @@ public:
 			isect->dg.p = ray(ray.maxt);
 			isect->dg.nn = Normal(-ray.d);
 			isect->dg.scattered = true;
+			isect->dg.handle = &primitive;
 			CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
 			isect->ObjectToWorld = Transform();
 			isect->primitive = &primitive;

@@ -68,6 +68,7 @@ public:
 		DifferentialGeometry dg;
 		dg.p = ray(ray.mint);
 		dg.nn = Normal(-ray.d);
+		dg.handle = &primitive;
 		SWCSpectrum sigma(SigmaT(sw, dg));
 		// Compute the number of steps to evaluate the volume
 		// Integrates in steps of at most stepSize
@@ -106,6 +107,7 @@ public:
 		DifferentialGeometry dg;
 		dg.p = ray(ray.mint);
 		dg.nn = Normal(-ray.d);
+		dg.handle = &primitive;
 		float sigma = SigmaS(sw, dg).Filter(sw);
 		// Compute the number of steps to evaluate the volume
 		// Integrates in steps of at most stepSize
@@ -155,6 +157,7 @@ public:
 			isect->dg.p = ray(ray.maxt);
 			isect->dg.nn = Normal(-ray.d);
 			isect->dg.scattered = true;
+			isect->dg.handle = &primitive;
 			CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
 			isect->ObjectToWorld = Transform();
 			isect->primitive = &primitive;
