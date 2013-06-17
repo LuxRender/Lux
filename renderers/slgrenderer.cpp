@@ -1801,12 +1801,12 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
 
+				const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
+					slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha : 1.f;
 				// I have to clamp alpha values because then can be outside the [0.0, 1.0]
 				// range (i.e. some pixel filter can have negative weights and lead
 				// to negative values)
-				const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
-					Clamp(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha, 0.f, 1.f) : 0.f;
-				float deltaAlpha = alphaNew - (*previousAlphaBuffer)(pixelX, pixelY);
+				float deltaAlpha = std::max(alphaNew - (*previousAlphaBuffer)(pixelX, pixelY), 0.f);
 
 				// Delay the update if deltaWeight is < 0.0
 				if (deltaWeight > 0.f) {
