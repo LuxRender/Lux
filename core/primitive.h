@@ -368,6 +368,8 @@ public:
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;
+	virtual void GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const;
 
 	virtual bool CanSample() const { return instance->CanSample(); }
 	virtual float Area() const { return instance->Area(); }
