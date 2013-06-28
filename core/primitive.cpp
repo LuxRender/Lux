@@ -182,9 +182,9 @@ bool MotionPrimitive::IntersectP(const Ray &r) const
 
 	return instance->IntersectP(Inverse(InstanceToWorld) * r);
 }
+
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
-	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
-{
+	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
 	// Transform instance's differential geometry to world space
 	DifferentialGeometry dgl(Inverse(obj2world) * dg);
 
@@ -192,6 +192,11 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	*dgShading *= obj2world;
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
+}
+
+void MotionPrimitive::GetShadingInformation(const DifferentialGeometry &dgShading,
+		RGBColor *color, float *alpha) const {
+	dgShading.ihandle->GetShadingInformation(dgShading, color, alpha);
 }
 
 BBox MotionPrimitive::WorldBound() const
