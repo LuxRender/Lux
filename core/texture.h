@@ -127,8 +127,10 @@ public:
 	virtual Point Map(const DifferentialGeometry &dg) const = 0;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const = 0;
+	static TextureMapping3D *Create(const Transform &tex2world, const ParamSet &tp);
+protected:
 	void Apply3DTextureMappingOptions(const ParamSet &tp);
-//private:
+public: //FIXME: only needed to be public for SLG renderer texture conversion
 	Transform WorldToTexture;
 };
 class GlobalMapping3D : public TextureMapping3D {

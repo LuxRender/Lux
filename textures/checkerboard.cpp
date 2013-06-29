@@ -42,24 +42,7 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 		string aamode = tp.FindOneString("aamode", "none");
 		return new Checkerboard2D(TextureMapping2D::Create(tex2world, tp), tex1, tex2, aamode);
 	} else {
-		TextureMapping3D *imap;
-		// Read mapping coordinates
-		string coords = tp.FindOneString("coordinates", "global");
-		if (coords == "global")
-			imap = new GlobalMapping3D(tex2world);
-		else if (coords == "local")
-			imap = new LocalMapping3D(tex2world);
-		else if (coords == "uv")
-			imap = new UVMapping3D(tex2world);
-		else if (coords == "globalnormal")
-			imap = new GlobalNormalMapping3D(tex2world);
-		else if (coords == "localnormal")
-			imap = new LocalNormalMapping3D(tex2world);
-		else
-			imap = new GlobalMapping3D(tex2world);
-		// Apply texture specified transformation option for 3D mapping
-		imap->Apply3DTextureMappingOptions(tp);
-		return new Checkerboard3D(imap, tex1, tex2);
+		return new Checkerboard3D(TextureMapping3D::Create(tex2world, tp), tex1, tex2);
 	}
 }
 

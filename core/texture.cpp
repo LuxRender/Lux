@@ -201,6 +201,30 @@ void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	*dtdv = Dot(dg.dpdv, vt);
 }
 
+TextureMapping3D *TextureMapping3D::Create(const Transform &tex2world, const ParamSet &tp)
+{
+	// Initialize 3D texture mapping _map_ from _tp_
+	TextureMapping3D *imap;
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else {
+		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "3D texture mapping '" << coords << "' unknown";
+		imap = new GlobalMapping3D(tex2world);
+	}
+	// Apply texture specified transformation option for 3D mapping
+	imap->Apply3DTextureMappingOptions(tp);
+	return imap;
+}
+
 void TextureMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 {
 	// Apply inverted scale

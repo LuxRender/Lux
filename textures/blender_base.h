@@ -36,21 +36,7 @@ public:
 	BlenderTexture3D(const std::string &name, const Transform &tex2world, const ParamSet &tp,
 		short type) : Texture(name) {
 		// Read mapping coordinates
-		string coords = tp.FindOneString("coordinates", "global");
-		if (coords == "global")
-			mapping = new GlobalMapping3D(tex2world);
-		else if (coords == "local")
-			mapping = new LocalMapping3D(tex2world);
-		else if (coords == "uv")
-			mapping = new UVMapping3D(tex2world);
-		else if (coords == "globalnormal")
-			mapping = new GlobalNormalMapping3D(tex2world);
-		else if (coords == "localnormal")
-			mapping = new LocalNormalMapping3D(tex2world);
-		else
-			mapping = new GlobalMapping3D(tex2world);
-		// Apply texture specified transformation option for 3D mapping
-		mapping->Apply3DTextureMappingOptions(tp);
+		mapping = TextureMapping3D::Create(tex2world, tp);
 		tex1 = tp.GetFloatTexture("tex1", 0.f);
 		tex2 = tp.GetFloatTexture("tex2", 1.f);
 		tex.type = type;
