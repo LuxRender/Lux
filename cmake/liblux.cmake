@@ -405,8 +405,11 @@ SET(lux_textures_src
 	textures/bilerp.cpp
 	textures/brick.cpp
 	textures/checkerboard.cpp
+	textures/cloud.cpp
 	textures/colordepth.cpp
+	textures/densitygrid.cpp
 	textures/dots.cpp
+	textures/exponential.cpp
 	textures/fbm.cpp
 	textures/harlequin.cpp
 	textures/imagemap.cpp
@@ -792,8 +795,11 @@ SET(lux_textures_hdr
 	textures/bilerp.h
 	textures/brick.h
 	textures/checkerboard.h
+	textures/cloud.h
 	textures/colordepth.h
+	textures/densitygrid.h
 	textures/dots.h
+	textures/exponential.h
 	textures/fbm.h
 	textures/harlequin.h
 	textures/imagemap.h

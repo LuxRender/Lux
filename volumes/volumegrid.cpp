@@ -85,8 +85,6 @@ Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	int ny = params.FindOneInt("ny", 1);
 	int nz = params.FindOneInt("nz", 1);
 	if (nitems != static_cast<u_int>(nx * ny * nz)) {
-		//Error("VolumeGrid has %d density values but nx*ny*nz = %d",
-		//	nitems, nx*ny*nz);
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<<"VolumeGrid has "<<nitems<<" density values but nx*ny*nz = "<<nx*ny*nz;
 		return NULL;
 	}
