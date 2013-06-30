@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // Cloud.cpp*
-#include "cloud.h"
+#include "cloudvolume.h"
 #include "paramset.h"
 #include "dynload.h"
 

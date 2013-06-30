@@ -444,8 +444,8 @@ SOURCE_GROUP("Source Files\\Tonemaps" FILES ${lux_tonemaps_src})
 
 SET(lux_volumes_src
 	volumes/clearvolume.cpp
-	volumes/cloud.cpp
-	volumes/exponential.cpp
+	volumes/cloudvolume.cpp
+	volumes/exponentialvolume.cpp
 	volumes/heterogeneous.cpp
 	volumes/homogeneous.cpp
 	volumes/volumegrid.cpp
@@ -860,8 +860,8 @@ SET(lux_tonemaps_hdr
 SOURCE_GROUP("Header Files\\Tonemaps" FILES ${lux_tonemaps_hdr})
 SET(lux_volumes_hdr
 	volumes/clearvolume.h
-	volumes/cloud.h
-	volumes/exponential.h
+	volumes/cloudvolume.h
+	volumes/exponentialvolume.h
 	volumes/heterogeneous.h
 	volumes/homogeneous.h
 	volumes/volumegrid.h

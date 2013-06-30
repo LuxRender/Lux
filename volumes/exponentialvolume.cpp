@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // exponential.cpp*
-#include "exponential.h"
+#include "exponentialvolume.h"
 #include "paramset.h"
 #include "dynload.h"
 
