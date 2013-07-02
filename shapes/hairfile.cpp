@@ -58,83 +58,118 @@ public:
 	}
 
 	Point EvaluatePoint(const float t) {
-		int count = (int)points.size();
-		int segment = Floor2Int((count - 1) * t);
-		segment = max(segment, 0);
-		segment = min(segment, count - 2);
+		const int count = (int)points.size();
+		if (count > 2) {
+			int segment = Floor2Int((count - 1) * t);
+			segment = max(segment, 0);
+			segment = min(segment, count - 2);
 
-		const float ct = t * (count - 1) - segment;
+			const float ct = t * (count - 1) - segment;
 
-		if (segment == 0)
-			return CatmullRomSpline(points[0], points[0], points[1], points[2], ct);
-		if (segment == count - 2)
-			return CatmullRomSpline(points[count - 3], points[count - 2], points[count - 1], points[count - 1], ct);
+			if (segment == 0)
+				return CatmullRomSpline(points[0], points[0], points[1], points[2], ct);
+			if (segment == count - 2)
+				return CatmullRomSpline(points[count - 3], points[count - 2], points[count - 1], points[count - 1], ct);
 
-		return CatmullRomSpline(points[segment - 1], points[segment], points[segment + 1], points[segment + 2], ct);
+			return CatmullRomSpline(points[segment - 1], points[segment], points[segment + 1], points[segment + 2], ct);
+		} else if (count == 2)
+			return (1.f - t) * points[0] + t * points[1];
+		else if (count == 1)
+			return points[0];
+		else
+			throw std::runtime_error("Internal error in CatmullRomCurve::EvaluatePoint()");
 	}
 
 	float EvaluateSize(const float t) {
 		int count = (int)sizes.size();
-		int segment = Floor2Int((count - 1) * t);
-		segment = max(segment, 0);
-		segment = min(segment, count - 2);
+		if (count > 2) {
+			int segment = Floor2Int((count - 1) * t);
+			segment = max(segment, 0);
+			segment = min(segment, count - 2);
 
-		const float ct = t * (count - 1) - segment;
+			const float ct = t * (count - 1) - segment;
 
-		if (segment == 0)
-			return CatmullRomSpline(sizes[0], sizes[0], sizes[1], sizes[2], ct);
-		if (segment == count - 2)
-			return CatmullRomSpline(sizes[count - 3], sizes[count - 2], sizes[count - 1], sizes[count - 1], ct);
+			if (segment == 0)
+				return CatmullRomSpline(sizes[0], sizes[0], sizes[1], sizes[2], ct);
+			if (segment == count - 2)
+				return CatmullRomSpline(sizes[count - 3], sizes[count - 2], sizes[count - 1], sizes[count - 1], ct);
 
-		return CatmullRomSpline(sizes[segment - 1], sizes[segment], sizes[segment + 1], sizes[segment + 2], ct);
+			return CatmullRomSpline(sizes[segment - 1], sizes[segment], sizes[segment + 1], sizes[segment + 2], ct);
+		} else if (count == 2)
+			return (1.f - t) * sizes[0] + t * sizes[1];
+		else if (count == 1)
+			return sizes[0];
+		else
+			throw std::runtime_error("Internal error in CatmullRomCurve::EvaluateSize()");
 	}
 
 	RGBColor EvaluateColor(const float t) {
 		int count = (int)cols.size();
-		int segment = Floor2Int((count - 1) * t);
-		segment = max(segment, 0);
-		segment = min(segment, count - 2);
+		if (count > 2) {
+			int segment = Floor2Int((count - 1) * t);
+			segment = max(segment, 0);
+			segment = min(segment, count - 2);
 
-		const float ct = t * (count - 1) - segment;
+			const float ct = t * (count - 1) - segment;
 
-		if (segment == 0)
-			return CatmullRomSpline(cols[0], cols[0], cols[1], cols[2], ct);
-		if (segment == count - 2)
-			return CatmullRomSpline(cols[count - 3], cols[count - 2], cols[count - 1], cols[count - 1], ct);
+			if (segment == 0)
+				return CatmullRomSpline(cols[0], cols[0], cols[1], cols[2], ct);
+			if (segment == count - 2)
+				return CatmullRomSpline(cols[count - 3], cols[count - 2], cols[count - 1], cols[count - 1], ct);
 
-		return CatmullRomSpline(cols[segment - 1], cols[segment], cols[segment + 1], cols[segment + 2], ct);
+			return CatmullRomSpline(cols[segment - 1], cols[segment], cols[segment + 1], cols[segment + 2], ct);
+		} else if (count == 2)
+			return (1.f - t) * cols[0] + t * cols[1];
+		else if (count == 1)
+			return cols[0];
+		else
+			throw std::runtime_error("Internal error in CatmullRomCurve::EvaluateColor()");
 	}
 
 	float EvaluateTransparency(const float t) {
 		int count = (int)transps.size();
-		int segment = Floor2Int((count - 1) * t);
-		segment = max(segment, 0);
-		segment = min(segment, count - 2);
+		if (count > 2) {
+			int segment = Floor2Int((count - 1) * t);
+			segment = max(segment, 0);
+			segment = min(segment, count - 2);
 
-		const float ct = t * (count - 1) - segment;
+			const float ct = t * (count - 1) - segment;
 
-		if (segment == 0)
-			return CatmullRomSpline(transps[0], transps[0], transps[1], transps[2], ct);
-		if (segment == count - 2)
-			return CatmullRomSpline(transps[count - 3], transps[count - 2], transps[count - 1], transps[count - 1], ct);
+			if (segment == 0)
+				return CatmullRomSpline(transps[0], transps[0], transps[1], transps[2], ct);
+			if (segment == count - 2)
+				return CatmullRomSpline(transps[count - 3], transps[count - 2], transps[count - 1], transps[count - 1], ct);
 
-		return CatmullRomSpline(transps[segment - 1], transps[segment], transps[segment + 1], transps[segment + 2], ct);
+			return CatmullRomSpline(transps[segment - 1], transps[segment], transps[segment + 1], transps[segment + 2], ct);
+		} else if (count == 2)
+			return (1.f - t) * transps[0] + t * transps[1];
+		else if (count == 1)
+			return transps[0];
+		else
+			throw std::runtime_error("Internal error in CatmullRomCurve::EvaluateTransparency()");
 	}
 
 	luxrays::UV EvaluateUV(const float t) {
 		int count = (int)uvs.size();
-		int segment = Floor2Int((count - 1) * t);
-		segment = max(segment, 0);
-		segment = min(segment, count - 2);
+		if (count > 2) {
+			int segment = Floor2Int((count - 1) * t);
+			segment = max(segment, 0);
+			segment = min(segment, count - 2);
 
-		const float ct = t * (count - 1) - segment;
+			const float ct = t * (count - 1) - segment;
 
-		if (segment == 0)
-			return CatmullRomSpline(uvs[0], uvs[0], uvs[1], uvs[2], ct);
-		if (segment == count - 2)
-			return CatmullRomSpline(uvs[count - 3], uvs[count - 2], uvs[count - 1], uvs[count - 1], ct);
+			if (segment == 0)
+				return CatmullRomSpline(uvs[0], uvs[0], uvs[1], uvs[2], ct);
+			if (segment == count - 2)
+				return CatmullRomSpline(uvs[count - 3], uvs[count - 2], uvs[count - 1], uvs[count - 1], ct);
 
-		return CatmullRomSpline(uvs[segment - 1], uvs[segment], uvs[segment + 1], uvs[segment + 2], ct);
+			return CatmullRomSpline(uvs[segment - 1], uvs[segment], uvs[segment + 1], uvs[segment + 2], ct);
+		} else if (count == 2)
+			return (1.f - t) * uvs[0] + t * uvs[1];
+		else if (count == 1)
+			return uvs[0];
+		else
+			throw std::runtime_error("Internal error in CatmullRomCurve::EvaluateUV()");
 	}
 
 private:
@@ -145,10 +180,10 @@ private:
 
 		const float tmid = (t0 + t1) * .5f;
 
-		const Point p0 = EvaluateSize(t0);
+		const Point p0 = EvaluatePoint(t0);
 		const Point pmid = EvaluatePoint(tmid);
 		const Point p1 = EvaluatePoint(t1);
-
+		
 		const Vector vmid = pmid - p0;
 		const Vector v = p1 - p0;
 
@@ -173,7 +208,7 @@ private:
 
 		// Check if the distance normalized with the segment length is
 		// over the required error
-		const float segmentLength = (p1 - p0).Length();
+		const float segmentLength = v.Length();
 		if (distance / segmentLength > error) {
 			// Tessellate left side too
 			AdaptiveTessellate(depth + 1, maxDepth, error, values, t0, tmid);
