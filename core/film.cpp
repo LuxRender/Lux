@@ -588,16 +588,16 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 							if (x < nc / 2)
 								spectr(x, y) = spect(nc / 2 - 1 - x, nr / 2 - 1 - y);
 							else if (x > nc / 2)
-								spectr(x, y) = spect(x - 1 - nc / 2, nr / 2 - 1 + y - 1);
+								spectr(x, y) = spect(x - 1 - nc / 2, nr / 2 - 1 + y);
 							else {
 								const fftw_complex &c = out[(nr / 2 + y) * (nc / 2 + 1)];
 								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
 							}
 						} else if (y > nr / 2 ) {
 							if (x < nc / 2)
-								spectr(x, y) = spect(nc / 2 - 1 - x, nr + nr / 2 - 2 - y);
+								spectr(x, y) = spect(nc / 2 - 1 - x, nr + nr / 2 - 1 - y);
 							else if (x > nc / 2)
-								spectr(x, y) = spect(x - nc / 2, y - nr / 2);
+								spectr(x, y) = spect(x - 1 - nc / 2, y - nr / 2 - 1);
 							else {
 								const fftw_complex &c = out[(y - nr / 2) * (nc / 2 + 1)];
 								spectr(x, y) = c[0] * c[0] + c[1] * c[1];
@@ -628,7 +628,6 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 					const u_int maxH = (yResolution - y + nr / 2) > (nr + 1) ? nr + 1: yResolution - y + nr / 2;
 					const u_int beginH = y - (nr / 2 - minH);
 					for (u_int x = 0; x < xResolution; ++x) {
-						glareImage[x + y * xResolution] = XYZColor(0.f);
 						XYZColor &pix = xyzpixels[x + y * xResolution];
 						if (!pix.Y() > glareAbsoluteThreshold)
 							continue;
