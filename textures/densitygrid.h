@@ -158,7 +158,7 @@ public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	float D(int x, int y, int z) const {
-		return density[((z * ny) + y) * nx + x];
+		return density[((Clamp(z, 0, nz - 1) * ny) + Clamp(y, 0, ny - 1)) * nx + Clamp(x, 0, nx - 1)];
 	}
 	// DensityGridTexture Private Data
 	int nx, ny, nz;
