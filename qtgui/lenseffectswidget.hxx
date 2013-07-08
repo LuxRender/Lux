@@ -83,6 +83,7 @@ private:
 	double m_Glare_threshold;
 	bool m_Glare_map;
 	QString m_Glare_pupil, m_Glare_lashes;
+	QString m_lastOpendir;
 
 private slots:
 	// Lens effects slots
@@ -106,8 +107,8 @@ private slots:
 	void glareThresholdSliderChanged (int value);
 	void glareThresholdSpinBoxChanged (double value);
 	void glareMapChanged(int);
-	void glarePupilChanged();
-	void glareLashesChanged();
+	void glareBrowsePupilMap();
+	void glareBrowseLashesMap();
 	void computeGlareLayer ();
 	void deleteGlareLayer ();
 };

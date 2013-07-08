@@ -43,7 +43,8 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
-#include <boost/math/special_functions/bessel.hpp>
+//#include <boost/math/special_functions/bessel.hpp>
+#include <complex>
 
 #include <fftw3.h>
 
@@ -440,6 +441,125 @@ struct VignettingFilter
 	}
 };
 
+static float Blackman(float nx) {
+	const float a = 0.16f;
+	const float a0 = (1.f - a) / 2.f;
+	const float a1 = 1.f / 2.f;
+	const float a2 = a / 2.f;
+
+	return a0 - a1 * cosf(2.f * M_PI * nx) + a2 * cosf(4.f * M_PI * nx);
+}
+
+static float Hanning(float nx) {
+	const float a = 0.5f;
+	const float b = 0.5f;
+
+	return a - b * cosf(2.f * M_PI * nx);
+}
+
+
+// pointwise complex multiplication between F and G, result in R
+static void fft_complex_mult(fftw_complex *F, fftw_complex *G, u_int width, u_int height, fftw_complex *R) {
+	// frequency-space product
+	const u_int c_width = width / 2 + 1; // based on how FFTW stores complex data
+	for (u_int y = 0; y < height; ++y) {
+		for (u_int x = 0; x < c_width; ++x) {
+			const size_t idx = x + y * c_width;
+			const std::complex<double> f(F[idx][0], F[idx][1]);
+			const std::complex<double> g(G[idx][0], G[idx][1]);
+			const std::complex<double> p = f * g;
+			R[idx][0] = p.real();
+			R[idx][1] = p.imag();
+		}
+	}
+}
+
+class fft_convolution_2d {
+public:
+	u_int src_w;
+	u_int src_h;
+	u_int kernel_w;
+	u_int kernel_h;
+	u_int fft_w;
+	u_int fft_h;
+	fftw_complex *src_f;
+	fftw_complex *kernel_f;	
+	cimg_library::CImg<double> src_fft;
+	cimg_library::CImg<double> dst_fft;
+	fftw_plan plan_forward_src;
+	fftw_plan plan_backward;
+	
+	fft_convolution_2d(u_int src_width, u_int src_height, u_int kernel_width, u_int kernel_height)
+		: src_w(src_width), src_h(src_height), kernel_w(kernel_width), kernel_h(kernel_height),
+		fft_w(src_width + kernel_width / 2), fft_h(src_height + kernel_height / 2),
+		src_fft(fft_w, fft_h), dst_fft(fft_w, fft_h)
+	{
+		// allocate storage for transformed src and kernel
+		src_f = (fftw_complex *)fftw_alloc_complex(fft_h * (fft_w / 2 + 1));
+		kernel_f = (fftw_complex *)fftw_alloc_complex(fft_h * (fft_w / 2 + 1));
+
+		// initialize plans
+		plan_forward_src = fftw_plan_dft_r2c_2d(fft_h, fft_w, src_fft.data, src_f, FFTW_ESTIMATE);
+
+		// the backward FFT takes src_f as input, as it is overwritten during backward transform
+		plan_backward = fftw_plan_dft_c2r_2d(fft_h, fft_w, src_f, dst_fft.data, FFTW_ESTIMATE);
+	}
+
+	~fft_convolution_2d() {
+		fftw_free(kernel_f);
+		fftw_free(src_f);
+
+		fftw_destroy_plan(plan_forward_src);
+		fftw_destroy_plan(plan_backward);
+	}
+
+	void init_kernel(const cimg_library::CImg<double> &kernel) {
+		// compose periodic signal
+		cimg_library::CImg<double> kernel_fft(fft_w, fft_h);
+		kernel_fft.fill(0.0);
+		kernel_fft.draw_image(kernel, 0, 0);
+
+		// transform kernel
+		fftw_plan plan_forward_kernel = fftw_plan_dft_r2c_2d(fft_h, fft_w, kernel_fft.data, kernel_f, FFTW_ESTIMATE);
+		fftw_execute(plan_forward_kernel);
+		fftw_destroy_plan(plan_forward_kernel);
+	}
+
+	// convolves src with the kernel, output in dst
+	// both have same dimensions and both can be the same image
+	void convolve(const cimg_library::CImg<double> &src, cimg_library::CImg<double> &dst) {
+		src_fft.fill(0.0);
+		dst_fft.fill(0.0);
+
+		// compose periodic signal
+		src_fft.draw_image(src, 0, 0);
+
+		// transform src
+		fftw_execute(plan_forward_src);
+
+		// frequency-space product, put result in src_f
+		// as it will be overwritten by the backwards transform anyway
+		fft_complex_mult(src_f, kernel_f, fft_w, fft_h, src_f);
+
+		fftw_execute(plan_backward);
+
+		const u_int offset_w = kernel_w / 2;
+		const u_int offset_h = kernel_h / 2;
+
+		const double norm = 1.0 / (fft_w * fft_h);
+
+		// blank output just in case
+		dst.fill(0.0);
+
+		for(u_int y = 0; y < src_h; ++y) {
+			for(u_int x = 0 ; x < src_w; ++x) {
+				double v = norm * dst_fft(x + offset_w, y + offset_h);
+				dst(x, y) = (v > 0.0) ? v : 0.0;
+			}
+		}
+	}
+};
+
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
@@ -560,8 +680,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				// Compose the pupil and eye lashes pictures
 				cimg_library::CImg<double> composition(pupil);
 				for (u_int i = 0; i < composition.size(); ++i) {
-					if (pupil[i] == 0.)
-						composition[i] = 0.;
+					if (pupil[i] == 0.0)
+						composition[i] = 0.0;
 					else
 						composition[i] = eyelashes[i];
 				}
@@ -618,28 +738,51 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				}
 				fftw_free(out);
 
-				// Normalize the spectrum
-				spectr /= spectr.sum();
-				spectr /= spectr.max();
+				// windowing
+				for (u_int y = 0; y < nr + 1; ++y) {
+					const float wy = Hanning(y * (1.f / nr));
+					for (u_int x = 0; x < nc + 1; ++x) {
+						const float wx = Hanning(x * (1.f / nc));
+						spectr(x, y) = wy * wx * spectr(x, y);
+					}
+				}
 
-				// Compute the glare layer
-				for (u_int y = 0; y < yResolution; ++y) {
-					const u_int minH = (nr / 2) < y ? 0 : nr / 2 - y;
-					const u_int maxH = (yResolution - y + nr / 2) > (nr + 1) ? nr + 1: yResolution - y + nr / 2;
-					const u_int beginH = y - (nr / 2 - minH);
-					for (u_int x = 0; x < xResolution; ++x) {
-						XYZColor &pix = xyzpixels[x + y * xResolution];
-						if (!pix.Y() > glareAbsoluteThreshold)
-							continue;
-						const u_int minW = (nc / 2) < x ? 0 : nc / 2 - x;
-						const u_int maxW = (xResolution - x + nc / 2) > (nc + 1) ? nc + 1: xResolution - x + nc / 2;
-						const u_int beginW = x - (nc / 2 - minW);
-						for (u_int yy = minH; yy < maxH; ++yy) {
-							for (u_int xx = minW; xx < maxW; ++ xx) {
-								glareImage[xx - minW + beginW + (yy - minH + beginH) * xResolution] += spectr(xx, yy) * pix;
-							}
+				// Normalize the spectrum, this is now our kernel so it should sum to one
+				spectr /= spectr.sum();
+
+				// convolve with glare kernel
+
+				fft_convolution_2d fft_conv(xResolution, yResolution, spectr.width, spectr.height);
+
+				fft_conv.init_kernel(spectr);
+
+				cimg_library::CImg<double> glare_tmp(xResolution, yResolution);
+
+				for (u_int channel = 0; channel < 3; channel++) {
+					// initialize glare_src
+					for (u_int y = 0; y < yResolution; ++y) {
+						for (u_int x = 0; x < xResolution; ++x) {
+							const XYZColor &pix = xyzpixels[x + y * xResolution];
+							const int d = (pix.Y() >= glareAbsoluteThreshold) ? 1 : 0;
+							glare_tmp(x, y) = pix.c[channel] * d;
 						}
 					}
+
+					// normalize source, should increase precision
+					double glare_scale = glare_tmp.max();
+					glare_tmp *= 1.0 / glare_scale;
+
+					// perform convolution
+					fft_conv.convolve(glare_tmp, glare_tmp);
+
+					// Fill the glare layer
+					for (u_int y = 0; y < yResolution; ++y) {
+						for (u_int x = 0; x < xResolution; ++x) {
+							const double v = glare_scale * glare_tmp(x, y);
+							glareImage[x + y * xResolution].c[channel] = v;
+						}
+					}
+
 				}
 			} else {
 				u_int maxRes = max(xResolution, yResolution);

@@ -23,6 +23,8 @@
 #include <cmath>
 
 #include <QFont>
+#include <QFileDialog>
+#include <QFileInfo>
 
 #include "api.h"
 
@@ -63,8 +65,8 @@ LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new 
 	connect(ui->button_glareComputeLayer, SIGNAL(clicked()), this, SLOT(computeGlareLayer()));
 	connect(ui->button_glareDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteGlareLayer()));
 	connect(ui->checkBox_glareMap, SIGNAL(stateChanged(int)), this, SLOT(glareMapChanged(int)));
-	connect(ui->lineEdit_pupilMap, SIGNAL(returnPressed()), this, SLOT(glarePupilChanged()));
-	connect(ui->lineEdit_lashesMap, SIGNAL(returnPressed()), this, SLOT(glareLashesChanged()));
+	connect(ui->button_browsePupilMap, SIGNAL(clicked()), this, SLOT(glareBrowsePupilMap()));
+	connect(ui->button_browseLashesMap, SIGNAL(clicked()), this, SLOT(glareBrowseLashesMap()));
 
 #if defined(__APPLE__) // for better design on OSX
 	ui->tab_gaussianBloom->setFont(QFont  ("Lucida Grande", 11));
@@ -421,14 +423,26 @@ void LensEffectsWidget::glareMapChanged(int value)
 	updateParam (LUX_FILM, LUX_FILM_GLARE_MAP, m_Glare_map);
 }
 
-void LensEffectsWidget::glarePupilChanged()
+void LensEffectsWidget::glareBrowsePupilMap()
 {
-	m_Glare_pupil = ui->lineEdit_pupilMap->text();
+	m_Glare_pupil = QFileDialog::getOpenFileName(this, tr("Choose a pupil/aperture map"), m_lastOpendir, tr("Image files (*.png *.jpg)"));
+	ui->lineEdit_pupilMap->setText(m_Glare_pupil);
 	updateParam(LUX_FILM, LUX_FILM_GLARE_PUPIL, m_Glare_pupil.toAscii().data());
+
+	if (!m_Glare_pupil.isEmpty()) {
+		QFileInfo info(m_Glare_pupil);
+		m_lastOpendir = info.absolutePath();
+	}
 }
 
-void LensEffectsWidget::glareLashesChanged()
+void LensEffectsWidget::glareBrowseLashesMap()
 {
-	m_Glare_lashes = ui->lineEdit_lashesMap->text();
+	m_Glare_lashes = QFileDialog::getOpenFileName(this, tr("Choose an eyelashes/obstacle map"), m_lastOpendir, tr("Image files (*.png *.jpg)"));
+	ui->lineEdit_lashesMap->setText(m_Glare_lashes);
 	updateParam(LUX_FILM, LUX_FILM_GLARE_LASHES, m_Glare_lashes.toAscii().data());
+
+	if (!m_Glare_lashes.isEmpty()) {
+		QFileInfo info(m_Glare_lashes);
+		m_lastOpendir = info.absolutePath();
+	}
 }
