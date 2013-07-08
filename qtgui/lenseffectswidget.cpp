@@ -426,23 +426,26 @@ void LensEffectsWidget::glareMapChanged(int value)
 void LensEffectsWidget::glareBrowsePupilMap()
 {
 	m_Glare_pupil = QFileDialog::getOpenFileName(this, tr("Choose a pupil/aperture map"), m_lastOpendir, tr("Image files (*.png *.jpg)"));
+	if (m_Glare_pupil.isEmpty())
+		return;
+
 	ui->lineEdit_pupilMap->setText(m_Glare_pupil);
 	updateParam(LUX_FILM, LUX_FILM_GLARE_PUPIL, m_Glare_pupil.toAscii().data());
 
-	if (!m_Glare_pupil.isEmpty()) {
-		QFileInfo info(m_Glare_pupil);
-		m_lastOpendir = info.absolutePath();
-	}
+	QFileInfo info(m_Glare_pupil);
+	m_lastOpendir = info.absolutePath();
 }
 
 void LensEffectsWidget::glareBrowseLashesMap()
 {
 	m_Glare_lashes = QFileDialog::getOpenFileName(this, tr("Choose an eyelashes/obstacle map"), m_lastOpendir, tr("Image files (*.png *.jpg)"));
+
+	if (m_Glare_lashes.isEmpty())
+		return;
+
 	ui->lineEdit_lashesMap->setText(m_Glare_lashes);
 	updateParam(LUX_FILM, LUX_FILM_GLARE_LASHES, m_Glare_lashes.toAscii().data());
 
-	if (!m_Glare_lashes.isEmpty()) {
-		QFileInfo info(m_Glare_lashes);
-		m_lastOpendir = info.absolutePath();
-	}
+	QFileInfo info(m_Glare_lashes);
+	m_lastOpendir = info.absolutePath();
 }
