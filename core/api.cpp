@@ -90,7 +90,7 @@ FreeImage error handler
 @param fif Format / Plugin responsible for the error
 @param message Error message
 */
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
 	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
 		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
 }
