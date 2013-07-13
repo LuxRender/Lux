@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 		string changed;
 		if (rendererName == "") {
 			// There isn't a Renderer command, just add one
-			changed = filetext + "\nRenderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]\n";
+			changed = "Renderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]\n" + filetext;
 		} else {
 			// Get the list of options 
 			std::string::const_iterator start = rendererOptions.begin();
