@@ -54,7 +54,7 @@
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxqueue.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/10/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app
-#		COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
+		COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger

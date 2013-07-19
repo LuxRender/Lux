@@ -48,7 +48,7 @@ public:
 	enum LightStrategyType {
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC, SAMPLE_ONE_IMPORTANCE,
-		SAMPLE_ONE_POWER_IMPORTANCE, SAMPLE_ALL_POWER_IMPORTANCE,
+		SAMPLE_ONE_POWER_IMPORTANCE, SAMPLE_ALL_POWER_IMPORTANCE, SAMPLE_AUTOMATIC_POWER_IMPORTANCE,
 		SAMPLE_ONE_LOG_POWER_IMPORTANCE
 	};
 
@@ -185,6 +185,30 @@ public:
 	virtual float Pdf(const Scene &scene, const Light *light) const;
 	virtual float Pdf(const Scene &scene, u_int light) const;
 	virtual u_int GetSamplingLimit(const Scene &scene) const;
+};
+	
+class LSSAutoPowerImportance : public LightsSamplingStrategy {
+public:
+	LSSAutoPowerImportance() : LightsSamplingStrategy(), strategy(NULL) { }
+	virtual ~LSSAutoPowerImportance() { delete strategy; }
+	virtual void Init(const Scene &scene);
+
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const {
+		return strategy->SampleLight(scene, index, u, pdf);
+	}
+	virtual float Pdf(const Scene &scene, const Light *light) const {
+		return strategy->Pdf(scene, light);
+	}
+	virtual float Pdf(const Scene &scene, u_int light) const {
+		return strategy->Pdf(scene, light);
+	}
+	virtual u_int GetSamplingLimit(const Scene &scene) const {
+		return strategy->GetSamplingLimit(scene);
+	}
+
+private:
+	LightsSamplingStrategy *strategy;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {

@@ -67,6 +67,8 @@ LightsSamplingStrategy *LightsSamplingStrategy::Create(const string &name,
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
 	else if (st == "allpowerimp")
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
+	else if (st == "autopowerimp")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC_POWER_IMPORTANCE;
 	else if (st == "logpowerimp")
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
 	else {
@@ -93,6 +95,9 @@ LightsSamplingStrategy *LightsSamplingStrategy::Create(const string &name,
 			break;
 		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
 			lsStrategy = new LSSAllPowerImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_AUTOMATIC_POWER_IMPORTANCE:
+			lsStrategy = new LSSAutoPowerImportance();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
 			lsStrategy = new LSSOneLogPowerImportance();
@@ -270,6 +275,20 @@ float LSSAllPowerImportance::Pdf(const Scene &scene, u_int light) const
 u_int LSSAllPowerImportance::GetSamplingLimit(const Scene &scene) const
 {
 	return scene.lights.size();
+}
+
+//******************************************************************************
+// Light Sampling Strategies: LightStrategyAutoPowerImportance
+//******************************************************************************
+
+void LSSAutoPowerImportance::Init(const Scene &scene)
+{
+	if (scene.lights.size() > 5)
+		strategy = new LSSOnePowerImportance();
+	else
+		strategy = new LSSAllPowerImportance();
+	
+	strategy->Init(scene);
 }
 
 //******************************************************************************
