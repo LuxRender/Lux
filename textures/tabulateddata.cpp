@@ -166,7 +166,9 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 			<< ", this may yield unintented results.";
 	}
 
-	return new IrregularDataTexture(n, &wl[0], &data[0]);
+	const float resolution = (wl.back()- wl.front()) / (n - 1);
+
+	return new IrregularDataTexture(n, &wl[0], &data[0], resolution);
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<TabulatedDataTexture> r("tabulateddata");
