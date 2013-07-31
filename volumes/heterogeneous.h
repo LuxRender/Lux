@@ -127,23 +127,19 @@ public:
 			sigma = (sigma + sigma2) * .5f;
 			// Skip the step if no scattering occurs
 			if (!(sigma > 0.f)) {
-				if (s == 1 && pdfBack)
-					*pdfBack = 0.f;
 				sigma = sigma2;
 				continue;
 			}
 			// Determine scattering distance
 			const float d = logf(1 - u) / sigma; //the real distance is ray.mint-d
-			if (pdf) {
-				*pdf *= expf(ss * sigma);
-			}
-			if (pdfBack) {
-				*pdfBack *= expf(ss * sigma);
-				if (s == 1 && scatteredStart)
-					*pdfBack *= sigma;
-			}
-			scatter = d > ray.mint - ray.maxt;
+			if (pdfBack && s == 1 && scatteredStart)
+				*pdfBack *= sigma;
+			scatter = d > ray.mint + (s - 1U) * ss - ray.maxt;
 			if (!scatter) {
+				if (pdf)
+					*pdf *= expf(-ss * sigma);
+				if (pdfBack)
+					*pdfBack *= expf(-ss * sigma);
 				sigma = sigma2;
 				// Update the random variable to account for
 				// the current step
@@ -152,7 +148,9 @@ public:
 			}
 			// The ray is scattered
 			if (pdf)
-				*pdf *= sigma;
+				*pdf *= expf(d * sigma);
+			if (pdfBack)
+				*pdfBack *= expf(d * sigma);
 			ray.maxt = ray.mint + (s - 1U) * ss - d;
 			isect->dg.p = ray(ray.maxt);
 			isect->dg.nn = Normal(-ray.d);
@@ -169,6 +167,8 @@ public:
 				*L *= SigmaT(sample.swl, isect->dg);
 			break;
 		}
+		if (pdf && scatter)
+			*pdf *= sigma;
 		if (L)
 			*L *= Exp(-Tau(sample.swl, ray));
 		return scatter;
