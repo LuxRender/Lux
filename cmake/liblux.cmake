@@ -212,6 +212,8 @@ SET(lux_filters_src
 	filters/mitchell.cpp
 	filters/sinc.cpp
 	filters/triangle.cpp
+	filters/catmullrom.cpp
+	filters/blackmanharris.cpp
 	)
 SOURCE_GROUP("Source Files\\Filters" FILES ${lux_filters_src})
 
@@ -655,6 +657,8 @@ SET(lux_filters_hdr
 	filters/mitchell.h
 	filters/sinc.h
 	filters/triangle.h
+	filters/catmullrom.h
+	filters/blackmanharris.h
 	)
 SOURCE_GROUP("Header Files\\Filters" FILES ${lux_filters_hdr})
 SET(lux_integrators_hdr
