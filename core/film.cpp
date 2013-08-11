@@ -3027,7 +3027,7 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 }
 
 void Film::GenerateNoiseAwareMap() {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
 
@@ -3148,7 +3148,7 @@ void Film::GenerateNoiseAwareMap() {
 
 const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
 		boost::shared_ptr<Distribution2D> &distrib) {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	if (noiseAwareMapVersion > version) {
 		map = noiseAwareMap;
@@ -3162,7 +3162,7 @@ const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &ma
 
 // NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
 float *Film::GetNoiseAwareMap() {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	if (noiseAwareMapVersion == 0)
 		return NULL;
@@ -3175,7 +3175,7 @@ float *Film::GetNoiseAwareMap() {
 }
 
 void Film::SetNoiseAwareMap(const float *map) {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
 	noiseAwareMap.reset(new float[nPix]);
@@ -3190,7 +3190,7 @@ void Film::SetNoiseAwareMap(const float *map) {
 
 const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
 		boost::shared_ptr<Distribution2D> &distrib) {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	if (userSamplingMapVersion > version) {
 		map = userSamplingMap;
@@ -3203,7 +3203,7 @@ const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &
 
 // NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
 float *Film::GetUserSamplingMap() {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	if (userSamplingMapVersion == 0)
 		return NULL;
@@ -3216,7 +3216,7 @@ float *Film::GetUserSamplingMap() {
 }
 
 void Film::SetUserSamplingMap(const float *map) {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	// TODO: reject the map if all values are 0.0
 	const u_int nPix = xPixelCount * yPixelCount;
@@ -3262,7 +3262,7 @@ void Film::UpdateSamplingMap() {
 
 const bool Film::GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
 		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib) {
-	boost::mutex::scoped_lock lock(samplingMapMutex);
+	fast_mutex::scoped_lock lock(samplingMapMutex);
 
 	if ((noiseAwareMapVersion > naMapVersion) || (userSamplingMapVersion > usMapVersion)) {
 		naMapVersion = noiseAwareMapVersion;

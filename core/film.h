@@ -30,6 +30,7 @@
 #include "queryable.h"
 #include "bsh.h"
 #include "mcdistribution.h"
+#include "fastmutex.h"
 
 #include "slg/utils/convtest/convtest.h"
 
@@ -805,7 +806,7 @@ protected: // Put it here for better data alignment
 	// Noise-aware map * user sampling map
 	boost::shared_array<float> samplingMap;
 	boost::shared_ptr<Distribution2D> samplingDistribution2D;
-	boost::mutex samplingMapMutex;
+	fast_mutex samplingMapMutex;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
