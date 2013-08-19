@@ -29,6 +29,7 @@
 #include <boost/foreach.hpp>
 #include <boost/pool/pool.hpp>
 #include <boost/thread.hpp>
+#include <boost/shared_array.hpp>
 
 #include "context.h"
 #include "queryable.h"
@@ -219,6 +220,142 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 
 	}
 	return(n);
+}
+
+int framebuffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags) {
+	return 0;
+}
+
+void framebuffer_releasebuffer(PyObject *exporter, Py_buffer *view) {
+}
+
+// for debugging
+//#define PYLUX_USE_BUFFERS 1
+
+struct shared_array_noop_deleter {
+	void operator()(float *) {
+	}
+};
+
+struct float_buffer {
+	float_buffer(Context *ctx, float *buf, size_t nelms)
+		: context(ctx), buffer_ptr(buf, shared_array_noop_deleter()), buffer_nelms(nelms), owned(false) {
+	}
+
+	float_buffer(Context *ctx, const boost::shared_array<float> &buf, size_t nelms)
+		: context(ctx), buffer_ptr(buf), buffer_nelms(nelms), owned(true) {
+	}
+
+	float_buffer()
+		: context(NULL), buffer_ptr(NULL), buffer_nelms(0) {
+	}
+
+private:
+	Context *context;
+	boost::shared_array<float> buffer_ptr;
+	Py_ssize_t buffer_nelms;
+	bool owned;
+
+	friend int float_buffer_getbuffer(PyObject *, Py_buffer *, int);
+	friend void float_buffer_releasebuffer(PyObject *, Py_buffer *);
+	friend Py_ssize_t float_buffer_len(PyObject *);
+	friend PyObject* float_buffer_item(PyObject *, Py_ssize_t);
+};
+
+static int float_buffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags) {
+
+	boost::python::extract<float_buffer&> b(exporter);
+
+	if (!b.check()) {
+		PyErr_SetString(PyExc_BufferError, "Invalid buffer exporter instance");
+		view->obj = NULL;
+		return -1;
+	}
+
+	float_buffer& buf = b();
+
+	if (!buf.context) {
+		PyErr_SetString(PyExc_BufferError, "Buffer exporter not initialized");
+		view->obj = NULL;
+		return -1;	
+	}
+
+	if (!buf.buffer_ptr) {
+		PyErr_SetString(PyExc_BufferError, "Invalid buffer in buffer exporter");
+		view->obj = NULL;
+		return -1;
+	}
+
+	// based on PyBuffer_FillInfo
+    if (view == NULL) 
+		return 0;
+	const bool readonly = true;
+    if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
+        (readonly)) {
+        PyErr_SetString(PyExc_BufferError,
+                        "Object is not writable.");
+        return -1;
+    }
+
+    view->obj = exporter;
+    if (view->obj)
+        Py_INCREF(view->obj);
+	view->buf = buf.buffer_ptr.get();
+    view->len = sizeof(float) * buf.buffer_nelms;
+    view->readonly = readonly;
+    view->itemsize = sizeof(float);
+    view->format = NULL;
+    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
+        view->format = "f";
+    view->ndim = 1;
+    view->shape = NULL;
+    if ((flags & PyBUF_ND) == PyBUF_ND)
+        view->shape = &buf.buffer_nelms;
+    view->strides = NULL;
+    if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
+        view->strides = &(view->itemsize);
+    view->suboffsets = NULL;
+    view->internal = NULL;
+    return 0;
+}
+
+static void float_buffer_releasebuffer(PyObject *exporter, Py_buffer *view) {
+	boost::python::extract<float_buffer&> b(exporter);
+
+	if (!b.check()) {
+		PyErr_SetString(PyExc_BufferError, "Invalid buffer exporter instance");
+		return;
+	}
+
+	float_buffer& buf = b();
+
+	buf.buffer_ptr.reset();
+}
+
+static Py_ssize_t float_buffer_len(PyObject *exporter) {   
+	boost::python::extract<float_buffer&> b(exporter);
+	
+	if (!b.check()) {
+		PyErr_SetString(PyExc_BufferError, "Invalid buffer exporter instance");
+		return 0;
+	}
+	
+	float_buffer& buf = b();
+	
+	return buf.buffer_nelms;
+}
+
+static PyObject* float_buffer_item(PyObject *exporter, Py_ssize_t idx) {
+	boost::python::extract<float_buffer&> b(exporter);
+	
+	if (!b.check()) {
+		PyErr_SetString(PyExc_BufferError, "Invalid buffer exporter instance");
+		return 0;
+	}
+	
+	float_buffer& buf = b();
+	
+	return boost::python::incref((boost::python::object(buf.buffer_ptr[idx])).ptr());
 }
 
 /*
@@ -785,17 +922,85 @@ public:
 		return pyFrameBuffer;
 	}
 
-	boost::python::list zBuffer()
+	boost::python::object zBuffer()
 	{
-		boost::python::list pyFrameBuffer;
 		checkActiveContext();
-		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution"));
 
-		float* framebuffer = context->ZBuffer();
+		const int xres = luxGetIntAttribute("film", "xResolution");
+		const int yres = luxGetIntAttribute("film", "yResolution");
+		const int nelms = xres * yres;
+		float* zbuffer = context->ZBuffer();
+
+#ifdef PYLUX_USE_BUFFERS
+		// for debugging buffer support
+
+		float_buffer fb = float_buffer(context, zbuffer, nelms);
+
+		boost::python::object zbuf(fb);
+
+		if (PyObject_CheckBuffer(zbuf.ptr()) == 0) {
+			PyErr_BadArgument();
+			return boost::python::object();
+		}
+
+		return zbuf;
+#else
+		boost::python::list pyFrameBuffer;
 		//copy the values
-		for(int i=0;i<nvalues;i++)
-			pyFrameBuffer.append(framebuffer[i]);
+		for(int i=0;i<nelms;i++)
+			pyFrameBuffer.append(zbuffer[i]);
 		return pyFrameBuffer;
+#endif		
+	}
+
+	boost::python::tuple blenderCombinedDepthBuffers()
+	{
+		checkActiveContext();
+		updateFramebuffer();
+		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
+		const float c_gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+
+		const int xres = luxGetIntAttribute("film", "xResolution");
+		const int yres = luxGetIntAttribute("film", "yResolution");
+		const int nelms = xres * yres;
+
+		const float *color = context->FloatFramebuffer();
+		const float *alpha = context->AlphaBuffer();
+		const float *z = context->ZBuffer();
+
+		boost::shared_array<float> pb(new float[4*nelms]);
+		float* pixel = pb.get();
+
+		boost::shared_array<float> zb(new float[nelms]);
+		float* zbuffer = zb.get();
+
+		for(int y=yres-1; y>-1;y--)
+		{
+			for(int x=0; x<xres; x++)
+			{
+				const int i = (y*xres + x);
+				const int j = i*3;
+				*(pixel++) = color[j+0];
+				*(pixel++) = color[j+1];
+				*(pixel++) = color[j+2];
+
+				*(pixel++) = preMult == true ? alpha[i] : 1.0;
+				*(zbuffer++) = z[i];
+			}
+		}
+
+		float_buffer pfb = float_buffer(context, pb, 4*nelms);
+		boost::python::object pbuf(pfb);
+
+		float_buffer zfb = float_buffer(context, zb, nelms);
+		boost::python::object zbuf(zfb);
+
+		if ((!PyObject_CheckBuffer(zbuf.ptr())) || (!PyObject_CheckBuffer(pbuf.ptr()))) {
+			PyErr_BadArgument();
+			return boost::python::make_tuple(boost::python::object(), boost::python::object());
+		}
+
+		return boost::python::make_tuple( pbuf, zbuf );
 	}
 
 	/**
@@ -837,7 +1042,6 @@ public:
 				depth.append( depth_item );
 			}
 		}
-		
 		return boost::python::make_tuple( combined, depth );
 	}
 
@@ -1110,11 +1314,55 @@ private:
 
 } //namespace lux
 
+static bool is_buffer(PyObject *obj) {
+	return PyObject_CheckBuffer(obj);
+}
+
+static bool is_sequence(PyObject *obj) {
+	return PySequence_Check(obj);
+}
+
+void export_float_buffer()
+{
+	using namespace boost::python;
+	using namespace lux;
+
+	// for debugging
+	def("is_buffer", &is_buffer, args("obj"));
+	def("is_sequence", &is_sequence, args("obj"));
+
+	// register float_buffer
+	class_<float_buffer>("float_buffer");	
+
+	// update float_buffer type so it implements
+	// the buffer and sequence protocols
+	const converter::registration& fb_reg(converter::registry::lookup(type_id<float_buffer>()));
+	PyTypeObject* fb_type = fb_reg.get_class_object();
+
+	// buffer protocol
+	static PyBufferProcs float_buffer_as_buffer = {
+		(getbufferproc)float_buffer_getbuffer,
+		(releasebufferproc)float_buffer_releasebuffer,
+	};
+	fb_type->tp_as_buffer = &float_buffer_as_buffer;
+
+	// partial sequence protocol support
+	static PySequenceMethods float_buffer_as_sequence = {
+		float_buffer_len,       /* sq_length */   // needed for foreach_set
+		0,						/* sq_concat */
+		0,						/* sq_repeat */
+		float_buffer_item       /* sq_item */     // needed for PySequence_Check to succeed
+	};
+	fb_type->tp_as_sequence = &float_buffer_as_sequence;
+}
+
 // Add PyContext class to pylux module definition
 void export_PyContext()
 {
 	using namespace boost::python;
 	using namespace lux;
+
+	export_float_buffer();
 
 	class_<PyContext>(
 		"Context",
@@ -1157,6 +1405,11 @@ void export_PyContext()
 			&PyContext::attributeEnd,
 			args("Context"),
 			ds_pylux_Context_attributeEnd
+		)
+		.def("blenderCombinedDepthBuffers",
+			&PyContext::blenderCombinedDepthBuffers,
+			args("Context"),
+			"Blender framebuffer fetcher method; returns combined Color+Alpha and Depth buffers in bottom-up format as Python buffers"
 		)
 		.def("blenderCombinedDepthRects",
 			&PyContext::blenderCombinedDepthRects,
