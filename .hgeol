@@ -1,6 +1,7 @@
-[patterns]
-** = native
+[repository]
+native = LF
 
+[patterns]
 **.c = LF
 **.h = LF
 **.cpp = LF
@@ -11,8 +12,8 @@
 **.l = LF
 **.y = LF
 **.cmake = LF
-
 **.vcproj = CRLF
 **.sln = CRLF
 **.py = LF
 **.png = BIN
+** = native
