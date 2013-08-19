@@ -1152,10 +1152,28 @@ bool FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		// Output to low dynamic range formats
 		if ((type & IMAGE_FILEOUTPUT) || (type & IMAGE_FRAMEBUFFER)) {
 			// Clamp too high values
-			// and apply gamma correction
+			for (u_int i = 0; i < nPix; ++i) {
+				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod);
+			}
+
+			// Copy to float framebuffer pixels (linear)
+			if ((type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
+				u_int i = 0;
+				for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
+					for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
+						const u_int offset = 3 * (y * xResolution + x);
+						float_framebuffer[offset] = rgbcolor[i].c[0];
+						float_framebuffer[offset + 1] = rgbcolor[i].c[1];
+						float_framebuffer[offset + 2] = rgbcolor[i].c[2];
+						++i;
+					}
+				}
+			}
+
+			// Apply gamma correction
 			const float invGamma = 1.f / m_Gamma;
 			for (u_int i = 0; i < nPix; ++i) {
-				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod).Pow(invGamma);
+				rgbcolor[i] = rgbcolor[i].Pow(invGamma);
 			}
 
 			// write out tonemapped TGA
@@ -1300,19 +1318,6 @@ bool FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					framebuffer[3 * p] = framebuffer[3 * p + 1] = framebuffer[3 * p + 2] = 
 							static_cast<unsigned char>(Clamp(256.f * v, 0.f, 255.f));
 				}*/
-			}
-
-			if ((type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
-				u_int i = 0;
-				for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
-					for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
-						const u_int offset = 3 * (y * xResolution + x);
-						float_framebuffer[offset] = rgbcolor[i].c[0];
-						float_framebuffer[offset + 1] = rgbcolor[i].c[1];
-						float_framebuffer[offset + 2] = rgbcolor[i].c[2];
-						++i;
-					}
-				}
 			}
 		}
 	}
