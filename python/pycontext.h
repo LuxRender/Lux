@@ -262,7 +262,7 @@ private:
 	friend PyObject* float_buffer_item(PyObject *, Py_ssize_t);
 };
 
-static int float_buffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags) {
+int float_buffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags) {
 
 	boost::python::extract<float_buffer&> b(exporter);
 
@@ -319,7 +319,7 @@ static int float_buffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags
     return 0;
 }
 
-static void float_buffer_releasebuffer(PyObject *exporter, Py_buffer *view) {
+void float_buffer_releasebuffer(PyObject *exporter, Py_buffer *view) {
 	boost::python::extract<float_buffer&> b(exporter);
 
 	if (!b.check()) {
@@ -332,7 +332,7 @@ static void float_buffer_releasebuffer(PyObject *exporter, Py_buffer *view) {
 	buf.buffer_ptr.reset();
 }
 
-static Py_ssize_t float_buffer_len(PyObject *exporter) {   
+Py_ssize_t float_buffer_len(PyObject *exporter) {   
 	boost::python::extract<float_buffer&> b(exporter);
 	
 	if (!b.check()) {
@@ -345,7 +345,7 @@ static Py_ssize_t float_buffer_len(PyObject *exporter) {
 	return buf.buffer_nelms;
 }
 
-static PyObject* float_buffer_item(PyObject *exporter, Py_ssize_t idx) {
+PyObject* float_buffer_item(PyObject *exporter, Py_ssize_t idx) {
 	boost::python::extract<float_buffer&> b(exporter);
 	
 	if (!b.check()) {
@@ -958,7 +958,6 @@ public:
 		checkActiveContext();
 		updateFramebuffer();
 		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
-		const float c_gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 		const int xres = luxGetIntAttribute("film", "xResolution");
 		const int yres = luxGetIntAttribute("film", "yResolution");
@@ -1016,7 +1015,6 @@ public:
 		boost::python::list combined;
 		boost::python::list depth;
 		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
-		const float c_gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 		checkActiveContext();
 		int xres = luxGetIntAttribute("film", "xResolution");
