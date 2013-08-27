@@ -507,7 +507,7 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 		}
 		vert->oneRing(Pring);
 	
-		if (!vert->boundary) {
+		if (!vert->boundary || Pring[0] == Pring[valence - 1]) {
 			// Compute tangents of interior face
 			for (u_int k = 0; k < valence; ++k) {
 				S += cosf(2.f*M_PI*k/valence) * Vector(Pring[k]);
@@ -557,7 +557,7 @@ void LoopSubdiv::ApplyDisplacementMap(set<Point, PointCompare> &unique, const ve
 			NULL);
 		Vector displacement((displacementMap->Evaluate(swl, dg) *
 			displacementMapScale + displacementMapOffset) *
-			Vector(v->n));
+			Normalize(Vector(v->n)));
 		map<const Point *, std::pair<Vector, u_int> >::iterator d = dispMap.find(v->P);
 		if (d == dispMap.end()) {
 			// If the point hasn't been found yet
@@ -658,7 +658,7 @@ void LoopSubdiv::weightOneRing(set<Point, PointCompare> &unique, SDVertex *destV
 		destVert->alpha = vert->alpha;
 	else
 		destVert->alpha = alpha;
-	destVert->n = N;
+	destVert->n = Normalize(N);
 }
 
 void SDVertex::oneRing(Point *Pring) const
@@ -776,6 +776,6 @@ void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *dest
 	Normal N((1 - 2 * beta) * vert->n);
 	N += beta * Vring[0]->n;
 	N += beta * Vring[valence - 1]->n;
-	destVert->n = N;
+	destVert->n = Normalize(N);
 }
 
