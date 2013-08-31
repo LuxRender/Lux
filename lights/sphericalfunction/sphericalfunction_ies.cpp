@@ -67,6 +67,11 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 		}
 	}
 	// Generate missing horizontal angles
+	if (horizAngles[0] == 90. || horizAngles[0] == -90.) {
+		const double offset = horizAngles[0];
+		for (u_int i = 0; i < horizAngles.size(); ++i)
+			horizAngles[i] -= offset;
+	}
 	if (horizAngles[0] == 0.) {
 		if (horizAngles.size() == 1) {
 			horizAngles.push_back(90.);
