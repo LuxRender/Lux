@@ -279,15 +279,16 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 				// Compute odd vertex on _k_th edge
 				SDVertex *v0 = face->v[k], *v1 = face->v[NEXT(k)];
 				SDEdge edge(v0, v1);
-				SDVertex *vert = edgeVerts[edge];
-				if (!vert) {
+				map<SDEdge, SDVertex*>::iterator itEdge = edgeVerts.find(edge);
+				SDVertex *vert;
+				if (itEdge == edgeVerts.end()) {
 					edge.f[0] = face;
 					edge.f0edgeNum = k;
 					// Create and initialize new odd vertex
 					vert = vertexArena.construct();//new (vertexArena) SDVertex;
 					newVertices.push_back(vert);
 					vert->regular = true;
-					vert->boundary = (f2 == NULL);
+					vert->boundary = v0->boundary || v1->boundary || (f2 == NULL);
 					vert->startFace = face->children[3];
 					// Apply edge rules to compute new vertex position
 					if (vert->boundary) {
@@ -336,6 +337,11 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 					}
 					edgeVerts[edge] = vert;
 				} else {
+					if (itEdge->first.f0edgeNum == 9999) {
+						SHAPE_LOG(name, LUX_ERROR, LUX_CONSISTENCY) << "Incorrect topology, more than 2 faces share the same edge, aborting subdivision";
+						return boost::shared_ptr<LoopSubdiv::SubdivResult>();
+					}
+					vert = itEdge->second;
 					// If UV are different on each side of the edge create a new vertex
 					if (!vert->boundary &&
 						(f2->v[f2->vnum(v0->P)]->u != v0->u ||
@@ -363,7 +369,10 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						vert->col = 0.5f * (v0->col + v1->col);
 						vert->alpha = 0.5f * (v0->alpha + v1->alpha);
 					}
-					edgeVerts.erase(edge);
+					SDEdge e(itEdge->first);
+					e.f0edgeNum = 9999;
+					edgeVerts.erase(itEdge);
+					edgeVerts[e] = vert;
 				}
 				// Update face vertex pointers
 				// Update child vertex pointer to new odd vertex
@@ -675,13 +684,14 @@ void SDVertex::oneRing(Point *Pring) const
 	} else {
 		// Get one ring vertices for boundary vertex
 		SDFace *face = startFace, *f2;
-		while ((f2 = face->nextFace(P)) != NULL)
+		while ((f2 = face->nextFace(P)) != NULL && f2 != startFace)
 			face = f2;
+		f2 = face;
 		*Pring++ = *(face->nextVert(P)->P);
 		do {
 			*Pring++ = *(face->prevVert(P)->P);
 			face = face->prevFace(P);
-		} while (face != NULL);
+		} while (face != NULL && face != f2);
 	}
 }
 
@@ -704,8 +714,9 @@ void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *dest
 	// Get one ring vertices for boundary vertex
 	SDFace *face = vert->startFace, *f2;
 	// Go to the last face in the list
-	while ((f2 = face->nextFace(vert->P)) != NULL)
+	while ((f2 = face->nextFace(vert->P)) != NULL && f2 != vert->startFace)
 		face = f2;
+	f2 = face;
 	// Add the last vertex (on the boundary)
 	*VR++ = face->nextVert(vert->P);
 	// Add all vertices up to the first one (on the boundary)
@@ -730,7 +741,7 @@ void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *dest
 
 		*VR++ = v2;
 		face = face->prevFace(vert->P);
-		if (face) {
+		if (face && face != f2) {
 			v2 = face->nextVert(vert->P);
 
 			if (vu != v2->u || vv != v2->v)
@@ -740,7 +751,7 @@ void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *dest
 			if (va != v2->alpha)
 				alphaSplit = true;
 		}
-	} while (face != NULL);
+	} while (face != NULL && face != f2);
 
 	Point P((1 - 2 * beta) * *(vert->P));
 	P += beta * *(Vring[0]->P);

@@ -110,8 +110,9 @@ struct SDFace {
 	}
 	SDVertex *otherVert(const Point *p0, const Point *p1) const {
 		for (u_int i = 0; i < 3; ++i) {
-			if (v[i]->P != p0 && v[i]->P != p1)
-				return v[i];
+			if ((v[i]->P == p0 && v[NEXT(i)]->P == p1) ||
+				(v[i]->P == p1 && v[NEXT(i)]->P == p0))
+				return v[PREV(i)];
 		}
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDVertex::otherVert()";
 		return NULL;
@@ -261,6 +262,8 @@ inline u_int SDVertex::valence() const {
 				v->startFace = startFace;
 			++nf;
 			f = f->nextFace(v->P);
+			if (f == startFace)
+				return nf;
 		}
 
 		f = startFace;
@@ -270,6 +273,8 @@ inline u_int SDVertex::valence() const {
 				v->startFace = startFace;
 			++nf;
 			f = f->prevFace(v->P);
+			if (f == startFace)
+				break;
 		}
 		return nf;
 	}
