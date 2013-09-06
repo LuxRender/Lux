@@ -1339,16 +1339,20 @@ void export_float_buffer()
 
 	// buffer protocol
 	static PyBufferProcs float_buffer_as_buffer = {
-		(getbufferproc)float_buffer_getbuffer,
-		(releasebufferproc)float_buffer_releasebuffer,
+		NULL,						/* bf_getreadbuffer */
+		NULL,						/* bf_getwritebuffer */
+		NULL,						/* bf_getsegcount */
+		NULL,						/* bf_getcharbuffer */
+		float_buffer_getbuffer,		/* bf_getbuffer */
+		float_buffer_releasebuffer,	/* bf_releasebuffer */
 	};
 	fb_type->tp_as_buffer = &float_buffer_as_buffer;
 
 	// partial sequence protocol support
 	static PySequenceMethods float_buffer_as_sequence = {
 		float_buffer_len,       /* sq_length */   // needed for foreach_set
-		0,						/* sq_concat */
-		0,						/* sq_repeat */
+		NULL,					/* sq_concat */
+		NULL,					/* sq_repeat */
 		float_buffer_item       /* sq_item */     // needed for PySequence_Check to succeed
 	};
 	fb_type->tp_as_sequence = &float_buffer_as_sequence;
