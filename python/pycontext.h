@@ -247,7 +247,7 @@ struct float_buffer {
 	}
 
 	float_buffer()
-		: context(NULL), buffer_ptr(NULL), buffer_nelms(0) {
+		: context(NULL), buffer_ptr((float*)NULL), buffer_nelms(0) {
 	}
 
 private:
