@@ -1339,12 +1339,17 @@ void export_float_buffer()
 
 	// buffer protocol
 	static PyBufferProcs float_buffer_as_buffer = {
+#if (PY_MAJOR_VERSION >= 3)
+		float_buffer_getbuffer,		/* bf_getbuffer */
+		float_buffer_releasebuffer	/* bf_releasebuffer */
+#else
 		NULL,						/* bf_getreadbuffer */
 		NULL,						/* bf_getwritebuffer */
 		NULL,						/* bf_getsegcount */
 		NULL,						/* bf_getcharbuffer */
 		float_buffer_getbuffer,		/* bf_getbuffer */
-		float_buffer_releasebuffer,	/* bf_releasebuffer */
+		float_buffer_releasebuffer	/* bf_releasebuffer */
+#endif
 	};
 	fb_type->tp_as_buffer = &float_buffer_as_buffer;
 
