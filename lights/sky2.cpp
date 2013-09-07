@@ -170,6 +170,33 @@ static void ComputeRadiance(const RegularSPD * const SkyModel[10], const Vector 
 		(c + expTerm + rayleighTerm + mieTerm + zenithTerm) * radiance;
 }
 
+static float ComputeY(const RegularSPD * const SkyModel[10], const Vector &sundir,
+	const Vector &w)
+{
+	const float cosG = RiCosBetween(w, sundir);
+	const float cosG2 = cosG * cosG;
+	const float gamma = acosf(cosG);
+	const float cosT = max(0.f, CosTheta(w));
+	const float a = SkyModel[0]->Filter();
+	const float b = SkyModel[1]->Filter();
+	const float c = SkyModel[2]->Filter();
+	const float d = SkyModel[3]->Filter();
+	const float e = SkyModel[4]->Filter();
+	const float f = SkyModel[5]->Filter();
+	const float g = SkyModel[6]->Filter();
+	const float h = SkyModel[7]->Filter();
+	const float i = SkyModel[8]->Filter();
+	const float radiance = SkyModel[9]->Y();
+
+	const float expTerm = d * expf(e * gamma);
+	const float rayleighTerm = f * cosG2;
+	const float mieTerm = g * (1.f + cosG2) /
+		powf(1.f + i * (i - 2.f * cosG), 1.5f);
+	const float zenithTerm = h * sqrtf(cosT);
+	return (1.f + a * expf(b / (cosT + .01f))) *
+		(c + expTerm + rayleighTerm + mieTerm + zenithTerm) * radiance;
+}
+
 class  Sky2BSDF : public BSDF  {
 public:
 	// Sky2BSDF Public Methods
@@ -363,29 +390,21 @@ Sky2Light::Sky2Light(const Transform &light2world, float skyscale, u_int ns,
 
 float Sky2Light::Power(const Scene &scene) const
 {
-	return 1.f; //FIXME
-/*	Point worldCenter;
+	Point worldCenter;
 	float worldRadius;
 	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 
 	const u_int steps = 100;
-	const float deltaStep = 2.f / steps;
-	float phi = 0.f, power = 0.f;
+	const float deltaStep = 1.f / steps;
+	float power = 0.f;
 	for (u_int i = 0; i < steps; ++i) {
-		float cosTheta = -1.f;
 		for (u_int j = 0; j < steps; ++j) {
-			float theta = acosf(cosTheta);
-			float gamma = RiAngleBetween(theta, phi, thetaS, phiS);
-			theta = min(theta, M_PI * .5f - .001f);
-			power += zenith_Y * PerezBase(perez_Y, theta, gamma);
-			cosTheta += deltaStep;
+			power += ComputeY(model, sundir, UniformSampleSphere(i * deltaStep + deltaStep / 2.f, j * deltaStep + deltaStep / 2.f));
 		}
-
-		phi += deltaStep * M_PI;
 	}
 	power /= steps * steps;
 
-	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;*/
+	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
 }
 
 bool Sky2Light::Le(const Scene &scene, const Sample &sample, const Ray &r,
