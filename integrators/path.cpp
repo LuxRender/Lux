@@ -594,7 +594,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 			pathState->pathRay.o = pathState->lastBounce;
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
-				const Light *light = scene.lights[i];
+				const Light *light = scene.lights[i].get();
 				if (!light->IsEnvironmental())
 					continue;
 				float pdf;

@@ -1143,7 +1143,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 	//--------------------------------------------------------------------------
 	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
 		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
-		AreaLight *al = alPrim->GetAreaLight();
+		AreaLight *al = alPrim->GetAreaLight().get();
 
 		Texture<SWCSpectrum> *tex = al->GetTexture();
 
@@ -1234,7 +1234,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 	// Check if there is a sun light source
 	SunLight *sunLight = NULL;
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		sunLight = dynamic_cast<SunLight *>(scene->lights[i]);
+		sunLight = dynamic_cast<SunLight *>(scene->lights[i].get());
 		if (sunLight)
 			break;
 	}
@@ -1273,8 +1273,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 	SkyLight *skyLight = NULL;
 	Sky2Light *sky2Light = NULL;
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		skyLight = dynamic_cast<SkyLight *>(scene->lights[i]);
-		sky2Light = dynamic_cast<Sky2Light *>(scene->lights[i]);
+		skyLight = dynamic_cast<SkyLight *>(scene->lights[i].get());
+		sky2Light = dynamic_cast<Sky2Light *>(scene->lights[i].get());
 		if (skyLight || sky2Light)
 			break;
 	}
@@ -1343,8 +1343,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 	InfiniteAreaLight *infiniteAreaLight = NULL;
 	InfiniteAreaLightIS *infiniteAreaLightIS = NULL;
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		infiniteAreaLight = dynamic_cast<InfiniteAreaLight *>(scene->lights[i]);
-		infiniteAreaLightIS = dynamic_cast<InfiniteAreaLightIS *>(scene->lights[i]);
+		infiniteAreaLight = dynamic_cast<InfiniteAreaLight *>(scene->lights[i].get());
+		infiniteAreaLightIS = dynamic_cast<InfiniteAreaLightIS *>(scene->lights[i].get());
 		if (infiniteAreaLight || infiniteAreaLightIS)
 			break;
 	}

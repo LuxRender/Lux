@@ -124,7 +124,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			// Choose light source to trace path from
 			float lightPdf;
 			u_int lNum = lightCDF.SampleDiscrete(lightNum[sampOffset], &lightPdf);
-			Light *light = scene.lights[lNum];
+			Light *light = scene.lights[lNum].get();
 			// Sample ray leaving light source
 			BSDF *bsdf;
 			float pdf;

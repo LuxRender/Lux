@@ -511,7 +511,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// non passthrough intersection
 				ray.o = vp.p;
 				for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
-					const Light *light = scene.lights[lightNumber];
+					const Light *light = scene.lights[lightNumber].get();
 					if (!light->IsEnvironmental())
 						continue;
 					float ePdfDirect;
@@ -1046,7 +1046,7 @@ bool BidirPathState::Init(const Scene &scene) {
 			bidir->lightNumOffset, 0) * numberOfLights;
 		const u_int lightNum = min(Floor2UInt(component), numberOfLights - 1U);
 		component -= lightNum;
-		light = scene.lights[lightNum];
+		light = scene.lights[lightNum].get();
 
 		float lightPos[2];
 		sample.sampler->GetTwoD(sample, bidir->lightPosOffset, 0, lightPos);
@@ -1896,7 +1896,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 			float portal = sampleData[2] * nLights;
 			const u_int lightDirectNumber = min(Floor2UInt(portal), nLights - 1U);
-			const Light *light = scene.lights[lightDirectNumber];
+			const Light *light = scene.lights[lightDirectNumber].get();
 			portal -= lightDirectNumber;
 
 			const Point &p = eyeVertex.bsdf->dgShading.p;

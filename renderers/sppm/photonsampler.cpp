@@ -62,7 +62,7 @@ void PhotonSampler::TracePhoton(
 	// Choose light to shoot photon from
 	float lightPdf;
 	u_int lightNum = lightCDF->SampleDiscrete(GetOneD(*sample, 0, 0), &lightPdf);
-	const Light *light = scene.lights[lightNum];
+	const Light *light = scene.lights[lightNum].get();
 
 	// Generate _photonRay_ from light source and initialize _alpha_
 	BSDF *bsdf;

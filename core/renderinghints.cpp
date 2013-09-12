@@ -120,7 +120,7 @@ const Light *LSSAllUniform::SampleLight(const Scene &scene, u_int index,
 	if (index >= scene.lights.size())
 		return NULL;
 	*pdf = 1.f;
-	return scene.lights[index];
+	return scene.lights[index].get();
 }
 
 float LSSAllUniform::Pdf(const Scene &scene, const Light *light) const
@@ -152,7 +152,7 @@ const Light *LSSOneUniform::SampleLight(const Scene &scene, u_int index,
 	const u_int n = min(Floor2UInt(*u), nLights - 1);
 	*u -= n;
 	*pdf = 1.f / nLights;
-	return scene.lights[n];
+	return scene.lights[n].get();
 }
 
 float LSSOneUniform::Pdf(const Scene &scene, const Light *light) const
@@ -205,13 +205,13 @@ const Light *LSSOneImportance::SampleLight(const Scene &scene, u_int index,
 {
 	if (index > 0)
 		return NULL;
-	return scene.lights[lightDistribution->SampleDiscrete(*u, pdf, u)];
+	return scene.lights[lightDistribution->SampleDiscrete(*u, pdf, u)].get();
 }
 
 float LSSOneImportance::Pdf(const Scene &scene, const Light *light) const
 {
 	for (u_int i = 0; i < scene.lights.size(); ++i) {
-		if (scene.lights[i] == light)
+		if (scene.lights[i].get() == light)
 			return lightDistribution->Pdf(i);
 	}
 	return 0.f;
@@ -233,7 +233,7 @@ void LSSOnePowerImportance::Init(const Scene &scene) {
 
 	// Averge the light power
 	for (u_int i = 0; i < nLights; ++i) {
-		const Light *l = scene.lights[i];
+		const Light *l = scene.lights[i].get();
 		lightPower[i] = l->GetRenderingHints()->GetImportance() * l->Power(scene);
 	}
 
@@ -252,7 +252,7 @@ const Light *LSSAllPowerImportance::SampleLight(const Scene &scene, u_int index,
 	// and importance
 	if (index >= scene.lights.size())
 		return NULL;
-	const Light *light =  scene.lights[lightDistribution->SampleDiscrete((index + *u) / scene.lights.size(), pdf, u)];
+	const Light *light =  scene.lights[lightDistribution->SampleDiscrete((index + *u) / scene.lights.size(), pdf, u)].get();
 	*pdf *= scene.lights.size();
 	return light;
 }
@@ -260,7 +260,7 @@ const Light *LSSAllPowerImportance::SampleLight(const Scene &scene, u_int index,
 float LSSAllPowerImportance::Pdf(const Scene &scene, const Light *light) const
 {
 	for (u_int i = 0; i < scene.lights.size(); ++i) {
-		if (scene.lights[i] == light)
+		if (scene.lights[i].get() == light)
 			return lightDistribution->Pdf(i) * scene.lights.size();
 	}
 	return 0.f;
@@ -302,7 +302,7 @@ void LSSOneLogPowerImportance::Init(const Scene &scene) {
 
 	// Averge the light power
 	for (u_int i = 0; i < nLights; ++i) {
-		const Light *l = scene.lights[i];
+		const Light *l = scene.lights[i].get();
 		lightPower[i] = logf(l->GetRenderingHints()->GetImportance() * l->Power(scene));
 	}
 
@@ -386,7 +386,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 					BSDF *lightBsdf;
 					float lightPdf;
 					for (u_int i = 0; i < scene.lights.size(); ++i) {
-						const Light *light = scene.lights[i];
+						const Light *light = scene.lights[i].get();
 						if (!light->IsEnvironmental())
 							continue;
 						Li = Lt;

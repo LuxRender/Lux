@@ -71,7 +71,7 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 	const u_int nLights = scene.lights.size();
 	const u_int lightNum = min(nLights - 1,
 		Floor2UInt(sample.sampler->GetOneD(sample, scatterSampleOffset, 0) * nLights));
-	Light *light = scene.lights[lightNum];
+	Light *light = scene.lights[lightNum].get();
 
 	// Compute sample patterns for single scattering samples
 	// FIXME - use real samples

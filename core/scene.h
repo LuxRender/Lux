@@ -42,10 +42,10 @@ class  Scene {
 public:
 	// Scene Public Methods
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
-		Sampler *s, vector<boost::shared_ptr<Primitive> >  prims,
+		Sampler *s, vector<boost::shared_ptr<Primitive> >  &prims,
 		boost::shared_ptr<Primitive> &accel,
-		const vector<Light *> &lts, const vector<string> &lg,
-		Region *vr);
+		vector<boost::shared_ptr<Light> > &lts,
+		const vector<string> &lg, Region *vr);
 	Scene(Camera *c);
 	~Scene();
 	bool Intersect(const Ray &ray, Intersection *isect) const {
@@ -141,7 +141,7 @@ public:
 
 	// Scene Data
 	boost::shared_ptr<Primitive> aggregate;
-	vector<Light *> lights;
+	vector<boost::shared_ptr<Light> > lights;
 	vector<string> lightGroups;
 	SceneCamera camera;
 	Region *volumeRegion;

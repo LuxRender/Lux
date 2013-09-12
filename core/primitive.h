@@ -251,7 +251,8 @@ class AreaLightPrimitive : public Primitive {
 public:
 	// AreaLightPrimitive Public Methods
 	AreaLightPrimitive(boost::shared_ptr<Primitive> &aPrim,
-		AreaLight* aArealight) : prim(aPrim), areaLight(aArealight) { }
+		boost::shared_ptr<AreaLight> &aArealight) :
+		prim(aPrim), areaLight(aArealight) { }
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
@@ -290,7 +291,9 @@ public:
 		return prim;
 	}
 
-	AreaLight *GetAreaLight() const { return areaLight; }
+	const boost::shared_ptr<AreaLight> &GetAreaLight() const {
+		return areaLight;
+	}
 
 	virtual void Tessellate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
@@ -314,7 +317,7 @@ public:
 
 	virtual void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
 		prim->GetIntersection(rayHit, index, in);
-		in->arealight = areaLight; // set the intersected arealight
+		in->arealight = areaLight.get(); // set the intersected arealight
 	}
 
 	virtual Transform GetLocalToWorld(float time) const {
@@ -324,7 +327,7 @@ public:
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
-	AreaLight *areaLight;
+	boost::shared_ptr<AreaLight> areaLight;
 };
 
 /**

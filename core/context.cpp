@@ -592,92 +592,92 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 		sunparams.EraseFloat("dconst");
 		sunparams.EraseFloat("econst");
 
-		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
-		if (lt_sun == NULL) {
+		boost::shared_ptr<Light> lt_sun(MakeLight("sun", curTransform.StaticTransform(), sunparams));
+		if (!lt_sun) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
-			graphicsState->currentLightPtr0 = NULL;
+			graphicsState->currentLightPtr0.reset();
 		} else {
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
 			if (renderOptions->currentLightInstance)
 				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
 			else
 				renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
-			lt_sun->group = lg;
-			lt_sun->SetVolume(graphicsState->exterior);
 		}
 
 		// Stop the sky complaining about unused sun params
 		ParamSet skyparams(params);
 		skyparams.EraseFloat("relsize");
 
-		Light *lt_sky = MakeLight("sky", curTransform.StaticTransform(), skyparams);
-		if (lt_sky == NULL) {
+		boost::shared_ptr<Light> lt_sky(MakeLight("sky", curTransform.StaticTransform(), skyparams));
+		if (!lt_sky) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
-			graphicsState->currentLightPtr1 = NULL;
+			graphicsState->currentLightPtr1.reset();
 		} else {
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
 			if (renderOptions->currentLightInstance)
 				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
 			else
 				renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
-			lt_sky->group = lg;
-			lt_sky->SetVolume(graphicsState->exterior);
 		}
 	} else if (n == "sunsky2") {
 		//SunSky2 light - create both sun & sky2 lightsources
 
 		ParamSet sunparams(params);
 
-		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
-		if (lt_sun == NULL) {
+		boost::shared_ptr<Light> lt_sun(MakeLight("sun", curTransform.StaticTransform(), sunparams));
+		if (!lt_sun) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
-			graphicsState->currentLightPtr0 = NULL;
+			graphicsState->currentLightPtr0.reset();
 		} else {
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
 			if (renderOptions->currentLightInstance)
 				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
 			else
 				renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
-			lt_sun->group = lg;
-			lt_sun->SetVolume(graphicsState->exterior);
 		}
 
 		// Stop the sky complaining about unused sun params
 		ParamSet skyparams(params);
 		skyparams.EraseFloat("relsize");
 
-		Light *lt_sky = MakeLight("sky2", curTransform.StaticTransform(), skyparams);
-		if (lt_sky == NULL) {
+		boost::shared_ptr<Light> lt_sky(MakeLight("sky2", curTransform.StaticTransform(), skyparams));
+		if (!lt_sky) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky2 unknown.";
-			graphicsState->currentLightPtr1 = NULL;
+			graphicsState->currentLightPtr1.reset();
 		} else {
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
 			if (renderOptions->currentLightInstance)
 				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
 			else
 				renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
-			lt_sky->group = lg;
-			lt_sky->SetVolume(graphicsState->exterior);
 		}
 	} else {
 		// other lightsource type
-		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
-		if (lt == NULL) {
+		boost::shared_ptr<Light> lt(MakeLight(n, curTransform.StaticTransform(), params));
+		if (!lt) {
 			LOG(LUX_ERROR,LUX_SYNTAX) << "luxLightSource: light type '" << n << "' unknown";
 		} else {
+			lt->group = lg;
+			lt->SetVolume(graphicsState->exterior);
 			if (renderOptions->currentLightInstance)
 				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt));
 			else
 				renderOptions->lights.push_back(lt);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt;
-			graphicsState->currentLightPtr1 = NULL;
-			lt->group = lg;
-			lt->SetVolume(graphicsState->exterior);
+			graphicsState->currentLightPtr1.reset();
 		}
 	}
 }
@@ -744,9 +744,9 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	if (renderOptions->currentInstanceRefined) {
 		if (graphicsState->areaLight != "") {
 			u_int lg = GetLightGroup();
-			AreaLight *area = MakeAreaLight(graphicsState->areaLight,
+			boost::shared_ptr<AreaLight> area(MakeAreaLight(graphicsState->areaLight,
 				curTransform.StaticTransform(),
-				graphicsState->areaLightParams, sh);
+				graphicsState->areaLightParams, sh));
 			if (area) {
 				area->group = lg;
 				area->SetVolume(graphicsState->exterior); //unused
@@ -778,9 +778,9 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		}
 	} else if (graphicsState->areaLight != "") {
 		u_int lg = GetLightGroup();
-		AreaLight *area = MakeAreaLight(graphicsState->areaLight,
+		boost::shared_ptr<AreaLight> area(MakeAreaLight(graphicsState->areaLight,
 			curTransform.StaticTransform(),
-			graphicsState->areaLightParams, sh);
+			graphicsState->areaLightParams, sh));
 		if (area) {
 			area->group = lg;
 			area->SetVolume(graphicsState->exterior); //unused
@@ -896,11 +896,11 @@ void Context::ObjectInstance(const string &n) {
 		if (renderOptions->areaLightInstances[n][i].size() == 0)
 			continue;
 		boost::shared_ptr<AreaLight> li(renderOptions->areaLightInstances[n][i][0]->GetAreaLight());
-		AreaLight *l;
+		boost::shared_ptr<AreaLight> l;
 		if (curTransform.IsStatic())
-			l = new InstanceAreaLight(curTransform.StaticTransform(), li);
+			l.reset(new InstanceAreaLight(curTransform.StaticTransform(), li));
 		else
-			l = new MotionAreaLight(curTransform.GetMotionSystem(), li);
+			l.reset(new MotionAreaLight(curTransform.GetMotionSystem(), li));
 		// Add the instanced light
 		renderOptions->lights.push_back(l);
 		// Add the instanced primitives
@@ -974,13 +974,13 @@ void Context::ObjectInstance(const string &n) {
 	}
 	vector<boost::shared_ptr<Light> > &li = renderOptions->lightInstances[n];
 	for (u_int i = 0; i < li.size(); ++i) {
-		Light *l;
+		boost::shared_ptr<Light> l;
 		if (curTransform.IsStatic())
-			l = new InstanceLight(curTransform.StaticTransform(),
-				li[i]);
+			l.reset(new InstanceLight(curTransform.StaticTransform(),
+				li[i]));
 		else
-			l = new MotionLight(curTransform.GetMotionSystem(),
-				li[i]);
+			l.reset(new MotionLight(curTransform.GetMotionSystem(),
+				li[i]));
 		if (renderOptions->currentLightInstance)
 			renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(l));
 		else

@@ -306,7 +306,7 @@ int float_buffer_getbuffer(PyObject *exporter, Py_buffer *view, int flags) {
     view->itemsize = sizeof(float);
     view->format = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
-        view->format = "f";
+        view->format = (char *)"f";
     view->ndim = 1;
     view->shape = NULL;
     if ((flags & PyBUF_ND) == PyBUF_ND)

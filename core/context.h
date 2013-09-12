@@ -272,7 +272,7 @@ private:
 		string rendererName;
 		ParamSet rendererParams;
 		MotionTransform worldToCamera;
-		mutable vector<Light *> lights;
+		mutable vector<boost::shared_ptr<Light> > lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<Region *> volumeRegions;
 		// Unrefined primitives
@@ -323,8 +323,8 @@ private:
 		// Dade - some light source like skysun is composed by 2 lights. So
 		// we can have 2 current light sources (i.e. Portal have to be applied
 		// to both sources, see bug #297)
- 		Light* currentLightPtr0;
- 		Light* currentLightPtr1;
+		boost::shared_ptr<Light> currentLightPtr0;
+		boost::shared_ptr<Light> currentLightPtr1;
 		bool reverseOrientation;
 	};
 

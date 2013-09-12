@@ -545,7 +545,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		float lightPdf;
 		float uln = RadicalInverse(nshot, 19);
 		u_int lightNum = lightCDF.SampleDiscrete(uln, &lightPdf);
-		const Light *light = scene.lights[lightNum];
+		const Light *light = scene.lights[lightNum].get();
 
 		// Generate _photonRay_ from light source and initialize _alpha_
 		BSDF *bsdf;

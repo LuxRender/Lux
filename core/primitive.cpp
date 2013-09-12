@@ -111,7 +111,7 @@ bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const
 {
 	if (!prim->Intersect(r, in))
 		return false;
-	in->arealight = areaLight; // set the intersected arealight
+	in->arealight = areaLight.get(); // set the intersected arealight
 	return true;
 }
 
