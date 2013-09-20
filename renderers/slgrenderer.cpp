@@ -1139,6 +1139,13 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 		mat = instance->GetMaterial();
 	} else
 	//--------------------------------------------------------------------------
+	// Check if it is an InstancePrimitive
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const MotionPrimitive *>(prim)) {
+		const MotionPrimitive *motionPrim = dynamic_cast<const MotionPrimitive *>(prim);
+		mat = motionPrim->GetMaterial();
+	} else
+	//--------------------------------------------------------------------------
 	// Check if it is an AreaLight
 	//--------------------------------------------------------------------------
 	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
@@ -1431,7 +1438,7 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 		const Primitive *prim = scene->primitives[i].get();
 		//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 
-		// Instances require special care
+		// InstancePrimitive and MotionPrimitive require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 			const string matName = GetSLGMaterialName(slgScene, instance, colorSpace);
@@ -1460,6 +1467,48 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 				for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 					// Define an instance of the mesh
 					const string objName = "InstanceObject-" + ToString(prim) + "-" +
+						ToString(*mesh);
+					const string meshName = "Mesh-" + ToString(*mesh);
+
+					std::ostringstream ss;
+					const string prefix = "scene.objects." + objName;
+					ss << prefix << ".material = " << matName << "\n";
+					ss << prefix << ".transformation = " << transString << "\n";
+					ss << prefix << ".useplynormals = 1\n";
+
+					const std::string createObjProp = ss.str();
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
+					slgScene->AddObject(objName, meshName, createObjProp);
+				}
+			}
+		} else if (dynamic_cast<const MotionPrimitive *>(prim)) {
+			const MotionPrimitive *motionPrim = dynamic_cast<const MotionPrimitive *>(prim);
+			const string matName = GetSLGMaterialName(slgScene, motionPrim, colorSpace);
+
+			const vector<boost::shared_ptr<Primitive> > &instanceSources = motionPrim->GetInstanceSources();
+
+			for (u_int i = 0; i < instanceSources.size(); ++i) {
+				const Primitive *instancedSource = instanceSources[i].get();
+
+				vector<luxrays::ExtTriangleMesh *> meshList;
+				// Check if I have already defined one of the original primitive
+				if (primMeshLists.count(instancedSource) < 1) {
+					// I have to define the instanced primitive
+					meshList = DefinePrimitive(slgScene, instancedSource);
+					primMeshLists[instancedSource] = meshList;
+				} else
+					meshList = primMeshLists[instancedSource];
+
+				if (meshList.size() == 0)
+					continue;
+
+				// Build transformation string
+				const string transString = ToString(motionPrim->GetTransform(0.f).m);
+	
+				// Add the object
+				for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
+					// Define an instance of the mesh
+					const string objName = "MotionInstanceObject-" + ToString(prim) + "-" +
 						ToString(*mesh);
 					const string meshName = "Mesh-" + ToString(*mesh);
 

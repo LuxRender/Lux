@@ -909,9 +909,9 @@ void Context::ObjectInstance(const string &n) {
 		for (u_int j = 0; j < renderOptions->areaLightInstances[n][i].size(); ++j) {
 			boost::shared_ptr<Primitive> pi(renderOptions->areaLightInstances[n][i][j]->GetPrimitive());
 			AreaLightPrimitive *ap;
+			vector<boost::shared_ptr<Primitive> > source;
+			source.push_back(pi);
 			if (curTransform.IsStatic()) {
-				vector<boost::shared_ptr<Primitive> > source;
-				source.push_back(pi);
 				boost::shared_ptr<Primitive> p(new InstancePrimitive(source,
 					pi, curTransform.StaticTransform(),
 					graphicsState->material,
@@ -919,8 +919,8 @@ void Context::ObjectInstance(const string &n) {
 					graphicsState->interior));
 				ap = new AreaLightPrimitive(p, l);
 			} else {
-				boost::shared_ptr<Primitive> p(new MotionPrimitive(pi,
-					curTransform.GetMotionSystem(),
+				boost::shared_ptr<Primitive> p(new MotionPrimitive(source,
+					pi, curTransform.GetMotionSystem(),
 					graphicsState->material,
 					graphicsState->exterior,
 					graphicsState->interior));
@@ -960,7 +960,7 @@ void Context::ObjectInstance(const string &n) {
 				graphicsState->exterior,
 				graphicsState->interior));
 		} else {
-			o = boost::shared_ptr<Primitive>(new MotionPrimitive(in[0],
+			o = boost::shared_ptr<Primitive>(new MotionPrimitive(inSource, in[0],
 				curTransform.GetMotionSystem(),
 				graphicsState->material,
 				graphicsState->exterior,
@@ -1021,6 +1021,7 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
+	vector<boost::shared_ptr<Primitive> > &inSource = renderOptions->instancesSource[n];
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
 	if (renderOptions->currentInstanceRefined == &in) {
 		LOG(LUX_ERROR,LUX_NESTING) << "MotionInstance '" << n << "' self reference";
@@ -1059,7 +1060,7 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 
 	MotionSystem ms(times, transforms);
 
-	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], ms, graphicsState->material,
+	boost::shared_ptr<Primitive> o(new MotionPrimitive(inSource, in[0], ms, graphicsState->material,
 		graphicsState->exterior, graphicsState->interior));
 	renderOptions->primitives.push_back(o);
 }

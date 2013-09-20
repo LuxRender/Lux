@@ -457,11 +457,12 @@ public:
 	 * @param i   The primitive to instance.
 	 * @param i2w The instance to world motionsystem.
 	 */
-	MotionPrimitive(boost::shared_ptr<Primitive> &i,
+	MotionPrimitive(const vector<boost::shared_ptr<Primitive> > &instSources,
+		boost::shared_ptr<Primitive> &i,
 		const MotionSystem &i2w, boost::shared_ptr<Material> &mat,
 		boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in) :
-		instance(i), motionPath(i2w), material(mat),
-		exterior(ex), interior(in) { }
+		instanceSources(instSources), instance(i), motionPath(i2w),
+		material(mat), exterior(ex), interior(in) { }
 	virtual ~MotionPrimitive() { }
 
 	virtual BBox WorldBound() const;
@@ -523,8 +524,14 @@ public:
 	virtual Transform GetLocalToWorld(float time) const {
 		return motionPath.Sample(time) * instance->GetLocalToWorld(time);
 	}
+
+	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
+	Material *GetMaterial() const { return material.get(); }
+	Transform GetTransform(const float t) const { return motionPath.Sample(t); }
+
 private:
 	// MotionPrimitive Private Data
+	vector<boost::shared_ptr<Primitive> > instanceSources;
 	boost::shared_ptr<Primitive> instance;
 	MotionSystem motionPath;
 	boost::shared_ptr<Material> material;
