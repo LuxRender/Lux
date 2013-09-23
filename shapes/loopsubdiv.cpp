@@ -716,6 +716,10 @@ void LoopSubdiv::weightBoundary(set<Point, PointCompare> &unique, SDVertex *dest
 	// Go to the last face in the list
 	while ((f2 = face->nextFace(vert->P)) != NULL && f2 != vert->startFace)
 		face = f2;
+	if (f2 == vert->startFace) {
+		weightOneRing(unique, destVert, vert, beta);
+		return;
+	}
 	f2 = face;
 	// Add the last vertex (on the boundary)
 	*VR++ = face->nextVert(vert->P);
