@@ -1839,19 +1839,21 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 	// access to the film
 	ScopedPoolLock poolLock(film->contribPool);
 
-	if (slgFilm->HasPerPixelNormalizedBuffer()) {
+	if (slgFilm->HasChannel(slg::Film::RADIANCE_PER_PIXEL_NORMALIZED)) {
 		// Copy the information from PER_PIXEL_NORMALIZED buffer
 
 		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
-					slg::PER_PIXEL_NORMALIZED, pixelX, pixelY);
+				const float *spNew = slgFilm->channel_RADIANCE_PER_PIXEL_NORMALIZEDs[0]->GetPixel(pixelX, pixelY);
 
-				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
-				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
+				const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
+				const float &newWeight = spNew[3];
+						
+				luxrays::Spectrum deltaRadiance = newRadiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
+				const float deltaWeight = newWeight - (*previousEyeWeight)(pixelX, pixelY);
 
-				const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
-					slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha : 1.f;
+				const float alphaNew = slgFilm->HasChannel(slg::Film::ALPHA) ?
+					*(slgFilm->channel_ALPHA->GetPixel(pixelX, pixelY)) : 1.f;
 				// I have to clamp alpha values because then can be outside the [0.0, 1.0]
 				// range (i.e. some pixel filter can have negative weights and lead
 				// to negative values)
@@ -1869,8 +1871,8 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 						Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
 						film->AddSampleNoFiltering(&contrib);
 
-						(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
-						(*previousEyeWeight)(pixelX, pixelY) = spNew->weight;
+						(*previousEyeBufferRadiance)(pixelX, pixelY) = newRadiance;
+						(*previousEyeWeight)(pixelX, pixelY) = newWeight;
 						(*previousAlphaBuffer)(pixelX, pixelY) = alphaNew;
 					}
 				}
@@ -1878,19 +1880,21 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 		}
 	}
 
-	if (slgFilm->HasPerScreenNormalizedBuffer()) {
+	if (slgFilm->HasChannel(slg::Film::RADIANCE_PER_SCREEN_NORMALIZED)) {
 		// Copy the information from PER_SCREEN_NORMALIZED buffer
 
 		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
-					slg::PER_SCREEN_NORMALIZED, pixelX, pixelY);
+				const float *spNew = slgFilm->channel_RADIANCE_PER_SCREEN_NORMALIZEDs[0]->GetPixel(pixelX, pixelY);
 
-				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
-				const float deltaWeight = spNew->weight - (*previousLightWeight)(pixelX, pixelY);
+				const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
+				const float &newWeight = spNew[3];
 
-				(*previousLightBufferRadiance)(pixelX, pixelY) = spNew->radiance;
-				(*previousLightWeight)(pixelX, pixelY) = spNew->weight;
+				luxrays::Spectrum deltaRadiance = newRadiance - (*previousLightBufferRadiance)(pixelX, pixelY);
+				const float deltaWeight = newWeight - (*previousLightWeight)(pixelX, pixelY);
+
+				(*previousLightBufferRadiance)(pixelX, pixelY) = newRadiance;
+				(*previousLightWeight)(pixelX, pixelY) = newWeight;
 
 				if (deltaWeight > 0.f) {
 					// This is required to cancel the "* weight" inside AddSampleNoFiltering()
@@ -2071,7 +2075,7 @@ void SLGRenderer::Render(Scene *s) {
 			const u_int slgFilmWidth = session->film->GetWidth();
 			const u_int slgFilmHeight = session->film->GetHeight();
 
-			if (session->film->HasPerPixelNormalizedBuffer()) {
+			if (session->film->HasChannel(slg::Film::RADIANCE_PER_PIXEL_NORMALIZED)) {
 				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
@@ -2084,7 +2088,7 @@ void SLGRenderer::Render(Scene *s) {
 				}
 			}
 
-			if (session->film->HasPerScreenNormalizedBuffer()) {
+			if (session->film->HasChannel(slg::Film::RADIANCE_PER_SCREEN_NORMALIZED)) {
 				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
