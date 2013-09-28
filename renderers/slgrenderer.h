@@ -144,12 +144,7 @@ private:
 	slg::RenderEngineType renderEngineType;
 	Scene *scene;
 	// Used to feed LuxRender film with only the delta information from the previous update
-	BlockedArray<luxrays::Spectrum> *previousEyeBufferRadiance;
-	BlockedArray<float> *previousEyeWeight;
-	BlockedArray<luxrays::Spectrum> *previousLightBufferRadiance;
-	BlockedArray<float> *previousLightWeight;
-	BlockedArray<float> *previousAlphaBuffer;
-	double previousSampleCount;
+	slg::Film *previousFilm;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

@@ -44,6 +44,8 @@ public:
 		havePortalShape(false) {
 		if (LightToWorld.HasScale())
 			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in light-to-world transformation! Some lights might not support it yet.";
+
+		AddIntAttribute(*this, "group", "Light group", &Light::group);
 	}
 	virtual ~Light() { }
 	const Volume *GetVolume() const { return volume.get(); }

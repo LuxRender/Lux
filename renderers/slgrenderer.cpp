@@ -153,11 +153,7 @@ SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
-	previousEyeBufferRadiance = NULL;
-	previousEyeWeight = NULL;
-	previousLightBufferRadiance = NULL;
-	previousLightWeight = NULL;
-	previousAlphaBuffer = NULL;
+	previousFilm = NULL;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "slg");
 
@@ -174,11 +170,7 @@ SLGRenderer::~SLGRenderer() {
 		throw std::runtime_error("Internal error: called SLGRenderer::~SLGRenderer() while not in TERMINATE or INIT state.");
 
 	delete rendererStatistics;
-	delete previousEyeBufferRadiance;
-	delete previousEyeWeight;
-	delete previousLightBufferRadiance;
-	delete previousLightWeight;
-	delete previousAlphaBuffer;
+	delete previousFilm;
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
@@ -690,11 +682,14 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 	return texName;
 }
 
-static string GetSLGCommonMatProps(const string &matName, const string &emissionTexName,
+static string GetSLGCommonMatProps(const string &matName,
+		const string &emissionTexName, const u_int lightID,
 		const string &bumpTex, const string &normalTex) {
 	std::ostringstream ss;
-	if (emissionTexName != "0.0 0.0 0.0")
-		ss << "scene.materials." << matName << ".emission = " << emissionTexName + "\n";
+	if (emissionTexName != "0.0 0.0 0.0") {
+		ss << "scene.materials." << matName << ".emission = " << emissionTexName << "\n";
+		ss << "scene.materials." << matName << ".emission.id = " << lightID << "\n";
+	}
 	if (bumpTex != "")
 		ss << "scene.materials." << matName << ".bumptex = " + bumpTex << "\n";
 	if (normalTex != "")
@@ -704,7 +699,8 @@ static string GetSLGCommonMatProps(const string &matName, const string &emission
 }
 
 static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
-		const Primitive *prim, const string &emissionTexName, ColorSystem &colorSpace) {
+		const Primitive *prim, const string &emissionTexName,
+		const u_int lightID, ColorSystem &colorSpace) {
 	if (!mat)
 		return "mat_default";
 
@@ -742,7 +738,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			const string texName = GetSLGTexName(slgScene, matte->GetTexture());
 
 			const string matProp = "scene.materials." + matName +".type = matte\n"
-				 + GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				 + GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kd = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -761,7 +757,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			const string texName = GetSLGTexName(slgScene, mirror->GetTexture());
 
 			const string matProp = "scene.materials." + matName +".type = mirror\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kr = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -788,7 +784,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 
 			string matProp;
 			matProp = "scene.materials." + matName +".type = " + (architectural ? "archglass" : "glass") + "\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 					"scene.materials." + matName +".kr = " + krTexName + "\n"
 					"scene.materials." + matName +".kt = " + ktTexName + "\n"
 					"scene.materials." + matName +".ioroutside = 1.0\n"
@@ -856,7 +852,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			string matProp;
 			if (architectural) {
 				matProp = "scene.materials." + matName +".type = archglass\n"
-						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+						+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -867,7 +863,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 							ToString(ktRGB.b) + "\n";
 			} else {
 				matProp = "scene.materials." + matName +".type = glass\n"
-						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+						+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -909,7 +905,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 
 			// Emulating Metal with Metal2 material
 			const string matProp = "scene.materials." + matName +".type = metal2\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".n = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
 				"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
 				"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
@@ -932,7 +928,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			const string ktTexName = GetSLGTexName(slgScene, matteTranslucent->GetKtTexture());
 
 			const string matProp = "scene.materials." + matName +".type = mattetranslucent\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kr = " + krTexName + "\n"
 				"scene.materials." + matName +".kt = " + ktTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
@@ -950,7 +946,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		// Check if the material has already been defined
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
 			const string matProp = "scene.materials." + matName +".type = null\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex);
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
@@ -970,10 +966,10 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			Material *mat2 = mix->GetMaterial2();
 
 			const string matProp = "scene.materials." + matName +".type = mix\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".amount = " + GetSLGTexName(slgScene, amount) + "\n"
-				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0", colorSpace) + "\n"
-				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0", colorSpace) + "\n"
+				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0", 0, colorSpace) + "\n"
+				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0", 0, colorSpace) + "\n"
 				;
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -999,7 +995,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			const bool isMultibounce = glossy2->IsMultiBounce();
 
 			const string matProp = "scene.materials." + matName +".type = glossy2\n"
-				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kd = " + kdTexName + "\n"
 				"scene.materials." + matName +".ks = " + ksTexName + "\n"
 				"scene.materials." + matName +".ka = " + kaTexName + "\n"
@@ -1040,7 +1036,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 K color: " << Krgb;
 
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 					"scene.materials." + matName +".n = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
 					"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
@@ -1061,7 +1057,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				slgScene->DefineTextures(texProp);
 
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 					"scene.materials." + matName +".n = fresnelapproxn-" + matName + "\n"
 					"scene.materials." + matName +".k = fresnelapproxk-" + matName + "\n"
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
@@ -1094,7 +1090,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 
 			string matProp;
 			matProp = "scene.materials." + matName +".type = roughglass\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 					"scene.materials." + matName +".kr = " + krTexName + "\n"
 					"scene.materials." + matName +".kt = " + ktTexName + "\n"
 					"scene.materials." + matName +".ioroutside = 1.0\n"
@@ -1123,6 +1119,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 	
 	Material *mat = NULL;
 	string emissionTexName = "0.0 0.0 0.0";
+	u_int lightID = 0;
 
 	//--------------------------------------------------------------------------
 	// Check if it is a Shape
@@ -1158,6 +1155,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 		const float power = (*al)["power"].FloatValue();
 		const float efficacy = (*al)["efficacy"].FloatValue();
 		const float area = (*al)["area"].FloatValue();
+		lightID = (*al)["group"].IntValue();
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
@@ -1234,7 +1232,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 		return "mat_default";
 	}
 
-	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName, colorSpace);
+	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName, lightID, colorSpace);
 }
 
 void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
@@ -1257,6 +1255,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 		// for compatibility with past scene
 		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
 			INV_PI;
+		const u_int lightId = (*sunLight)["group"].IntValue();
 
 		const Transform &light2World = sunLight->GetTransform();
 		const string light2WorldStr = ToString(light2World.m);
@@ -1271,7 +1270,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				ToString(gain) + " " +
 				ToString(gain) + " " +
 				ToString(gain) + "\n" +
-			"scene.sunlight.transformation = " + light2WorldStr + "\n";
+			"scene.sunlight.transformation = " + light2WorldStr + "\n"
+			"scene.sunlight.id = " + ToString(lightId) + "\n";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProp << "]";
 		slgScene->AddSunLight(createSunLightProp);
 	}
@@ -1303,6 +1303,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
 			const float gain = (*sky2Light)["gain"].FloatValue() * gainAdjustFactor;
+			const u_int lightId = (*sky2Light)["group"].IntValue();
 
 			const Transform &light2World = sky2Light->GetTransform();
 			const string light2WorldStr = ToString(light2World.m);
@@ -1316,7 +1317,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 					ToString(gain) + " " +
 					ToString(gain) + " " +
 					ToString(gain) + "\n" +
-				"scene.skylight.transformation = " + light2WorldStr + "\n";
+				"scene.skylight.transformation = " + light2WorldStr + "\n"
+				"scene.skylight.id = " + ToString(lightId) + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
 			slgScene->AddSkyLight(createSkyLightProp);
 		} else {
@@ -1327,6 +1329,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
 			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
+			const u_int lightId = (*skyLight)["group"].IntValue();
 
 			const Transform &light2World = skyLight->GetTransform();
 			const string light2WorldStr = ToString(light2World.m);
@@ -1340,7 +1343,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 					ToString(gain) + " " +
 					ToString(gain) + " " +
 					ToString(gain) + "\n" +
-				"scene.skylight.transformation = " + light2WorldStr + "\n";
+				"scene.skylight.transformation = " + light2WorldStr + "\n"
+				"scene.skylight.id = " + ToString(lightId) + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
 			slgScene->AddSkyLight(createSkyLightProp);
 		}
@@ -1366,6 +1370,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				const float colorG = (*infiniteAreaLight)["color.g"].FloatValue();
 				const float colorB = (*infiniteAreaLight)["color.b"].FloatValue();
 				const float gain = (*infiniteAreaLight)["gain"].FloatValue();
+				const u_int lightId = (*infiniteAreaLight)["group"].IntValue();
 
 				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
 
@@ -1382,7 +1387,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
 						ToString(gain * colorB) + "\n" +
-					"scene.infinitelight.transformation = " + light2WorldStr + "\n";
+					"scene.infinitelight.transformation = " + light2WorldStr + "\n"
+					"scene.infinitelight.id = " + ToString(lightId) + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
 				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			} else {
@@ -1390,6 +1396,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
 				const float colorB = (*infiniteAreaLightIS)["color.b"].FloatValue();
 				const float gain = (*infiniteAreaLightIS)["gain"].FloatValue();
+				const u_int lightId = (*infiniteAreaLightIS)["group"].IntValue();
 
 				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
 
@@ -1406,7 +1413,8 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
 						ToString(gain * colorB) + "\n" +
-					"scene.infinitelight.transformation = " + light2WorldStr + "\n";
+					"scene.infinitelight.transformation = " + light2WorldStr + "\n"
+					"scene.infinitelight.id = " + ToString(lightId) + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
 				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			}
@@ -1839,41 +1847,47 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 	// access to the film
 	ScopedPoolLock poolLock(film->contribPool);
 
+	// Lock SLG film
+	boost::unique_lock<boost::mutex> lock(session->filmMutex);
+
 	if (slgFilm->HasChannel(slg::Film::RADIANCE_PER_PIXEL_NORMALIZED)) {
 		// Copy the information from PER_PIXEL_NORMALIZED buffer
 
-		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
-			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const float *spNew = slgFilm->channel_RADIANCE_PER_PIXEL_NORMALIZEDs[0]->GetPixel(pixelX, pixelY);
+		for (u_int i = 0; i < slgFilm->channel_RADIANCE_PER_PIXEL_NORMALIZEDs.size(); ++i) {
+			for (u_int pixelY = 0; pixelY < height; ++pixelY) {
+				for (u_int pixelX = 0; pixelX < width; ++pixelX) {
+					const float *spNew = slgFilm->channel_RADIANCE_PER_PIXEL_NORMALIZEDs[i]->GetPixel(pixelX, pixelY);
+					const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
+					const float &newWeight = spNew[3];
 
-				const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
-				const float &newWeight = spNew[3];
-						
-				luxrays::Spectrum deltaRadiance = newRadiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
-				const float deltaWeight = newWeight - (*previousEyeWeight)(pixelX, pixelY);
+					const float *spOld = previousFilm->channel_RADIANCE_PER_PIXEL_NORMALIZEDs[i]->GetPixel(pixelX, pixelY);
+					const luxrays::Spectrum oldRadiance(spOld[0], spOld[1], spOld[2]);
+					const float &oldWeight = spOld[3];
 
-				const float alphaNew = slgFilm->HasChannel(slg::Film::ALPHA) ?
-					*(slgFilm->channel_ALPHA->GetPixel(pixelX, pixelY)) : 1.f;
-				// I have to clamp alpha values because then can be outside the [0.0, 1.0]
-				// range (i.e. some pixel filter can have negative weights and lead
-				// to negative values)
-				float deltaAlpha = std::max(alphaNew - (*previousAlphaBuffer)(pixelX, pixelY), 0.f);
+					luxrays::Spectrum deltaRadiance = newRadiance - oldRadiance;
+					const float deltaWeight = newWeight - oldWeight;
 
-				// Delay the update if deltaWeight is < 0.0
-				if (deltaWeight > 0.f) {
-					deltaRadiance /= deltaWeight;
-					deltaAlpha /= deltaWeight;
+					// Delay the update if deltaWeight is < 0.0
+					if (deltaWeight > 0.f) {
+						deltaRadiance /= deltaWeight;
 
-					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+						const float newAlpha = slgFilm->HasChannel(slg::Film::ALPHA) ?
+							*(slgFilm->channel_ALPHA->GetPixel(pixelX, pixelY)) : 1.f;
+						// I have to clamp alpha values because then can be outside the [0.0, 1.0]
+						// range (i.e. some pixel filter can have negative weights and lead
+						// to negative values)
+						const float deltaAlpha = std::max(newAlpha - *(previousFilm->channel_ALPHA->GetPixel(pixelX, pixelY)), 0.f) / deltaWeight;
 
-					if ((deltaAlpha >= 0.f) && (xyz.Y() >= 0.f)) {
-						// Flip the image upside down
-						Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
-						film->AddSampleNoFiltering(&contrib);
+						const float newDepth = slgFilm->HasChannel(slg::Film::DEPTH) ?
+							*(slgFilm->channel_DEPTH->GetPixel(pixelX, pixelY)) : 0.f;
 
-						(*previousEyeBufferRadiance)(pixelX, pixelY) = newRadiance;
-						(*previousEyeWeight)(pixelX, pixelY) = newWeight;
-						(*previousAlphaBuffer)(pixelX, pixelY) = alphaNew;
+						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+
+						if (xyz.Y() >= 0.f) {
+							// Flip the image upside down
+							Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, newDepth, deltaWeight, eyeBufferId, i);
+							film->AddSampleNoFiltering(&contrib);
+						}
 					}
 				}
 			}
@@ -1883,35 +1897,53 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 	if (slgFilm->HasChannel(slg::Film::RADIANCE_PER_SCREEN_NORMALIZED)) {
 		// Copy the information from PER_SCREEN_NORMALIZED buffer
 
-		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
-			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const float *spNew = slgFilm->channel_RADIANCE_PER_SCREEN_NORMALIZEDs[0]->GetPixel(pixelX, pixelY);
+		for (u_int i = 0; i < slgFilm->channel_RADIANCE_PER_SCREEN_NORMALIZEDs.size(); ++i) {
+			for (u_int pixelY = 0; pixelY < height; ++pixelY) {
+				for (u_int pixelX = 0; pixelX < width; ++pixelX) {
+					const float *spNew = slgFilm->channel_RADIANCE_PER_SCREEN_NORMALIZEDs[i]->GetPixel(pixelX, pixelY);
+					const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
+					const float &newWeight = spNew[3];
 
-				const luxrays::Spectrum newRadiance(spNew[0], spNew[1], spNew[2]);
-				const float &newWeight = spNew[3];
+					const float *spOld = previousFilm->channel_RADIANCE_PER_SCREEN_NORMALIZEDs[i]->GetPixel(pixelX, pixelY);
+					const luxrays::Spectrum oldRadiance(spOld[0], spOld[1], spOld[2]);
+					const float &oldWeight = spOld[3];
 
-				luxrays::Spectrum deltaRadiance = newRadiance - (*previousLightBufferRadiance)(pixelX, pixelY);
-				const float deltaWeight = newWeight - (*previousLightWeight)(pixelX, pixelY);
+					luxrays::Spectrum deltaRadiance = newRadiance - oldRadiance;
+					const float deltaWeight = newWeight - oldWeight;
 
-				(*previousLightBufferRadiance)(pixelX, pixelY) = newRadiance;
-				(*previousLightWeight)(pixelX, pixelY) = newWeight;
+					// Delay the update if deltaWeight is < 0.0
+					if (deltaWeight > 0.f) {
+						// This is required to cancel the "* weight" inside AddSampleNoFiltering()
+						deltaRadiance /= deltaWeight;
 
-				if (deltaWeight > 0.f) {
-					// This is required to cancel the "* weight" inside AddSampleNoFiltering()
-					deltaRadiance /= deltaWeight;
+						const float newAlpha = slgFilm->HasChannel(slg::Film::ALPHA) ?
+							*(slgFilm->channel_ALPHA->GetPixel(pixelX, pixelY)) : 1.f;
+						// I have to clamp alpha values because then can be outside the [0.0, 1.0]
+						// range (i.e. some pixel filter can have negative weights and lead
+						// to negative values)
+						const float deltaAlpha = std::max(newAlpha - *(previousFilm->channel_ALPHA->GetPixel(pixelX, pixelY)), 0.f) / deltaWeight;
 
-					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
-					// Flip the image upside down
-					Contribution contrib(pixelX, height - 1 - pixelY, xyz, 1.f, 0.f, deltaWeight, lightBufferId);
-					film->AddSampleNoFiltering(&contrib);
+						const float newDepth = slgFilm->HasChannel(slg::Film::DEPTH) ?
+							*(slgFilm->channel_DEPTH->GetPixel(pixelX, pixelY)) : 0.f;
+
+						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+
+						if (xyz.Y() >= 0.f) {
+							// Flip the image upside down
+							Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, newDepth, deltaWeight, lightBufferId, i);
+							film->AddSampleNoFiltering(&contrib);
+						}
+					}
 				}
 			}
 		}
 	}
 
-	const float newSampleCount = session->renderEngine->GetTotalSampleCount(); 
-	film->AddSampleCount(newSampleCount - previousSampleCount);
-	previousSampleCount = newSampleCount;
+	film->AddSampleCount(slgFilm->GetTotalSampleCount() - previousFilm->GetTotalSampleCount());
+
+	// Copy the SLG film
+	previousFilm->Reset();
+	previousFilm->AddFilm(*slgFilm);
 }
 
 void SLGRenderer::Render(Scene *s) {
@@ -2075,30 +2107,24 @@ void SLGRenderer::Render(Scene *s) {
 			const u_int slgFilmWidth = session->film->GetWidth();
 			const u_int slgFilmHeight = session->film->GetHeight();
 
-			if (session->film->HasChannel(slg::Film::RADIANCE_PER_PIXEL_NORMALIZED)) {
-				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
-				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
-				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
-
-				for (u_int y = 0; y < slgFilmHeight; ++y) {
-					for (u_int x = 0; x < slgFilmWidth; ++x) {
-						(*previousEyeWeight)(x, y) = 0.f;
-						(*previousAlphaBuffer)(x, y) = 0.f;
-					}
-				}
-			}
-
-			if (session->film->HasChannel(slg::Film::RADIANCE_PER_SCREEN_NORMALIZED)) {
-				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
-				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
-
-				for (u_int y = 0; y < slgFilmHeight; ++y) {
-					for (u_int x = 0; x < slgFilmWidth; ++x)
-						(*previousLightWeight)(x, y) = 0.f;
-				}
-			}
-
-			previousSampleCount = 0.0;
+			previousFilm = new slg::Film(slgFilmWidth, slgFilmHeight);
+			previousFilm->CopyDynamicSettings(*(session->film));
+			// Remove all Film channels not supported by LuxRender
+			previousFilm->RemoveChannel(slg::Film::POSITION);
+			previousFilm->RemoveChannel(slg::Film::GEOMETRY_NORMAL);
+			previousFilm->RemoveChannel(slg::Film::SHADING_NORMAL);
+			previousFilm->RemoveChannel(slg::Film::MATERIAL_ID);
+			previousFilm->RemoveChannel(slg::Film::DIRECT_DIFFUSE);
+			previousFilm->RemoveChannel(slg::Film::DIRECT_GLOSSY);
+			previousFilm->RemoveChannel(slg::Film::EMISSION);
+			previousFilm->RemoveChannel(slg::Film::INDIRECT_DIFFUSE);
+			previousFilm->RemoveChannel(slg::Film::INDIRECT_GLOSSY);
+			previousFilm->RemoveChannel(slg::Film::INDIRECT_SPECULAR);
+			previousFilm->RemoveChannel(slg::Film::MATERIAL_ID_MASK);
+			previousFilm->RemoveChannel(slg::Film::DIRECT_SHADOW_MASK);
+			previousFilm->RemoveChannel(slg::Film::INDIRECT_SHADOW_MASK);
+			previousFilm->RemoveChannel(slg::Film::UV);
+			previousFilm->Init();
 
 			for (;;) {
 				if (state == PAUSE) {
@@ -2189,14 +2215,8 @@ void SLGRenderer::Render(Scene *s) {
 		LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
 	}
 
-	delete previousEyeBufferRadiance;
-	previousEyeBufferRadiance = NULL;
-	delete previousEyeWeight;
-	previousEyeWeight = NULL;
-	delete previousLightBufferRadiance;
-	previousLightBufferRadiance = NULL;
-	delete previousLightWeight;
-	previousLightWeight = NULL;
+	delete previousFilm;
+	previousFilm = NULL;
 
 	SLG_LOG("Done.");
 

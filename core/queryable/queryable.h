@@ -271,6 +271,12 @@ public:
 	}
 	template<class T> friend void AddIntAttribute(T &object,
 		const std::string &name, const std::string &description,
+		unsigned int T::*i, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableIntAttribute>(object, name, description, i, access);
+	}
+	template<class T> friend void AddIntAttribute(T &object,
+		const std::string &name, const std::string &description,
 		int defaultValue, int T::*i,
 		AttributeAccess access = ReadOnlyAccess) {
 
