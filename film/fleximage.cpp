@@ -60,7 +60,9 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename, const bool disableNoiseMapUpd, const string &pupilmap, const string &lashesmap) :
+	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename, const bool disableNoiseMapUpd, 
+	bool bloomEnabled, float bloomRadius, float bloomWeight, bool vignettingEnabled, float vignettingScale, bool abberationEnabled, float abberationAmount, 
+	bool glareEnabled, float glareAmount, float glareRadius, int glareBlades, float glareThreshold, const string &pupilmap, const string &lashesmap) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec, samplingmapfilename), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
@@ -167,17 +169,17 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	m_BloomUpdateLayer = false;
 	m_BloomDeleteLayer = false;
 	m_HaveBloomImage = false;
-	m_BloomRadius = d_BloomRadius = 0.07f;
+	m_BloomRadius = d_BloomRadius = bloomRadius;
 	AddFloatAttribute(*this, "BloomRadius", "Bloom radius", &FlexImageFilm::m_BloomRadius, Queryable::ReadWriteAccess);
-	m_BloomWeight = d_BloomWeight = 0.25f;
+	m_BloomWeight = d_BloomWeight = bloomWeight;
 	AddFloatAttribute(*this, "BloomWeight", "Bloom weight", &FlexImageFilm::m_BloomWeight, Queryable::ReadWriteAccess);
 
-	m_VignettingEnabled = d_VignettingEnabled = false;
-	m_VignettingScale = d_VignettingScale = 0.4f;
+	m_VignettingEnabled = d_VignettingEnabled = vignettingEnabled;
+	m_VignettingScale = d_VignettingScale = vignettingScale;
 	AddFloatAttribute(*this, "VignettingScale", "Vignetting scale", &FlexImageFilm::m_VignettingScale, Queryable::ReadWriteAccess);
 
-	m_AberrationEnabled = d_AberrationEnabled = false;
-	m_AberrationAmount = d_AberrationAmount = 0.005f;
+	m_AberrationEnabled = d_AberrationEnabled = abberationEnabled;
+	m_AberrationAmount = d_AberrationAmount = abberationAmount;
 	AddFloatAttribute(*this, "AberrationAmount", "Chromatic abberation amount", &FlexImageFilm::m_AberrationAmount, Queryable::ReadWriteAccess);
 
 	m_GlareUpdateLayer = false;
@@ -185,13 +187,13 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	m_HaveGlareImage = false;
 	m_glareImage = NULL;
 	m_bloomImage = NULL;
-	m_GlareAmount = d_GlareAmount = 0.03f;
+	m_GlareAmount = d_GlareAmount = glareAmount;
 	AddFloatAttribute(*this, "GlareAmount", "Glare amount", &FlexImageFilm::m_GlareAmount, Queryable::ReadWriteAccess);
-	m_GlareRadius = d_GlareRadius = 0.03f;
+	m_GlareRadius = d_GlareRadius = glareRadius;
 	AddFloatAttribute(*this, "GlareRadius", "Glare radius", &FlexImageFilm::m_GlareRadius, Queryable::ReadWriteAccess);
-	m_GlareBlades = d_GlareBlades = 3;
+	m_GlareBlades = d_GlareBlades = glareBlades;
 	AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
-	m_GlareThreshold = d_GlareThreshold = .5f;
+	m_GlareThreshold = d_GlareThreshold = glareThreshold;
 	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
 	m_GlareMap = d_GlareMap = false;
 	AddBoolAttribute(*this, "GlareMap", "Use pupil and eye lashes maps for glare", m_GlareMap, &FlexImageFilm::m_GlareMap, Queryable::ReadWriteAccess);
@@ -1088,6 +1090,13 @@ bool FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 	bool result = true;
 	// NOTE - this method is not reentrant! 
 	// write_mutex must be aquired before calling WriteImage2
+
+	if (type & IMAGE_FINAL) {
+		// if bloom and glare are enabled, ensure we update the layers 
+		// since this is last time before saving
+		m_BloomUpdateLayer |= m_BloomEnabled;
+		m_GlareUpdateLayer |= m_GlareEnabled;
+	}
 
 	// Construct ColorSystem from values
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
@@ -2035,6 +2044,24 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	int tilecount = params.FindOneInt("tilecount", 0);
 
+
+
+	bool bloomEnabled = params.FindOneBool("bloom_enabled", false);
+	float bloomRadius = params.FindOneFloat("bloom_radius", 0.07f);
+	float bloomWeight = params.FindOneFloat("bloom_weight", 0.25f);
+
+	bool vignettingEnabled = params.FindOneBool("vignetting_enabled", false);
+	float vignettingScale = params.FindOneFloat("vignetting_scale", 0.4f);
+
+	bool abberationEnabled = params.FindOneBool("abberation_enabled", false);
+	float abberationAmount = params.FindOneFloat("abberation_amount", 0.005f);
+
+	bool glareEnabled = params.FindOneBool("glare_enabled", false);
+	float glareAmount = params.FindOneFloat("glare_amount", 0.03f);
+	float glareRadius = params.FindOneFloat("glare_radius", 0.03f);
+	int glareBlades = params.FindOneInt("glare_blades", 3);
+	float glareThreshold = params.FindOneFloat("glare_threshold", 0.5f);
+
 	// Glare maps
 	string s_GlareLashesFilename = params.FindOneString("glarelashesfilename", "");
 	string s_GlarePupilFilename = params.FindOneString("glarepupilfilename", "");
@@ -2048,7 +2075,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_FalseMethod, s_FalseScalecolor, s_FalseMaxSat, s_FalseMinSat, response, s_Gamma,
 		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename, disableNoiseMapUpdate,
-		s_GlarePupilFilename, s_GlareLashesFilename);
+		bloomEnabled, bloomRadius, bloomWeight, vignettingEnabled, vignettingScale, abberationEnabled, abberationAmount, 
+		glareEnabled, glareAmount, glareRadius, glareBlades, glareThreshold, s_GlarePupilFilename, s_GlareLashesFilename);
 }
 
 

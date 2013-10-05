@@ -1123,7 +1123,7 @@ void Context::ParseEnd() {
 
 				// Store final image
 				if (!aborted)
-					luxCurrentScene->camera()->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
+					luxCurrentScene->camera()->film->WriteImage((ImageType)(IMAGE_FINAL|IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}
