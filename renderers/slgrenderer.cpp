@@ -1660,6 +1660,16 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			;
 
 	//--------------------------------------------------------------------------
+	// Accelerator related settings
+	//--------------------------------------------------------------------------
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Accelerator type: " << ToClassName(scene->aggregate.get());
+	if (((dynamic_cast<TaBRecKdTreeAccel *>(scene->aggregate.get())) != 0) || ((dynamic_cast<BVHAccel *>(scene->aggregate.get())) != NULL)) {
+		// map kdtree and bvh to luxrays' bvh accel
+		ss << "accelerator.type = BVH\n";
+	}
+
+	//--------------------------------------------------------------------------
 	// Epsilon related settings
 	//--------------------------------------------------------------------------
 
