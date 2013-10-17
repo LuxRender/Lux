@@ -1774,10 +1774,10 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	const string configString = ss.str();
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SLG configuration: [\n" << configString << "]";
 	luxrays::Properties config;
-	config.LoadFromString(configString);
+	config.SetFromString(configString);
 
 	// Add overwrite properties
-	config.Load(overwriteConfig);
+	config.Set(overwriteConfig);
 
 	// Check if light buffer is needed and required
 	renderEngineType = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
@@ -2001,7 +2001,7 @@ void SLGRenderer::Render(Scene *s) {
 
 			try {
 				// Build the SLG rendering configuration
-				slgConfigProps.Load(CreateSLGConfig());
+				slgConfigProps.Set(CreateSLGConfig());
 
 				// Build the SLG scene to render
 				ColorSystem colorSpace = scene->camera()->film->GetColorSpace();
@@ -2267,14 +2267,14 @@ Renderer *SLGRenderer::CreateRenderer(const ParamSet &params) {
 	// file that can be used overwrite settings.
 	const string configFile = params.FindOneString("localconfigfile", "");
 	if (configFile != "")
-		config.LoadFromFile(configFile);
+		config.SetFromFile(configFile);
 
 	// A list of properties that can be used to overwrite generated properties
 	u_int nItems;
 	const string *items = params.FindString("config", &nItems);
 	if (items) {
 		for (u_int i = 0; i < nItems; ++i)
-			config.LoadFromString(items[i] + "\n");
+			config.SetFromString(items[i] + "\n");
 	}
 
 	return new SLGRenderer(config);
