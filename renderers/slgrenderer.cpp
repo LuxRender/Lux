@@ -676,7 +676,7 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		}
 
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << texProp << "]";
-		slgScene->DefineTextures(texProp);
+		slgScene->Parse(luxrays::Properties().SetFromString(texProp));
 	}
 
 	return texName;
@@ -741,7 +741,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				 + GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kd = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -760,7 +760,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
 				"scene.materials." + matName +".kr = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -790,7 +790,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 					"scene.materials." + matName +".ioroutside = 1.0\n"
 					"scene.materials." + matName +".iorinside = " + indexTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -876,7 +876,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 						"scene.materials." + matName +".iorinside = " + ToString(index) + "\n";
 			}
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Glass2 material, trying an emulation with Glass1.";
 		}
@@ -911,7 +911,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 				"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -932,7 +932,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				"scene.materials." + matName +".kr = " + krTexName + "\n"
 				"scene.materials." + matName +".kt = " + ktTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -948,7 +948,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 			const string matProp = "scene.materials." + matName +".type = null\n"
 				+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -972,7 +972,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0", 0, colorSpace) + "\n"
 				;
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -1005,7 +1005,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 				"scene.materials." + matName +".index = " + indexTexName + "\n"
 				"scene.materials." + matName +".multibounce = " + (isMultibounce ? "1" : "0") + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -1042,7 +1042,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-				slgScene->DefineMaterials(matProp);
+				slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 			} else if (dynamic_cast<FresnelColorTexture *>(fresnelTex)) {
 				FresnelColorTexture *fresnelCol = dynamic_cast<FresnelColorTexture *>(fresnelTex);
 
@@ -1054,7 +1054,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 					"scene.textures.fresnelapproxk-" + matName + ".type = fresnelapproxk\n"
 					"scene.textures.fresnelapproxk-" + matName + ".texture = " + colTexName + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining textures for material " << matName << ": [\n" << texProp << "]";
-				slgScene->DefineTextures(texProp);
+				slgScene->Parse(texProp);
 
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
 					+ GetSLGCommonMatProps(matName, emissionTexName, lightID, bumpTex, normalTex) +
@@ -1063,7 +1063,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-				slgScene->DefineMaterials(matProp);
+				slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal2 material with tabular data or fresnel color texture (i.e. not " <<
 						ToClassName(fresnelTex) << "). Replacing an unsupported material with matte.";
@@ -1098,7 +1098,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-			slgScene->DefineMaterials(matProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(matProp));
 		}
 	} else
 	//------------------------------------------------------------------
@@ -1207,7 +1207,7 @@ static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 					"scene.textures." + emissionTexName + ".texture1 = " + ToString(gainFactor) + "\n"
 					"scene.textures." + emissionTexName + ".texture2 = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << scaleTexProp << "]";
-			slgScene->DefineTextures(scaleTexProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(scaleTexProp));
 		}
 
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
@@ -1273,7 +1273,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 			"scene.sunlight.transformation = " + light2WorldStr + "\n"
 			"scene.sunlight.id = " + ToString(lightId) + "\n";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProp << "]";
-		slgScene->AddSunLight(createSunLightProp);
+		slgScene->Parse(luxrays::Properties().SetFromString(createSunLightProp));
 	}
 
 	// Check if there is a sky or sky2 light source
@@ -1320,7 +1320,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				"scene.skylight.transformation = " + light2WorldStr + "\n"
 				"scene.skylight.id = " + ToString(lightId) + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
-			slgScene->AddSkyLight(createSkyLightProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(createSkyLightProp));
 		} else {
 			const float dirX = (*skyLight)["dir.x"].FloatValue();
 			const float dirY = (*skyLight)["dir.y"].FloatValue();
@@ -1346,7 +1346,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 				"scene.skylight.transformation = " + light2WorldStr + "\n"
 				"scene.skylight.id = " + ToString(lightId) + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
-			slgScene->AddSkyLight(createSkyLightProp);
+			slgScene->Parse(luxrays::Properties().SetFromString(createSkyLightProp));
 		}
 	}
 	
@@ -1390,7 +1390,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 					"scene.infinitelight.transformation = " + light2WorldStr + "\n"
 					"scene.infinitelight.id = " + ToString(lightId) + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
-				slgScene->AddInfiniteLight(createInfiniteLightProp);
+				slgScene->Parse(luxrays::Properties().SetFromString(createInfiniteLightProp));
 			} else {
 				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
 				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
@@ -1416,7 +1416,7 @@ void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 					"scene.infinitelight.transformation = " + light2WorldStr + "\n"
 					"scene.infinitelight.id = " + ToString(lightId) + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
-				slgScene->AddInfiniteLight(createInfiniteLightProp);
+				slgScene->Parse(luxrays::Properties().SetFromString(createInfiniteLightProp));
 			}
 		}
 	}
@@ -1430,7 +1430,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgS
 
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 		const string meshName = "Mesh-" + ToString(*mesh);
-		slgScene->DefineObject(meshName, *mesh);
+		slgScene->DefineMesh(meshName, *mesh);
 	}
 
 	return meshList;
@@ -1480,13 +1480,14 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 
 					std::ostringstream ss;
 					const string prefix = "scene.objects." + objName;
+					ss << prefix << ".ply = " + meshName + "\n";
 					ss << prefix << ".material = " << matName << "\n";
 					ss << prefix << ".transformation = " << transString << "\n";
 					ss << prefix << ".useplynormals = 1\n";
 
 					const std::string createObjProp = ss.str();
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
-					slgScene->AddObject(objName, meshName, createObjProp);
+					slgScene->Parse(luxrays::Properties().SetFromString(createObjProp));
 				}
 			}
 		} else if (dynamic_cast<const MotionPrimitive *>(prim)) {
@@ -1522,13 +1523,14 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 
 					std::ostringstream ss;
 					const string prefix = "scene.objects." + objName;
+					ss << prefix << ".ply = " + meshName + "\n";
 					ss << prefix << ".material = " << matName << "\n";
 					ss << prefix << ".transformation = " << transString << "\n";
 					ss << prefix << ".useplynormals = 1\n";
 
 					const std::string createObjProp = ss.str();
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
-					slgScene->AddObject(objName, meshName, createObjProp);
+					slgScene->Parse(luxrays::Properties().SetFromString(createObjProp));
 				}
 			}
 		} else {
@@ -1552,17 +1554,18 @@ void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace)
 				
 				std::ostringstream ss;
 				const string prefix = "scene.objects." + objName;
+				ss << prefix << ".ply = " + meshName + "\n";
 				ss << prefix << ".material = " << matName << "\n";
 				ss << prefix << ".useplynormals = 1\n";
 
 				const std::string createObjProp = ss.str();
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
-				slgScene->AddObject(objName, meshName, createObjProp);
+				slgScene->Parse(luxrays::Properties().SetFromString(createObjProp));
 			}
 		}
 	}
 
-	if (slgScene->meshDefs.GetSize() == 0)
+	if (slgScene->objDefs.GetSize() == 0)
 		throw std::runtime_error("SLGRenderer can not render an empty scene");
 }
 
@@ -1596,10 +1599,11 @@ void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 		up.z = 1.f;
 	}
 
-	const string createCameraProp = "scene.camera.lookat = " + 
+	const string createCameraProp = "scene.camera.lookat.orig = " + 
 			ToString(orig.x) + " " +
 			ToString(orig.y) + " " +
-			ToString(orig.z) + " " +
+			ToString(orig.z) + "\n" +
+		"scene.camera.lookat.target = " +
 			ToString(target.x) + " " +
 			ToString(target.y) + " " +
 			ToString(target.z) + "\n"
@@ -1619,7 +1623,7 @@ void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 		"scene.camera.clipyon = " + ToString((scene->camera)["ClipYon"].FloatValue()) + "\n";
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera: [\n" << createCameraProp << "]";
-	slgScene->CreateCamera(createCameraProp);
+	slgScene->Parse(luxrays::Properties().SetFromString(createCameraProp));
 }
 
 slg::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace) {
@@ -1639,10 +1643,10 @@ slg::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProp
 	// Setup default material
 	//--------------------------------------------------------------------------
 
-	slgScene->DefineMaterials(
+	slgScene->Parse(luxrays::Properties().SetFromString(
 		"scene.materials.mat_default.type = matte\n"
 		"scene.materials.mat_default.kd = 0.75 0.75 0.75\n"
-		);
+		));
 
 	//--------------------------------------------------------------------------
 	// Setup lights
@@ -2032,7 +2036,7 @@ void SLGRenderer::Render(Scene *s) {
 
 		SLGStatistics *slgStats = static_cast<SLGStatistics *>(rendererStatistics);
 
-		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
+		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, slgScene);
 		slg::RenderSession *session = new slg::RenderSession(config);
 		slg::RenderEngine *engine = session->renderEngine;
 		engine->SetSeed(scene->seedBase);
@@ -2128,10 +2132,10 @@ void SLGRenderer::Render(Scene *s) {
 
 			for (;;) {
 				if (state == PAUSE) {
-					session->BeginEdit();
+					session->BeginSceneEdit();
 					while (state == PAUSE && !boost::this_thread::interruption_requested())
 						boost::this_thread::sleep(boost::posix_time::seconds(1));
-					session->EndEdit();
+					session->EndSceneEdit();
 				}
 				if ((state == TERMINATE) || boost::this_thread::interruption_requested())
 					break;
