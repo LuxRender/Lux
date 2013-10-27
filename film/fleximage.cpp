@@ -565,6 +565,7 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 
 		case LUX_FILM_CAMERA_RESPONSE_ENABLED:
 			return m_CameraResponseEnabled;
+			break;
 
 		case LUX_FILM_BLOOMRADIUS:
 			return m_BloomRadius;
