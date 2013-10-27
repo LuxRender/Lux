@@ -166,6 +166,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	m_Gamma = d_Gamma = p_Gamma;
 	AddFloatAttribute(*this, "Gamma", "Film gamma", &FlexImageFilm::m_Gamma, Queryable::ReadWriteAccess);
 
+	m_BloomEnabled = bloomEnabled;
 	m_BloomUpdateLayer = false;
 	m_BloomDeleteLayer = false;
 	m_HaveBloomImage = false;
@@ -182,6 +183,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	m_AberrationAmount = d_AberrationAmount = abberationAmount;
 	AddFloatAttribute(*this, "AberrationAmount", "Chromatic abberation amount", &FlexImageFilm::m_AberrationAmount, Queryable::ReadWriteAccess);
 
+	m_GlareEnabled = glareEnabled;
 	m_GlareUpdateLayer = false;
 	m_GlareDeleteLayer = false;
 	m_HaveGlareImage = false;
