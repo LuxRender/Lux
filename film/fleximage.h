@@ -54,7 +54,8 @@ public:
 		float p_ContrastDisplayAdaptionY, int p_FalseMethod, int p_FalseColorScale, float p_FalseMaxSat, float p_FalseMinSat, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 		bool debugmode, int outlierk, int tilecount, const double convstep, const string &samplingmapfilename, const bool disableNoiseMapUpd,
-		const string &pupilmap, const string &lashesmap);
+		bool bloomEnabled, float bloomRadius, float bloomWeight, bool vignettingEnabled, float vignettingScale, bool abberationEnabled, float abberationAmount, 
+		bool glareEnabled, float glareAmount, float glareRadius, int glareBlades, float glareThreshold, const string &pupilmap, const string &lashesmap);
 
 	virtual ~FlexImageFilm() {
 		if (convUpdateThread) {
@@ -175,6 +176,7 @@ private:
 	bool m_BloomUpdateLayer;
 	bool m_BloomDeleteLayer;
 	bool m_HaveBloomImage;
+	bool m_BloomEnabled; // should bloom be applied at final save
 
 	float m_VignettingScale, d_VignettingScale;
 	bool m_VignettingEnabled, d_VignettingEnabled;
@@ -192,6 +194,7 @@ private:
 	bool m_GlareUpdateLayer;
 	bool m_GlareDeleteLayer;
 	bool m_HaveGlareImage;
+	bool m_GlareEnabled; // should bloom be applied at final save
 
 	bool m_HistogramEnabled, d_HistogramEnabled;
 	

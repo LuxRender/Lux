@@ -440,7 +440,8 @@ struct VignettingFilter
 		}
 	}
 };
-
+// Is this planned in further use ? Silence "unused function" warning for now
+/*
 static float Blackman(float nx) {
 	const float a = 0.16f;
 	const float a0 = (1.f - a) / 2.f;
@@ -449,7 +450,7 @@ static float Blackman(float nx) {
 
 	return a0 - a1 * cosf(2.f * M_PI * nx) + a2 * cosf(4.f * M_PI * nx);
 }
-
+*/
 static float Hanning(float nx) {
 	const float a = 0.5f;
 	const float b = 0.5f;
