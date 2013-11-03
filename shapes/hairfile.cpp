@@ -709,7 +709,7 @@ void HairFile::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 			hairUVs.clear();
 			for (int j = 0; j <= segmentSize; ++j) {
 				hairPoints.push_back(Point(points[pointIndex * 3], points[pointIndex * 3 + 1], points[pointIndex * 3 + 2]));
-				hairSizes.push_back(((thickness) ? thickness[i] : header.d_thickness) * .5f);
+				hairSizes.push_back(((thickness) ? thickness[pointIndex] : header.d_thickness) * .5f);
 				if (colors)
 					hairCols.push_back(RGBColor(colors[pointIndex * 3], colors[pointIndex * 3 + 1], colors[pointIndex * 3 + 2]));
 				else

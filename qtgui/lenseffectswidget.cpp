@@ -112,11 +112,13 @@ void LensEffectsWidget::updateWidgetValues()
 		sliderval = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
 	else
 		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - std::fabs(m_Vignetting_Scale)));
-	
+
+	updateWidgetValue (ui->checkBox_vignettingEnabled, m_Vignetting_Enabled);	
 	updateWidgetValue (ui->slider_vignettingAmount, sliderval);
 	updateWidgetValue (ui->spinBox_vignettingAmount, m_Vignetting_Scale);
 
 	// Chromatic aberration
+	updateWidgetValue (ui->checkBox_caEnabled, m_Aberration_enabled);	
 	updateWidgetValue(ui->slider_caAmount, (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount)));
 	updateWidgetValue(ui->spinBox_caAmount, m_Aberration_amount);
 	

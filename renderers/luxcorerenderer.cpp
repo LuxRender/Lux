@@ -1625,6 +1625,16 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 			luxrays::Property("opencl.gpu.use")(true);
 
 	//--------------------------------------------------------------------------
+	// Accelerator related settings
+	//--------------------------------------------------------------------------
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Accelerator type: " << ToClassName(scene->aggregate.get());
+	if (((dynamic_cast<TaBRecKdTreeAccel *>(scene->aggregate.get())) != 0) || ((dynamic_cast<BVHAccel *>(scene->aggregate.get())) != NULL)) {
+		// Map kdtree and bvh to luxrays' bvh accel
+		cfgProps << luxrays::Property("accelerator.type")("BVH");
+	}
+
+	//--------------------------------------------------------------------------
 	// Epsilon related settings
 	//--------------------------------------------------------------------------
 
