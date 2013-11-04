@@ -98,6 +98,7 @@
 #include "textures/uv.h"
 #include "textures/band.h"
 #include "textures/hitpointcolor.h"
+#include "textures/blender_wood.h"
 
 #include "volumes/clearvolume.h"
 #include "film/fleximage.h"
@@ -461,7 +462,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const TexInfo &texInfo = normalTex->GetInfo();
 			const string imageMapName = GetLuxCoreImageMapName(lcScene, normalTex->GetMIPMap(), texInfo.gamma);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("imagemap") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("imagemap") <<
 					luxrays::Property("scene.textures." + texName + ".file")(imageMapName) <<
 					luxrays::Property("scene.textures." + texName + ".gamma")(texInfo.gamma) <<
 					luxrays::Property("scene.textures." + texName + ".gain")(texInfo.gain) <<
@@ -475,7 +476,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("add") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("add") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
 		} else
@@ -491,7 +492,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("scale") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("scale") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
 		} else if (dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex)) {
@@ -499,7 +500,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("scale") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("scale") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
 		} else
@@ -512,7 +513,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, mixTex->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, mixTex->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("mix") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("mix") <<
 					luxrays::Property("scene.textures." + texName + ".amount")(amountTexName) <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
@@ -526,7 +527,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, checkerboard2D->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, checkerboard2D->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("checkerboard2d") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("checkerboard2d") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name) <<
 					GetLuxCoreTexMapping(checkerboard2D->GetTextureMapping2D(), "scene.textures." + texName);
@@ -536,21 +537,21 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex1Name = GetLuxCoreTexName(lcScene, checkerboard3D->GetTex1());
 			const string tex2Name = GetLuxCoreTexName(lcScene, checkerboard3D->GetTex2());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("checkerboard3d") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("checkerboard3d") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name) <<
 					GetLuxCoreTexMapping(checkerboard3D->GetTextureMapping3D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const FBmTexture *>(tex)) {
 			const FBmTexture *fbm = dynamic_cast<const FBmTexture *>(tex);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("fbm") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("fbm") <<
 					luxrays::Property("scene.textures." + texName + ".octaves")(fbm->GetOctaves()) <<
 					luxrays::Property("scene.textures." + texName + ".roughness")(fbm->GetOmega()) <<
 					GetLuxCoreTexMapping(fbm->GetTextureMapping3D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const MarbleTexture *>(tex)) {
 			const MarbleTexture *marble = dynamic_cast<const MarbleTexture *>(tex);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("marble") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("marble") <<
 					luxrays::Property("scene.textures." + texName + ".octaves")(marble->GetOctaves()) <<
 					luxrays::Property("scene.textures." + texName + ".roughness")(marble->GetOmega()) <<
 					luxrays::Property("scene.textures." + texName + ".scale")(marble->GetScale()) <<
@@ -561,7 +562,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string insideName = GetLuxCoreTexName(lcScene, dotsTex->GetInsideTex());
 			const string outsideName = GetLuxCoreTexName(lcScene, dotsTex->GetOutsideTex());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("dots") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("dots") <<
 					luxrays::Property("scene.textures." + texName + ".inside")(insideName) <<
 					luxrays::Property("scene.textures." + texName + ".outside")(outsideName) <<
 					GetLuxCoreTexMapping(dotsTex->GetTextureMapping2D(), "scene.textures." + texName);
@@ -597,7 +598,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const string tex2Name = GetLuxCoreTexName(lcScene, brickTex->GetTex2());
 			const string tex3Name = GetLuxCoreTexName(lcScene, brickTex->GetTex3());
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("brick") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("brick") <<
 					luxrays::Property("scene.textures." + texName + ".brickbond")(brickbond) <<
 					luxrays::Property("scene.textures." + texName + ".brickwidth")(brickTex->GetBrickWidth()) <<
 					luxrays::Property("scene.textures." + texName + ".brickheight")(brickTex->GetBrickHeight()) <<
@@ -612,19 +613,63 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 		} else if (dynamic_cast<const WindyTexture *>(tex)) {
 			const WindyTexture *windy = dynamic_cast<const WindyTexture *>(tex);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("windy") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("windy") <<
 					GetLuxCoreTexMapping(windy->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderWoodTexture3D *>(tex)) {
+			const BlenderWoodTexture3D *wood = dynamic_cast<const BlenderWoodTexture3D *>(tex);
+					std::string woodtype = "";
+					switch(wood->GetType()) {
+						default:
+						case 0:
+							woodtype = "bands";
+							break;
+						case 1:
+							woodtype = "rings";
+							break;
+						case 2:
+							woodtype = "bandnoise";
+							break;
+						case 3:
+							woodtype = "ringnoise";
+							break;
+					}					
+					
+					std::string noisebasis2= "";
+					switch(wood->GetNoiseBasis2()) {
+						default:
+						case 0:
+							noisebasis2 = "sin";
+							break;
+						case 1:
+							noisebasis2 = "saw";
+							break;
+						case 2:
+							noisebasis2 = "tri";
+							break;
+					}
+					std::string noisetype= "soft_noise";
+					if(wood->GetNoiseT()) noisetype = "hard_noise";
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("wood") <<
+					luxrays::Property("scene.textures." + texName + ".woodtype")(woodtype) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis2")(noisebasis2) <<
+					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(wood->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(wood->GetContrast())) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(wood->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".turbulence")(ToString(wood->GetTurbulence())) <<
+					GetLuxCoreTexMapping(wood->GetTextureMapping3D(), "scene.textures." + texName);
+
 		} else if (dynamic_cast<const WrinkledTexture *>(tex)) {
 			const WrinkledTexture *wrinkTex = dynamic_cast<const WrinkledTexture *>(tex);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("wrinkled") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("wrinkled") <<
 					luxrays::Property("scene.textures." + texName + ".octaves")(ToString(wrinkTex->GetOctaves())) <<
 					luxrays::Property("scene.textures." + texName + ".roughness")(ToString(wrinkTex->GetOmega())) <<
 					GetLuxCoreTexMapping(wrinkTex->GetTextureMapping3D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const UVTexture *>(tex)) {
 			const UVTexture *uvTex = dynamic_cast<const UVTexture *>(tex);
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("uv") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("uv") <<
 					GetLuxCoreTexMapping(uvTex->GetTextureMapping2D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const BandTexture<T> *>(tex)) {
 			const BandTexture<T> *bandTex = dynamic_cast<const BandTexture<T> *>(tex);
@@ -633,7 +678,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			const vector<boost::shared_ptr<Texture<T> > > &texs = bandTex->GetTextures();
 			
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("band") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("band") <<
 					luxrays::Property("scene.textures." + texName + ".amount")(amountTexName);
 
 			for (u_int i = 0; i < offsets.size(); ++i) {
@@ -642,7 +687,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 				if (!constRGBTex && !constFloatTex) {
 					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only BandTexture with constant values (i.e. not " <<
 						ToClassName(texs[i].get()) << ").";
-					texProps << luxrays::Property("scene.textures." + texName + ".type ")("constfloat1") <<
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("constfloat1") <<
 							luxrays::Property("scene.textures." + texName + ".value")(.7f);
 					break;
 				}
@@ -659,24 +704,24 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 				}
 			}
 		} else if (dynamic_cast<const HitPointRGBColorTexture *>(tex)) {
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("hitpointcolor");
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("hitpointcolor");
 		} else if (dynamic_cast<const HitPointAlphaTexture *>(tex)) {
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("hitpointalpha");
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("hitpointalpha");
 		} else if (dynamic_cast<const HitPointGreyTexture *>(tex)) {
 			const HitPointGreyTexture *hpTex = dynamic_cast<const HitPointGreyTexture *>(tex);
 
 			const int channel = hpTex->GetChannel();
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("hitpointgrey") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("hitpointgrey") <<
 					luxrays::Property("scene.textures." + texName + ".channel")(((channel != 0) && (channel != 1) && (channel != 2)) ?
 						-1 : channel);
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
 					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
 					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
-					"HitPointAlphaTexture and HitPointGreyTexture"
+					"HitPointAlphaTexture, HitPointGreyTexture and BlenderWoodTexture3D"
 					"(i.e. not " << ToClassName(tex) << ").";
 
-			texProps << luxrays::Property("scene.textures." + texName + ".type ")("constfloat1") <<
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("constfloat1") <<
 					luxrays::Property("scene.textures." + texName + ".value")(.7f);
 		}
 
