@@ -700,7 +700,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 							(*constRGBTex)["color.b"].FloatValue());
 				if (constFloatTex) {
 					const float val = (*constFloatTex)["value"].FloatValue();
-					texProps << luxrays::Property("scene.textures." + texName + ".value" + ToString(i))(val, val);
+					texProps << luxrays::Property("scene.textures." + texName + ".value" + ToString(i))(val, val, val);
 				}
 			}
 		} else if (dynamic_cast<const HitPointRGBColorTexture *>(tex)) {
