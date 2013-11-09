@@ -1644,7 +1644,7 @@ luxcore::Scene *LuxCoreRenderer::CreateLuxCoreScene(const luxrays::Properties &l
 	//--------------------------------------------------------------------------
 
 	lcScene->Parse(luxrays::Property("scene.materials.mat_default.type")("matte") <<
-		luxrays::Property("scene.materials.mat_default.kd")(.75f, .75f, .75f));
+		luxrays::Property("scene.materials.mat_default.kd")(.9f, .9f, .9f));
 
 	//--------------------------------------------------------------------------
 	// Setup lights
