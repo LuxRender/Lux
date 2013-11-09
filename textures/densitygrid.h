@@ -169,7 +169,7 @@ private:
 };
 
 
-// ExponentialTexture Method Definitions
+// DensityGridTexture Method Definitions
 inline Texture<float> * DensityGridTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
