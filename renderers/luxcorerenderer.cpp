@@ -1809,12 +1809,10 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 	//--------------------------------------------------------------------------
 
 	// Avoid to overwrite an "overwrite" setting
-	if ((renderEngineType == "FILESAVER") && !overwriteConfig.IsDefined("film.tonemap.linear.scale")) {
+	if ((renderEngineType == "FILESAVER") && !overwriteConfig.IsDefined("film.tonemap.type")) {
 		const int type = (*film)["TonemapKernel"].IntValue();
 
-		if (type != FlexImageFilm::TMK_Linear)
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxVR supports only linear tone mapping, ignoring tone mapping settings";
-		else {
+		if (type == FlexImageFilm::TMK_Linear) {
 			// Translate linear tone mapping settings
 			const float sensitivity = (*film)["LinearSensitivity"].FloatValue();
 			const float exposure = (*film)["LinearExposure"].FloatValue();
@@ -1824,8 +1822,12 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 			// Check LinearOp class for an explanation of the following formula
 			const float factor = exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma);
 
+			cfgProps.Set(luxrays::Property("film.tonemap.type")("LINEAR"));
 			cfgProps.Set(luxrays::Property("film.tonemap.linear.scale")(factor));
-		}
+//		} else if (type == FlexImageFilm::TMK_AutoLinear) {
+//			cfgProps.Set(luxrays::Property("film.tonemap.type")("AUTOLINEAR"));
+		} else
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxVR supports only linear tone mapping, ignoring tone mapping settings";
 	}
 
 	return cfgProps;
