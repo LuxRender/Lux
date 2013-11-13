@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SLGRENDERER_H
-#define LUX_SLGRENDERER_H
+#ifndef LUX_LUXCORERENDERER_H
+#define LUX_LUXCORERENDERER_H
 
 #include <vector>
 #include <boost/thread.hpp>
@@ -29,10 +29,7 @@
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
 #include "luxrays/core/intersectiondevice.h"
-#include "slg/slg.h"
-#include "slg/renderengine.h"
-#include "slg/sdl/scene.h"
-#include "slg/film/framebuffer.h"
+#include "luxcore/luxcore.h"
 
 #include "lux.h"
 #include "renderer.h"
@@ -42,21 +39,19 @@
 #include "hybridrenderer.h"
 #include "mipmap.h"
 
-extern void LuxRaysDebugHandler(const char *msg);
-extern void SDLDebugHandler(const char *msg);
-extern void SLGDebugHandler(const char *msg);
+extern void LuxCoreDebugHandler(const char *msg);
 
 namespace lux
 {
 
-class SLGRenderer;
-class SLGHostDescription;
+class LuxCoreRenderer;
+class LuxCoreHostDescription;
 
 //------------------------------------------------------------------------------
-// SLGDeviceDescription
+// LuxCoreDeviceDescription
 //------------------------------------------------------------------------------
 
-class SLGDeviceDescription : protected RendererDeviceDescription {
+class LuxCoreDeviceDescription : protected RendererDeviceDescription {
 public:
 	const string &GetName() const { return name; }
 
@@ -64,50 +59,50 @@ public:
 	u_int GetUsedUnitsCount() const { return 1; }
 	void SetUsedUnitsCount(const u_int units) { }
 
-	friend class SLGRenderer;
-	friend class SLGHostDescription;
+	friend class LuxCoreRenderer;
+	friend class LuxCoreHostDescription;
 
 protected:
-	SLGDeviceDescription(SLGHostDescription *h, const string &n) : host(h), name(n) { }
+	LuxCoreDeviceDescription(LuxCoreHostDescription *h, const string &n) : host(h), name(n) { }
 
-	SLGHostDescription *host;
+	LuxCoreHostDescription *host;
 	string name;
 };
 
 //------------------------------------------------------------------------------
-// SLGHostDescription
+// LuxCoreHostDescription
 //------------------------------------------------------------------------------
 
-class SLGHostDescription : protected RendererHostDescription {
+class LuxCoreHostDescription : protected RendererHostDescription {
 public:
 	const string &GetName() const { return name; }
 
 	vector<RendererDeviceDescription *> &GetDeviceDescs() { return devs; }
 
-	friend class SLGRenderer;
-	friend class SLGDeviceDescription;
+	friend class LuxCoreRenderer;
+	friend class LuxCoreDeviceDescription;
 
 private:
-	SLGHostDescription(SLGRenderer *r, const string &n);
-	~SLGHostDescription();
+	LuxCoreHostDescription(LuxCoreRenderer *r, const string &n);
+	~LuxCoreHostDescription();
 
-	void AddDevice(SLGDeviceDescription *devDesc);
+	void AddDevice(LuxCoreDeviceDescription *devDesc);
 
-	SLGRenderer *renderer;
+	LuxCoreRenderer *renderer;
 	string name;
 	vector<RendererDeviceDescription *> devs;
 };
 
 //------------------------------------------------------------------------------
-// SLGRenderer
+// LuxCoreRenderer
 //------------------------------------------------------------------------------
 
-class SLGRenderer : public Renderer {
+class LuxCoreRenderer : public Renderer {
 public:
-	SLGRenderer(const luxrays::Properties &overwriteConfig);
-	~SLGRenderer();
+	LuxCoreRenderer(const luxrays::Properties &overwriteConfig);
+	~LuxCoreRenderer();
 
-	RendererType GetType() const { return SLG_TYPE; }
+	RendererType GetType() const { return LUXCORE_TYPE; }
 
 	RendererState GetState() const;
 	vector<RendererHostDescription *> &GetHostDescs();
@@ -119,21 +114,21 @@ public:
 	void Resume();
 	void Terminate();
 
-	friend class SLGDeviceDescription;
-	friend class SLGHostDescription;
-	friend class SLGStatistics;
+	friend class LuxCoreDeviceDescription;
+	friend class LuxCoreHostDescription;
+	friend class LuxCoreStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
-	void ConvertCamera(slg::Scene *slgScene);
-	void ConvertEnvLights(slg::Scene *slgScene);
-	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(slg::Scene *slgScene, const Primitive *prim);
-	void ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace);
-	slg::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace);
-	luxrays::Properties CreateSLGConfig();
+	void ConvertCamera(luxcore::Scene *lcScene);
+	void ConvertEnvLights(luxcore::Scene *lcScene);
+	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxcore::Scene *lcScene, const Primitive *prim);
+	void ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colorSpace);
+	luxcore::Scene *CreateLuxCoreScene(const luxrays::Properties &lcConfigProps, ColorSystem &colorSpace);
+	luxrays::Properties CreateLuxCoreConfig();
 
-	void UpdateLuxFilm(slg::RenderSession *session);
+	void UpdateLuxFilm(luxcore::RenderSession *session);
 
 	mutable boost::mutex classWideMutex;
 
@@ -141,15 +136,14 @@ private:
 	vector<RendererHostDescription *> hosts;
 
 	luxrays::Properties overwriteConfig;
-	slg::RenderEngineType renderEngineType;
+	string renderEngineType;
 	Scene *scene;
 	// Used to feed LuxRender film with only the delta information from the previous update
-	BlockedArray<luxrays::Spectrum> *previousEyeBufferRadiance;
-	BlockedArray<float> *previousEyeWeight;
-	BlockedArray<luxrays::Spectrum> *previousLightBufferRadiance;
-	BlockedArray<float> *previousLightWeight;
-	BlockedArray<float> *previousAlphaBuffer;
-	double previousSampleCount;
+	vector<float *> previousFilm_RADIANCE_PER_PIXEL_NORMALIZEDs;
+	vector<float *> previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs;
+	float *previousFilm_ALPHA;
+	float *previousFilm_DEPTH;
+	double previousFilmSampleCount;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done
@@ -159,4 +153,4 @@ private:
 
 }//namespace lux
 
-#endif // LUX_SLGRENDERER_H
+#endif // LUX_LUXCORERENDERER_H

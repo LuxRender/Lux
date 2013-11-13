@@ -44,14 +44,18 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 
 #############################################################################
 #############################################################################
-##########################        Find SLG         ##########################
+########################        Find LuxCore         ########################
 #############################################################################
 #############################################################################
 
 IF(APPLE)
+	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
+	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
 	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 ELSE(APPLE)
+	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
+	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
 	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 ENDIF(APPLE)
@@ -64,6 +68,13 @@ ELSE (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
 	MESSAGE(FATAL_ERROR "SLG Library not found.")
 ENDIF (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
 
+IF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
+	MESSAGE(STATUS "LuxCore include directory: " ${LUXCORE_INCLUDE_DIRS})
+	MESSAGE(STATUS "LuxCore library directory: " ${LUXCORE_LIBRARY})
+	INCLUDE_DIRECTORIES(SYSTEM ${LUXCORE_INCLUDE_DIRS})
+ELSE (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
+	MESSAGE(FATAL_ERROR "LuxCore Library not found.")
+ENDIF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
 
 #############################################################################
 #############################################################################

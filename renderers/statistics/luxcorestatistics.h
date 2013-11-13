@@ -20,13 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SLGSTATISTICS_H
-#define LUX_SLGSTATISTICS_H
+#ifndef LUX_LUXCORESTATISTICS_H
+#define LUX_LUXCORESTATISTICS_H
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#include "renderers/slgrenderer.h"
+#include "renderers/luxcorerenderer.h"
 #include "rendererstatistics.h"
 
 #include <algorithm>
@@ -34,17 +34,17 @@
 namespace lux
 {
 
-class SLGStatistics : public RendererStatistics {
+class LuxCoreStatistics : public RendererStatistics {
 public:
-	SLGStatistics(SLGRenderer *renderer);
-	~SLGStatistics();
+	LuxCoreStatistics(LuxCoreRenderer *renderer);
+	~LuxCoreStatistics();
 
 	class FormattedLong : public RendererStatistics::FormattedLong {
 	public:
-		FormattedLong(SLGStatistics *rs);
+		FormattedLong(LuxCoreStatistics *rs);
 
 	private:
-		SLGStatistics *rs;
+		LuxCoreStatistics *rs;
 
 		virtual std::string getRecommendedStringTemplate();
 		virtual std::string getProgress() { return getTotalAverageSamplesPerPixel(); }
@@ -66,22 +66,22 @@ public:
 		std::string getTotalAverageSamplesPerPixel();
 		std::string getTotalAverageSamplesPerSecond();
 
-		friend class SLGStatistics;
-		friend class SLGStatistics::FormattedShort;
+		friend class LuxCoreStatistics;
+		friend class LuxCoreStatistics::FormattedShort;
 	};
 
 	class FormattedShort : public RendererStatistics::FormattedShort {
 	public:
-		FormattedShort(SLGStatistics *rs);
+		FormattedShort(LuxCoreStatistics *rs);
 
 	private:
-		SLGStatistics *rs;
+		LuxCoreStatistics *rs;
 
 		virtual std::string getRecommendedStringTemplate();
 		virtual std::string getProgress();
 	};
 
-	friend class SLGRenderer;
+	friend class LuxCoreRenderer;
 
 protected:
 	double averageSampleSec;
@@ -92,7 +92,7 @@ protected:
 	vector<double> deviceRaySecs;
 
 private:
-	SLGRenderer *renderer;
+	LuxCoreRenderer *renderer;
 
 	virtual void resetDerived() { }
 	virtual void updateStatisticsWindowDerived() { }
@@ -183,4 +183,4 @@ private:
 
 }//namespace lux
 
-#endif // LUX_SLGSTATISTICS_H
+#endif // LUX_LUXCORESTATISTICS_H
