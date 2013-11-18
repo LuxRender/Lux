@@ -122,7 +122,7 @@ public:
 
 private:
 	void ConvertCamera(luxcore::Scene *lcScene);
-	void ConvertEnvLights(luxcore::Scene *lcScene);
+	void ConvertLights(luxcore::Scene *lcScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxcore::Scene *lcScene, const Primitive *prim);
 	void ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colorSpace);
 	luxcore::Scene *CreateLuxCoreScene(const luxrays::Properties &lcConfigProps, ColorSystem &colorSpace);

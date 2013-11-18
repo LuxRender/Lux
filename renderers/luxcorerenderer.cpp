@@ -67,6 +67,7 @@
 #include "lights/sky2.h"
 #include "lights/infinite.h"
 #include "lights/infinitesample.h"
+#include "lights/pointlight.h"
 
 #include "materials/matte.h"
 #include "materials/mirror.h"
@@ -1275,59 +1276,88 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, const Primitive *p
 			emissionGain, emissionPower, emissionEfficency, lightID, colorSpace);
 }
 
-void LuxCoreRenderer::ConvertEnvLights(luxcore::Scene *lcScene) {
-	// Check if there is a sun light source
-	SunLight *sunLight = NULL;
+void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		sunLight = dynamic_cast<SunLight *>(scene->lights[i].get());
-		if (sunLight)
-			break;
-	}
+		//----------------------------------------------------------------------
+		// Check if it is a sun light source
+		//----------------------------------------------------------------------
+		SunLight *sunLight = dynamic_cast<SunLight *>(scene->lights[i].get());
+		if (sunLight) {
+			// Add a SunLight to the scene
+			const float dirX = (*sunLight)["dir.x"].FloatValue();
+			const float dirY = (*sunLight)["dir.y"].FloatValue();
+			const float dirZ = (*sunLight)["dir.z"].FloatValue();
+			const float turbidity = (*sunLight)["turbidity"].FloatValue();
+			const float relSize = (*sunLight)["relSize"].FloatValue();
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
+			// for compatibility with past scene
+			const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
+				INV_PI;
+			const u_int lightId = (*sunLight)["group"].IntValue();
 
-	if (sunLight) {
-		// Add a SunLight to the scene
-		const float dirX = (*sunLight)["dir.x"].FloatValue();
-		const float dirY = (*sunLight)["dir.y"].FloatValue();
-		const float dirZ = (*sunLight)["dir.z"].FloatValue();
-		const float turbidity = (*sunLight)["turbidity"].FloatValue();
-		const float relSize = (*sunLight)["relSize"].FloatValue();
-		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-		// for compatibility with past scene
-		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
-			INV_PI;
-		const u_int lightId = (*sunLight)["group"].IntValue();
+			const Transform &light2World = sunLight->GetTransform();
 
-		const Transform &light2World = sunLight->GetTransform();
+			const string prefix = "scene.lights.sunlight_" + ToString(i);
+			const luxrays::Properties createSunLightProps(
+				luxrays::Property(prefix + ".type")("sun") <<
+				luxrays::Property(prefix + ".dir")(dirX, dirY, dirZ) <<
+				luxrays::Property(prefix + ".turbidity")(turbidity) <<
+				luxrays::Property(prefix + ".relsize")(relSize) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProps << "]";
+			lcScene->Parse(createSunLightProps);
+			continue;
+		}
 
-		const luxrays::Properties createSunLightProps(
-			luxrays::Property("scene.sunlight.dir")(dirX, dirY, dirZ) <<
-			luxrays::Property("scene.sunlight.turbidity")(turbidity) <<
-			luxrays::Property("scene.sunlight.relsize")(relSize) <<
-			luxrays::Property("scene.sunlight.gain")(gain, gain, gain) <<
-			luxrays::Property("scene.sunlight.transformation")(light2World.m) <<
-			luxrays::Property("scene.sunlight.id")(lightId));
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProps << "]";
-		lcScene->Parse(createSunLightProps);
-	}
+		//----------------------------------------------------------------------
+		// Check if it is a sky light source
+		//----------------------------------------------------------------------
+		SkyLight *skyLight = dynamic_cast<SkyLight *>(scene->lights[i].get());
+		if (skyLight) {
+			// Add a SkyLight to the scene
 
-	// Check if there is a sky or sky2 light source
-	SkyLight *skyLight = NULL;
-	Sky2Light *sky2Light = NULL;
-	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		skyLight = dynamic_cast<SkyLight *>(scene->lights[i].get());
-		sky2Light = dynamic_cast<Sky2Light *>(scene->lights[i].get());
-		if (skyLight || sky2Light)
-			break;
-	}
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
+			// for compatibility with past scene
+			const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
 
-	if (skyLight || sky2Light) {
-		// Add a SkyLight to the scene
+			const float dirX = (*skyLight)["dir.x"].FloatValue();
+			const float dirY = (*skyLight)["dir.y"].FloatValue();
+			const float dirZ = (*skyLight)["dir.z"].FloatValue();
+			const float turbidity = (*skyLight)["turbidity"].FloatValue();
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
+			// for compatibility with past scene
+			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
+			const u_int lightId = (*skyLight)["group"].IntValue();
 
-		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-		// for compatibility with past scene
-		const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
+			const Transform &light2World = skyLight->GetTransform();
 
+			const string prefix = "scene.lights.skylight_" + ToString(i);
+			const luxrays::Properties createSkyLightProps(
+				luxrays::Property(prefix + ".type")("sky") <<
+				luxrays::Property(prefix + ".dir")(dirX, dirY, dirZ) <<
+				luxrays::Property(prefix + ".turbidity")(turbidity) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProps << "]";
+			lcScene->Parse(createSkyLightProps);
+
+			continue;
+		}
+
+		//----------------------------------------------------------------------
+		// Check if it is a sky2 light source
+		//----------------------------------------------------------------------
+		Sky2Light *sky2Light = dynamic_cast<Sky2Light *>(scene->lights[i].get());
 		if (sky2Light) {
+			// Add a SkyLight to the scene
+
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
+			// for compatibility with past scene
+			const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
+
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer doesn't support Sky2 light. It will use Sky instead.";
 
 			const float dirX = (*sky2Light)["dir.x"].FloatValue();
@@ -1341,102 +1371,126 @@ void LuxCoreRenderer::ConvertEnvLights(luxcore::Scene *lcScene) {
 
 			const Transform &light2World = sky2Light->GetTransform();
 
+			const string prefix = "scene.lights.skylight2_" + ToString(i);
 			const luxrays::Properties createSkyLightProps(
-				luxrays::Property("scene.skylight.dir")(dirX, dirY, dirZ) <<
-				luxrays::Property("scene.skylight.turbidity")(turbidity) <<
-				luxrays::Property("scene.skylight.gain")(gain, gain, gain) <<
-				luxrays::Property("scene.skylight.transformation")(light2World.m) <<
-				luxrays::Property("scene.skylight.id")(lightId));
+				luxrays::Property(prefix + ".type")("sky") <<
+				luxrays::Property(prefix + ".dir")(dirX, dirY, dirZ) <<
+				luxrays::Property(prefix + ".turbidity")(turbidity) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProps << "]";
 			lcScene->Parse(createSkyLightProps);
-		} else {
-			const float dirX = (*skyLight)["dir.x"].FloatValue();
-			const float dirY = (*skyLight)["dir.y"].FloatValue();
-			const float dirZ = (*skyLight)["dir.z"].FloatValue();
-			const float turbidity = (*skyLight)["turbidity"].FloatValue();
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
-			const u_int lightId = (*skyLight)["group"].IntValue();
 
-			const Transform &light2World = skyLight->GetTransform();
-
-			const luxrays::Properties createSkyLightProps(
-				luxrays::Property("scene.skylight.dir")(dirX, dirY, dirZ) <<
-				luxrays::Property("scene.skylight.turbidity")(turbidity) <<
-				luxrays::Property("scene.skylight.gain")(gain, gain, gain) <<
-				luxrays::Property("scene.skylight.transformation")(light2World.m) <<
-				luxrays::Property("scene.skylight.id")(lightId));
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProps << "]";
-			lcScene->Parse(createSkyLightProps);
+			continue;
 		}
-	}
-	
-	// Check if there is a sky or sky2 light source
-	InfiniteAreaLight *infiniteAreaLight = NULL;
-	InfiniteAreaLightIS *infiniteAreaLightIS = NULL;
-	for (size_t i = 0; i < scene->lights.size(); ++i) {
-		infiniteAreaLight = dynamic_cast<InfiniteAreaLight *>(scene->lights[i].get());
-		infiniteAreaLightIS = dynamic_cast<InfiniteAreaLightIS *>(scene->lights[i].get());
-		if (infiniteAreaLight || infiniteAreaLightIS)
-			break;
-	}
 
-	if (infiniteAreaLight || infiniteAreaLightIS) {
-		// Check if I have already a sky light
-		if (skyLight || sky2Light)
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only one single environmental light. Using sky light and ignoring infinite lights";
-		else {
-			if (infiniteAreaLight) {
-				const float colorR = (*infiniteAreaLight)["color.r"].FloatValue();
-				const float colorG = (*infiniteAreaLight)["color.g"].FloatValue();
-				const float colorB = (*infiniteAreaLight)["color.b"].FloatValue();
-				const float gain = (*infiniteAreaLight)["gain"].FloatValue();
-				const u_int lightId = (*infiniteAreaLight)["group"].IntValue();
+		//----------------------------------------------------------------------
+		// Check if it is an infinite light source
+		//----------------------------------------------------------------------
+		InfiniteAreaLight *infiniteAreaLight = dynamic_cast<InfiniteAreaLight *>(scene->lights[i].get());
+		if (infiniteAreaLight) {
+			const float colorR = (*infiniteAreaLight)["color.r"].FloatValue();
+			const float colorG = (*infiniteAreaLight)["color.g"].FloatValue();
+			const float colorB = (*infiniteAreaLight)["color.b"].FloatValue();
+			const float gain = (*infiniteAreaLight)["gain"].FloatValue();
+			const u_int lightId = (*infiniteAreaLight)["group"].IntValue();
 
-				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
+			const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
 
-				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
-				const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
+			MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
+			const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
 
-				const Transform &light2World = infiniteAreaLight->GetTransform();
-				const string light2WorldStr = ToString(light2World.m);
+			const Transform &light2World = infiniteAreaLight->GetTransform();
 
-				const luxrays::Properties createInfiniteLightProps(
-					luxrays::Property("scene.infinitelight.file")(imageMapName) <<
-					luxrays::Property("scene.infinitelight.gamma")(gamma) <<
-					luxrays::Property("scene.infinitelight.shift")(0.f, 0.f) <<
-					luxrays::Property("scene.infinitelight.gain")(gain * colorR, gain * colorG, gain * colorB) <<
-					luxrays::Property("scene.infinitelight.transformation")(light2WorldStr) <<
-					luxrays::Property("scene.infinitelight.id")(lightId));
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
-				lcScene->Parse(createInfiniteLightProps);
+			const string prefix = "scene.lights.infinitelight_" + ToString(i);
+			const luxrays::Properties createInfiniteLightProps(
+				luxrays::Property(prefix + ".type")("infinite") <<
+				luxrays::Property(prefix + ".file")(imageMapName) <<
+				luxrays::Property(prefix + ".gamma")(gamma) <<
+				luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
+				luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
+			lcScene->Parse(createInfiniteLightProps);
+
+			continue;
+		}
+
+		//----------------------------------------------------------------------
+		// Check if it is an infinite light source
+		//----------------------------------------------------------------------
+		InfiniteAreaLightIS *infiniteAreaLightIS = dynamic_cast<InfiniteAreaLightIS *>(scene->lights[i].get());
+		if (infiniteAreaLightIS) {
+			const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
+			const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
+			const float colorB = (*infiniteAreaLightIS)["color.b"].FloatValue();
+			const float gain = (*infiniteAreaLightIS)["gain"].FloatValue();
+			const u_int lightId = (*infiniteAreaLightIS)["group"].IntValue();
+
+			const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
+
+			MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
+			const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
+
+			const Transform &light2World = infiniteAreaLightIS->GetTransform();
+
+			const string prefix = "scene.lights.infinitelightIS_" + ToString(i);
+			const luxrays::Properties createInfiniteLightProps(
+				luxrays::Property(prefix + ".type")("infinite") <<
+				luxrays::Property(prefix + ".file")(imageMapName) <<
+				luxrays::Property(prefix + ".gamma")(gamma) <<
+				luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
+				luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
+			lcScene->Parse(createInfiniteLightProps);
+			
+			continue;
+		}
+		
+		//----------------------------------------------------------------------
+		// Check if it is an infinite light source
+		//----------------------------------------------------------------------
+		PointLight *pointLight = dynamic_cast<PointLight *>(scene->lights[i].get());
+		if (pointLight) {
+			float colorR, colorG, colorB;
+			if (dynamic_cast<const ConstantRGBColorTexture *>(pointLight->GetLbaseTexture())) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(pointLight->GetLbaseTexture());
+
+				colorR = (*constRGBTex)["color.r"].FloatValue();
+				colorG = (*constRGBTex)["color.g"].FloatValue();
+				colorB = (*constRGBTex)["color.b"].FloatValue();
 			} else {
-				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
-				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
-				const float colorB = (*infiniteAreaLightIS)["color.b"].FloatValue();
-				const float gain = (*infiniteAreaLightIS)["gain"].FloatValue();
-				const u_int lightId = (*infiniteAreaLightIS)["group"].IntValue();
-
-				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
-
-				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
-				const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
-
-				const Transform &light2World = infiniteAreaLightIS->GetTransform();
-				const string light2WorldStr = ToString(light2World.m);
-
-				const luxrays::Properties createInfiniteLightProps(
-					luxrays::Property("scene.infinitelight.file")(imageMapName) <<
-					luxrays::Property("scene.infinitelight.gamma")(gamma) <<
-					luxrays::Property("scene.infinitelight.shift")(0.f, 0.f) <<
-					luxrays::Property("scene.infinitelight.gain")(gain * colorR, gain * colorG, gain * colorB) <<
-					luxrays::Property("scene.infinitelight.transformation")(light2WorldStr) <<
-					luxrays::Property("scene.infinitelight.id")(lightId));
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
-				lcScene->Parse(createInfiniteLightProps);
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only point light with constant color. (i.e. not " <<
+				ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				colorR = 1.f;
+				colorG = 1.f;
+				colorB = 1.f;
 			}
+
+			const float gain = (*pointLight)["gain"].FloatValue();
+			const u_int lightId = (*pointLight)["group"].IntValue();
+
+			const Transform &light2World = pointLight->GetTransform();
+
+			const string prefix = "scene.lights.pointlight_" + ToString(i);
+			const luxrays::Properties createPointLightProps(
+				luxrays::Property(prefix + ".type")("point") <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating pointlight: [\n" << createPointLightProps << "]";
+			lcScene->Parse(createPointLightProps);
+
+			continue;
 		}
+
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only infinite, sky, sky2, sun and point light source (i.e. not " <<
+				ToClassName(scene->lights[i].get()) << "). Ignoring the unsupported light source.";
 	}
 }
 
@@ -1641,7 +1695,7 @@ luxcore::Scene *LuxCoreRenderer::CreateLuxCoreScene(const luxrays::Properties &l
 	// Setup lights
 	//--------------------------------------------------------------------------
 
-	ConvertEnvLights(lcScene);
+	ConvertLights(lcScene);
 
 	//--------------------------------------------------------------------------
 	// Convert geometry

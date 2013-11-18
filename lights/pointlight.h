@@ -46,6 +46,8 @@ public:
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
+	Texture<SWCSpectrum> *GetLbaseTexture() { return Lbase.get(); }
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:

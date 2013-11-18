@@ -148,6 +148,8 @@ PointLight::PointLight(const Transform &light2world,
 	const float gainFactor = power * efficacy / (4.f * M_PI * Lbase->Y());
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
+
+	AddFloatAttribute(*this, "gain", "PointLight gain", &PointLight::gain);
 }
 PointLight::~PointLight() {
 	delete func;
