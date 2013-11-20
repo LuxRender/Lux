@@ -122,12 +122,14 @@ IF(APPLE)
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6) # keep this @ 10.6 to archieve bw-compatibility by weak-linking !
 
 	if(${XCODE_VERSION} VERSION_LESS 4.3)
-		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
-	elseif(${XCODE_VERSION} VERSION_GREATER 4.3)
-		set(CMAKE_XCODE_ATTRIBUTE_SDKROOT macosx) # xcode 4.4-style, gets alway latest available
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk)
 	else()
-		SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk)
+		SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk)
+        set(CMAKE_XCODE_ATTRIBUTE_SDKROOT macosx) # to silence sdk not found warning, just overrides CMAKE_OSX_SYSROOT, gets alway latest available
 	endif()
+
+    # set a precedence of sdk path over all other default search pathes
+    SET(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
 
 	if(OSX_OPTION_USE_MAX_SSE)
 		if(HAS_SSE MATCHES 4.2)
