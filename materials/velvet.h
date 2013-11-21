@@ -39,7 +39,7 @@ public:
 		const ParamSet &mp) : Material("Velvet-" + boost::lexical_cast<string>(this), mp),
 		Kd(kd), P1(p1), P2(p2), P3(p3), Thickness(thickness) { }
 	virtual ~Velvet() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	              

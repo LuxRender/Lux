@@ -24,12 +24,14 @@
 #include "lux.h"
 #include "camera.h"
 #include "film.h"
-#include "mc.h"
 #include "geometry/raydifferential.h"
 #include "sampling.h"
 #include "bxdf.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 // Camera Method Definitions
 Camera::Camera(const MotionSystem &w2c, float hither, float yon,

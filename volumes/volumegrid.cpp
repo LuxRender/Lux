@@ -53,18 +53,18 @@ float VolumeGrid::Density(const Point &p) const
 		(extent.pMax.y - extent.pMin.y) * ny - .5f;
 	float voxz = (pp.z - extent.pMin.z) /
 		(extent.pMax.z - extent.pMin.z) * nz - .5f;
-	int vx = Floor2Int(voxx);
-	int vy = Floor2Int(voxy);
-	int vz = Floor2Int(voxz);
+	int vx = luxrays::Floor2Int(voxx);
+	int vy = luxrays::Floor2Int(voxy);
+	int vz = luxrays::Floor2Int(voxz);
 	float dx = voxx - vx, dy = voxy - vy, dz = voxz - vz;
 	// Trilinearly interpolate density values to compute local density
-	float d00 = Lerp(dx, D(vx, vy, vz), D(vx + 1, vy, vz));
-	float d10 = Lerp(dx, D(vx, vy + 1, vz), D(vx + 1, vy + 1, vz));
-	float d01 = Lerp(dx, D(vx, vy, vz+1), D(vx+1, vy, vz+1));
-	float d11 = Lerp(dx, D(vx, vy + 1, vz + 1), D(vx + 1, vy + 1, vz + 1));
-	float d0 = Lerp(dy, d00, d10);
-	float d1 = Lerp(dy, d01, d11);
-	return Lerp(dz, d0, d1);
+	float d00 = luxrays::Lerp(dx, D(vx, vy, vz), D(vx + 1, vy, vz));
+	float d10 = luxrays::Lerp(dx, D(vx, vy + 1, vz), D(vx + 1, vy + 1, vz));
+	float d01 = luxrays::Lerp(dx, D(vx, vy, vz+1), D(vx+1, vy, vz+1));
+	float d11 = luxrays::Lerp(dx, D(vx, vy + 1, vz + 1), D(vx + 1, vy + 1, vz + 1));
+	float d0 = luxrays::Lerp(dy, d00, d10);
+	float d1 = luxrays::Lerp(dy, d01, d11);
+	return luxrays::Lerp(dz, d0, d1);
 }
 Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {

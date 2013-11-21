@@ -24,10 +24,12 @@
 using luxrays::SphericalDirection;
 #include "sphericalfunction_ies.h"
 #include "mipmap.h"
-#include "mcdistribution.h"
 #include "paramset.h"
 #include "imagereader.h"
 #include "spectrumwavelengths.h"
+#include "luxrays/utils/mcdistribution.h"
+
+using namespace luxrays;
 
 namespace lux {
 

@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "color.h"
 #include "mipmap.h"
+#include "luxrays/utils/mcdistribution.h"
 
 namespace lux {
 
@@ -153,7 +154,7 @@ public:
 	 */
 	float Average_f() const;
 private:
-	Distribution2D* uvDistrib;
+	luxrays::Distribution2D* uvDistrib;
 	boost::shared_ptr<const SphericalFunction> func;
 	float average;
 };

@@ -37,7 +37,7 @@ public:
 		const ParamSet &mp) : Material("DoubleSideMaterial-" + boost::lexical_cast<string>(this), mp, false),
 		frontMat(frontm), backMat(backm), useFrontForFrontMat(ufront), useFrontForBackMat(uback) { }
 	virtual ~DoubleSideMaterial() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

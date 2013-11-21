@@ -170,10 +170,10 @@ Vector CloudVolume::Turbulence(const Point &p, float noiseScale, u_int octaves) 
 	float noiseAmount = 1.f;
 
 	if (variability < 1.f)
-		noiseAmount = Lerp(variability, 1.f,
+		noiseAmount = luxrays::Lerp(variability, 1.f,
 			NoiseMask(p + Vector(noiseOffSet * 4.f, 0.f, 0.f)));	//make sure 0 < noiseAmount < 1
 
-	noiseAmount = Clamp(noiseAmount, 0.f, 1.f);
+	noiseAmount = luxrays::Clamp(noiseAmount, 0.f, 1.f);
 
 	Vector turbulence;
 

@@ -27,9 +27,9 @@
 #include "texture.h"
 #include "texturecolor.h"
 #include "spectrum.h"
-#include "memory.h"
 #include "error.h"
 #include "queryable.h"
+#include "luxrays/utils/memory.h"
 
 namespace lux
 {
@@ -99,10 +99,10 @@ public:
 			case MIPMAP_TRILINEAR:
 			case MIPMAP_EWA: {
 				s *= uSize(0);
-				const int is = Floor2Int(s);
+				const int is = luxrays::Floor2Int(s);
 				const float as = s - is;
 				t *= vSize(0);
-				const int it = Floor2Int(t);
+				const int it = luxrays::Floor2Int(t);
 				const float at = t - it;
 				int s0, s1;
 				if (as < .5f) {
@@ -120,12 +120,12 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(channel, 0, s1, it) -
+				*ds = luxrays::Lerp(at, Texel(channel, 0, s1, it) -
 					Texel(channel, 0, s0, it),
 					Texel(channel, 0, s1, it + 1) -
 					Texel(channel, 0, s0, it + 1)) *
 					uSize(0);
-				*dt = Lerp(as, Texel(channel, 0, is, t1) -
+				*dt = luxrays::Lerp(as, Texel(channel, 0, is, t1) -
 					Texel(channel, 0, is, t0),
 					Texel(channel, 0, is + 1, t1) -
 					Texel(channel, 0, is + 1, t0)) *
@@ -135,10 +135,10 @@ public:
 			case BILINEAR:
 			case NEAREST: {
 				s *= singleMap->uSize();
-				const int is = Floor2Int(s);
+				const int is = luxrays::Floor2Int(s);
 				const float as = s - is;
 				t *= singleMap->vSize();
-				const int it = Floor2Int(t);
+				const int it = luxrays::Floor2Int(t);
 				const float at = t - it;
 				int s0, s1;
 				if (as < .5f) {
@@ -156,12 +156,12 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(channel, s1, it) -
+				*ds = luxrays::Lerp(at, Texel(channel, s1, it) -
 					Texel(channel, s0, it),
 					Texel(channel, s1, it + 1) -
 					Texel(channel, s0, it + 1)) *
 					singleMap->uSize();
-				*dt = Lerp(as, Texel(channel, is, t1) -
+				*dt = luxrays::Lerp(as, Texel(channel, is, t1) -
 					Texel(channel, is, t0),
 					Texel(channel, is + 1, t1) -
 					Texel(channel, is + 1, t0)) *
@@ -176,10 +176,10 @@ public:
 			case MIPMAP_TRILINEAR:
 			case MIPMAP_EWA: {
 				s *= uSize(0);
-				const int is = Floor2Int(s);
+				const int is = luxrays::Floor2Int(s);
 				const float as = s - is;
 				t *= vSize(0);
-				const int it = Floor2Int(t);
+				const int it = luxrays::Floor2Int(t);
 				const float at = t - it;
 				int s0, s1;
 				if (as < .5f) {
@@ -197,12 +197,12 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
+				*ds = luxrays::Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
 					Texel(sw, 0, s0, it).Filter(sw),
 					Texel(sw, 0, s1, it + 1).Filter(sw) -
 					Texel(sw, 0, s0, it + 1).Filter(sw)) *
 					uSize(0);
-				*dt = Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
+				*dt = luxrays::Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
 					Texel(sw, 0, is, t0).Filter(sw),
 					Texel(sw, 0, is + 1, t1).Filter(sw) -
 					Texel(sw, 0, is + 1, t0).Filter(sw)) *
@@ -212,10 +212,10 @@ public:
 			case BILINEAR:
 			case NEAREST: {
 				s *= singleMap->uSize();
-				const int is = Floor2Int(s);
+				const int is = luxrays::Floor2Int(s);
 				const float as = s - is;
 				t *= singleMap->vSize();
-				const int it = Floor2Int(t);
+				const int it = luxrays::Floor2Int(t);
 				const float at = t - it;
 				int s0, s1;
 				if (as < .5f) {
@@ -233,12 +233,12 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
+				*ds = luxrays::Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
 					Texel(sw, 0, s0, it).Filter(sw),
 					Texel(sw, 0, s1, it + 1).Filter(sw) -
 					Texel(sw, 0, s0, it + 1).Filter(sw)) *
 					singleMap->uSize();
-				*dt = Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
+				*dt = luxrays::Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
 					Texel(sw, 0, is, t0).Filter(sw),
 					Texel(sw, 0, is + 1, t1).Filter(sw) -
 					Texel(sw, 0, is + 1, t0).Filter(sw)) *
@@ -278,7 +278,7 @@ public:
 			delete pyramid[0];
 
 			nLevels--;
-			BlockedArray<T> **newPyramid = new BlockedArray<T> *[nLevels];
+			luxrays::BlockedArray<T> **newPyramid = new luxrays::BlockedArray<T> *[nLevels];
 			for (u_int j = 0; j < nLevels; ++j)
 				newPyramid[j] = pyramid[j + 1];
 
@@ -287,7 +287,7 @@ public:
 		}
 	}
 
-	virtual const BlockedArray<T> *GetSingleMap() const {
+	virtual const luxrays::BlockedArray<T> *GetSingleMap() const {
 		// This works even if I have multiple levels
 		return singleMap;
 	}
@@ -318,7 +318,7 @@ private:
 		for (u_int i = 0; i < newres; ++i) {
 			// Compute image resampling weights for _i_th texel
 			const float center = (i + .5f) * oldres / newres;
-			wt[i].firstTexel = Floor2Int(center - filterwidth + 0.5f);
+			wt[i].firstTexel = luxrays::Floor2Int(center - filterwidth + 0.5f);
 			for (int j = 0; j < 4; ++j) {
 				const float pos = wt[i].firstTexel + j + .5f;
 				wt[i].weight[j] = Lanczos((pos - center) /
@@ -364,8 +364,8 @@ private:
 	ImageWrap wrapMode;
 	u_int nLevels;
 	union {
-		BlockedArray<T> **pyramid;
-		BlockedArray<T> *singleMap;
+		luxrays::BlockedArray<T> **pyramid;
+		luxrays::BlockedArray<T> *singleMap;
 	};
 
 #define WEIGHT_LUT_SIZE 128
@@ -384,18 +384,18 @@ float MIPMapFastImpl<T>::LookupFloat(Channel channel, float s, float t,
 		case MIPMAP_EWA: {
 			// Compute MIPMap level for trilinear filtering
 			const float level = nLevels - 1 +
-				Log2(max(width, 1e-8f));
+				luxrays::Log2(max(width, 1e-8f));
 			// Perform trilinear interpolation at appropriate level
 			if (level < 0)
 				return Triangle(channel, 0, s, t);
 			else if (level >= nLevels - 1)
 				return Texel(channel, nLevels - 1,
-					Floor2Int(s * uSize(nLevels - 1)),
-					Floor2Int(t * vSize(nLevels - 1)));
+					luxrays::Floor2Int(s * uSize(nLevels - 1)),
+					luxrays::Floor2Int(t * vSize(nLevels - 1)));
 			else {
-				const u_int iLevel = Floor2UInt(level);
+				const u_int iLevel = luxrays::Floor2UInt(level);
 				const float delta = level - iLevel;
-				return Lerp(delta,
+				return luxrays::Lerp(delta,
 					Triangle(channel, iLevel, s, t),
 					Triangle(channel, iLevel + 1, s, t));
 			}
@@ -416,18 +416,18 @@ SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const SpectrumWavelengths &sw,
 		case MIPMAP_TRILINEAR:
 		case MIPMAP_EWA: {
 			// Compute MIPMap level for trilinear filtering
-			const float level = nLevels - 1 + Log2(width);
+			const float level = nLevels - 1 + luxrays::Log2(width);
 			// Perform trilinear interpolation at appropriate level
 			if (level < 0)
 				return Triangle(sw, 0, s, t);
 			else if (level >= nLevels - 1)
 				return Texel(sw, nLevels - 1,
-					Floor2Int(s * uSize(nLevels - 1)),
-					Floor2Int(t * vSize(nLevels - 1)));
+					luxrays::Floor2Int(s * uSize(nLevels - 1)),
+					luxrays::Floor2Int(t * vSize(nLevels - 1)));
 			else {
-				const u_int iLevel = Floor2UInt(level);
+				const u_int iLevel = luxrays::Floor2UInt(level);
 				const float delta = level - iLevel;
-				return Lerp(delta,
+				return luxrays::Lerp(delta,
 					Triangle(sw, iLevel, s, t),
 					Triangle(sw, iLevel + 1, s, t));
 			}
@@ -449,18 +449,18 @@ RGBAColor MIPMapFastImpl<T>::LookupRGBAColor(float s, float t,
 		case MIPMAP_EWA: {
 			// Compute MIPMap level for trilinear filtering
 			const float level = nLevels - 1 +
-				Log2(max(width, 1e-8f));
+				luxrays::Log2(max(width, 1e-8f));
 			// Perform trilinear interpolation at appropriate level
 			if (level < 0)
 				return Triangle(0, s, t);
 			else if (level >= nLevels - 1)
 				return Texel(nLevels - 1,
-					Floor2Int(s * uSize(nLevels - 1)),
-					Floor2Int(t * vSize(nLevels - 1)));
+					luxrays::Floor2Int(s * uSize(nLevels - 1)),
+					luxrays::Floor2Int(t * vSize(nLevels - 1)));
 			else {
-				const u_int iLevel = Floor2UInt(level);
+				const u_int iLevel = luxrays::Floor2UInt(level);
 				const float delta = level - iLevel;
-				return Lerp(delta,
+				return luxrays::Lerp(delta,
 					Triangle(iLevel, s, t),
 					Triangle(iLevel + 1, s, t));
 			}
@@ -478,45 +478,45 @@ template <class T>
 float MIPMapFastImpl<T>::Triangle(Channel channel, u_int level,
 	float s, float t) const
 {
-	level = Clamp(level, 0U, nLevels - 1);
+	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(channel, level, s0, t0),
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(channel, level, s0, t0),
 		Texel(channel, level, s0, t0 + 1)),
-		Lerp(dt, Texel(channel, level, s0 + 1, t0),
+		luxrays::Lerp(dt, Texel(channel, level, s0 + 1, t0),
 		Texel(channel, level, s0 + 1, t0 + 1)));
 }
 template <class T>
 SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
 	u_int level, float s, float t) const
 {
-	level = Clamp(level, 0U, nLevels - 1);
+	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(sw, level, s0, t0),
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(sw, level, s0, t0),
 		Texel(sw, level, s0, t0 + 1)),
-		Lerp(dt, Texel(sw, level, s0 + 1, t0),
+		luxrays::Lerp(dt, Texel(sw, level, s0 + 1, t0),
 		Texel(sw, level, s0 + 1, t0 + 1)));
 }
 template <class T>
 RGBAColor MIPMapFastImpl<T>::Triangle(u_int level,
 	float s, float t) const
 {
-	level = Clamp(level, 0U, nLevels - 1);
+	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(level, s0, t0),
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(level, s0, t0),
 		Texel(level, s0, t0 + 1)),
-		Lerp(dt, Texel(level, s0 + 1, t0),
+		luxrays::Lerp(dt, Texel(level, s0 + 1, t0),
 		Texel(level, s0 + 1, t0 + 1)));
 }
 
@@ -525,11 +525,11 @@ float MIPMapFastImpl<T>::Triangle(Channel channel, float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(channel, s0, t0), Texel(channel, s0, t0 + 1)),
-		Lerp(dt, Texel(channel, s0 + 1, t0),
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(channel, s0, t0), Texel(channel, s0, t0 + 1)),
+		luxrays::Lerp(dt, Texel(channel, s0 + 1, t0),
 		Texel(channel, s0 + 1, t0 + 1)));
 }
 template <class T>
@@ -538,11 +538,11 @@ SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(sw, s0, t0), Texel(sw, s0, t0 + 1)),
-		Lerp(dt, Texel(sw, s0 + 1, t0),
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(sw, s0, t0), Texel(sw, s0, t0 + 1)),
+		luxrays::Lerp(dt, Texel(sw, s0 + 1, t0),
 		Texel(sw, s0 + 1, t0 + 1)));
 }
 template <class T>
@@ -550,11 +550,11 @@ RGBAColor MIPMapFastImpl<T>::Triangle(float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
-	return Lerp(ds,
-		Lerp(dt, Texel(s0, t0), Texel(s0, t0 + 1)),
-		Lerp(dt, Texel(s0 + 1, t0),	Texel(s0 + 1, t0 + 1)));
+	return luxrays::Lerp(ds,
+		luxrays::Lerp(dt, Texel(s0, t0), Texel(s0, t0 + 1)),
+		luxrays::Lerp(dt, Texel(s0 + 1, t0),	Texel(s0 + 1, t0 + 1)));
 }
 
 template <class T>
@@ -562,7 +562,7 @@ float MIPMapFastImpl<T>::Nearest(Channel channel, float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(channel, s0, t0);
 }
 template <class T>
@@ -571,7 +571,7 @@ SWCSpectrum MIPMapFastImpl<T>::Nearest(const SpectrumWavelengths &sw,
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(sw, s0, t0);
 }
 template <class T>
@@ -579,7 +579,7 @@ RGBAColor MIPMapFastImpl<T>::Nearest(float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
-	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(s0, t0);
 }
 
@@ -611,17 +611,17 @@ float MIPMapFastImpl<T>::LookupFloat(Channel channel, float s, float t,
 			}
 
 			// Choose level of detail for EWA lookup and perform EWA filtering
-			const float lod = nLevels - 1 + Log2(minorLength);
+			const float lod = nLevels - 1 + luxrays::Log2(minorLength);
 			if (lod <= 0.f)
 				return Triangle(channel, 0, s, t);
 			else if (lod >= nLevels - 1)
 				return Texel(channel, nLevels - 1,
-					Floor2Int(s * uSize(nLevels - 1)),
-					Floor2Int(t * vSize(nLevels - 1)));
+					luxrays::Floor2Int(s * uSize(nLevels - 1)),
+					luxrays::Floor2Int(t * vSize(nLevels - 1)));
 			else {
-				const u_int ilod = Floor2UInt(lod);
+				const u_int ilod = luxrays::Floor2UInt(lod);
 				const float d = lod - ilod;
-				return Lerp(d, EWA(channel, s, t,
+				return luxrays::Lerp(d, EWA(channel, s, t,
 					ds0, dt0, ds1, dt1, ilod),
 					EWA(channel, s, t,
 					ds0, dt0, ds1, dt1, ilod + 1));
@@ -663,17 +663,17 @@ SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const SpectrumWavelengths &sw,
 			}
 
 			// Choose level of detail for EWA lookup and perform EWA filtering
-			const float lod = nLevels - 1 + Log2(minorLength);
+			const float lod = nLevels - 1 + luxrays::Log2(minorLength);
 			if (lod <= 0.f)
 				return Triangle(sw, 0, s, t);
 			else if (lod >= nLevels - 1)
 				return Texel(sw, nLevels - 1,
-					Floor2Int(s * uSize(nLevels - 1)),
-					Floor2Int(t * vSize(nLevels - 1)));
+					luxrays::Floor2Int(s * uSize(nLevels - 1)),
+					luxrays::Floor2Int(t * vSize(nLevels - 1)));
 			else {
-				const u_int ilod = Floor2UInt(lod);
+				const u_int ilod = luxrays::Floor2UInt(lod);
 				const float d = lod - ilod;
-				return Lerp(d, EWA(sw, s, t,
+				return luxrays::Lerp(d, EWA(sw, s, t,
 					ds0, dt0, ds1, dt1, ilod),
 					EWA(sw, s, t,
 					ds0, dt0, ds1, dt1, ilod + 1));
@@ -695,7 +695,7 @@ float MIPMapFastImpl<T>::EWA(Channel channel, float s, float t,
 	s = s * uSize(level);
 	t = t * vSize(level);
 	if (level >= nLevels)
-		return Texel(channel, nLevels - 1, Floor2Int(s), Floor2Int(t));
+		return Texel(channel, nLevels - 1, luxrays::Floor2Int(s), luxrays::Floor2Int(t));
 	// Convert EWA coordinates to appropriate scale for level
 	ds0 *= uSize(level);
 	dt0 *= vSize(level);
@@ -708,10 +708,10 @@ float MIPMapFastImpl<T>::EWA(Channel channel, float s, float t,
 	const float F = A * C - B * B * 0.25f;
 	// Compute the ellipse's $(s,t)$ bounding box in texture space
 	const float du = sqrtf(C), dv = sqrtf(A);
-	const int s0 = Ceil2Int(s - du);
-	const int s1 = Floor2Int(s + du);
-	const int t0 = Ceil2Int(t - dv);
-	const int t1 = Floor2Int(t + dv);
+	const int s0 = luxrays::Ceil2Int(s - du);
+	const int s1 = luxrays::Floor2Int(s + du);
+	const int t0 = luxrays::Ceil2Int(t - dv);
+	const int t1 = luxrays::Floor2Int(t + dv);
 
 	const float invF = 1.f / F;
 	A *= invF;
@@ -728,7 +728,7 @@ float MIPMapFastImpl<T>::EWA(Channel channel, float s, float t,
 			const float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
 			if (r2 < 1.f) {
 				const float weight =
-					weightLut[min(Float2Int(r2 *
+					weightLut[min(luxrays::Float2Int(r2 *
 					WEIGHT_LUT_SIZE), WEIGHT_LUT_SIZE - 1)];
 				num += Texel(channel, level, is, it) * weight;
 				den += weight;
@@ -746,7 +746,7 @@ SWCSpectrum MIPMapFastImpl<T>::EWA(const SpectrumWavelengths &sw,
 	s = s * uSize(level);
 	t = t * vSize(level);
 	if (level >= nLevels)
-		return Texel(sw, nLevels - 1, Floor2Int(s), Floor2Int(t));
+		return Texel(sw, nLevels - 1, luxrays::Floor2Int(s), luxrays::Floor2Int(t));
 	// Convert EWA coordinates to appropriate scale for level
 	ds0 *= uSize(level);
 	dt0 *= vSize(level);
@@ -759,10 +759,10 @@ SWCSpectrum MIPMapFastImpl<T>::EWA(const SpectrumWavelengths &sw,
 	const float F = A * C - B * B * 0.25f;
 	// Compute the ellipse's $(s,t)$ bounding box in texture space
 	const float du = sqrtf(C), dv = sqrtf(A);
-	const int s0 = Ceil2Int(s - du);
-	const int s1 = Floor2Int(s + du);
-	const int t0 = Ceil2Int(t - dv);
-	const int t1 = Floor2Int(t + dv);
+	const int s0 = luxrays::Ceil2Int(s - du);
+	const int s1 = luxrays::Floor2Int(s + du);
+	const int t0 = luxrays::Ceil2Int(t - dv);
+	const int t1 = luxrays::Floor2Int(t + dv);
 
 	const float invF = 1.f / F;
 	A *= invF;
@@ -779,7 +779,7 @@ SWCSpectrum MIPMapFastImpl<T>::EWA(const SpectrumWavelengths &sw,
 			const float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
 			if (r2 < 1.f) {
 				const float weight =
-					weightLut[min(Float2Int(r2 *
+					weightLut[min(luxrays::Float2Int(r2 *
 					WEIGHT_LUT_SIZE), WEIGHT_LUT_SIZE - 1)];
 				num += Texel(sw, level, is, it) * weight;
 				den += weight;
@@ -796,7 +796,7 @@ RGBAColor MIPMapFastImpl<T>::EWA(float s, float t,
 	s = s * uSize(level);
 	t = t * vSize(level);
 	if (level >= nLevels)
-		return Texel(nLevels - 1, Floor2Int(s), Floor2Int(t));
+		return Texel(nLevels - 1, luxrays::Floor2Int(s), luxrays::Floor2Int(t));
 	// Convert EWA coordinates to appropriate scale for level
 	ds0 *= uSize(level);
 	dt0 *= vSize(level);
@@ -809,10 +809,10 @@ RGBAColor MIPMapFastImpl<T>::EWA(float s, float t,
 	const float F = A * C - B * B * 0.25f;
 	// Compute the ellipse's $(s,t)$ bounding box in texture space
 	const float du = sqrtf(C), dv = sqrtf(A);
-	const int s0 = Ceil2Int(s - du);
-	const int s1 = Floor2Int(s + du);
-	const int t0 = Ceil2Int(t - dv);
-	const int t1 = Floor2Int(t + dv);
+	const int s0 = luxrays::Ceil2Int(s - du);
+	const int s1 = luxrays::Floor2Int(s + du);
+	const int t0 = luxrays::Ceil2Int(t - dv);
+	const int t1 = luxrays::Floor2Int(t + dv);
 
 	const float invF = 1.f / F;
 	A *= invF;
@@ -829,7 +829,7 @@ RGBAColor MIPMapFastImpl<T>::EWA(float s, float t,
 			const float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
 			if (r2 < 1.f) {
 				const float weight =
-					weightLut[min(Float2Int(r2 *
+					weightLut[min(luxrays::Float2Int(r2 *
 					WEIGHT_LUT_SIZE), WEIGHT_LUT_SIZE - 1)];
 				num += Texel(level, is, it) * weight;
 				den += weight;
@@ -871,9 +871,9 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 	case MIPMAP_TRILINEAR:
 	case MIPMAP_EWA: {
 		T *resampledImage = NULL;
-		if (!IsPowerOf2(sres) || !IsPowerOf2(tres)) {
+		if (!luxrays::IsPowerOf2(sres) || !luxrays::IsPowerOf2(tres)) {
 			// Resample image to power-of-two resolution
-			const u_int sPow2 = RoundUpPow2(sres), tPow2 = RoundUpPow2(tres);
+			const u_int sPow2 = luxrays::RoundUpPow2(sres), tPow2 = luxrays::RoundUpPow2(tres);
 			LOG(LUX_INFO, LUX_NOERROR) <<
 				"Resampling image from " << sres << "x" <<
 				tres << " to " << sPow2 << "x" << tPow2;
@@ -894,10 +894,10 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 						int origS = sWeights[s].firstTexel + j;
 						switch (wrapMode) {
 						case TEXTURE_REPEAT:
-							origS = Mod(origS, static_cast<int>(sres));
+							origS = luxrays::Mod(origS, static_cast<int>(sres));
 							break;
 						case TEXTURE_CLAMP:
-							origS = Clamp(origS, 0, static_cast<int>(sres - 1));
+							origS = luxrays::Clamp(origS, 0, static_cast<int>(sres - 1));
 							break;
 						case TEXTURE_BLACK:
 						case TEXTURE_WHITE:
@@ -928,10 +928,10 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 						int origT = tWeights[t].firstTexel + j;
 						switch (wrapMode) {
 						case TEXTURE_REPEAT:
-							origT = Mod(origT, static_cast<int>(tres));
+							origT = luxrays::Mod(origT, static_cast<int>(tres));
 							break;
 						case TEXTURE_CLAMP:
-							origT = Clamp(origT, 0, static_cast<int>(tres - 1));
+							origT = luxrays::Clamp(origT, 0, static_cast<int>(tres - 1));
 							break;
 						case TEXTURE_BLACK:
 						case TEXTURE_WHITE:
@@ -958,21 +958,21 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 		}
 
 		// Initialize levels of MIPMap from image
-		nLevels = 1 + static_cast<u_int>(max(0, Log2Int(static_cast<float>(max(sres, tres)))));
+		nLevels = 1 + static_cast<u_int>(max(0, luxrays::Log2Int(static_cast<float>(max(sres, tres)))));
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Generating " << nLevels <<
 			" mipmap levels";
 
-		pyramid = new BlockedArray<T> *[this->nLevels];
+		pyramid = new luxrays::BlockedArray<T> *[this->nLevels];
 		// Initialize most detailed level of MIPMap
-		pyramid[0] = new BlockedArray<T>(sres, tres, img);
+		pyramid[0] = new luxrays::BlockedArray<T>(sres, tres, img);
 		for (u_int i = 1; i < nLevels; ++i) {
 			// Initialize $i$th MIPMap level from $i-1$st level
 			const u_int sRes = max<u_int>(1,
 				pyramid[i - 1]->uSize() / 2);
 			const u_int tRes = max<u_int>(1,
 				pyramid[i - 1]->vSize() / 2);
-			pyramid[i] = new BlockedArray<T>(sRes, tRes);
+			pyramid[i] = new luxrays::BlockedArray<T>(sRes, tRes);
 			// Filter four texels from finer level of pyramid
 			for (u_int t = 0; t < tRes; ++t) {
 				for (u_int s = 0; s < sRes; ++s) {
@@ -990,7 +990,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 
 		// Initialize EWA filter weights if needed
 		if (!weightLut) {
-			weightLut = AllocAligned<float>(WEIGHT_LUT_SIZE);
+			weightLut = luxrays::AllocAligned<float>(WEIGHT_LUT_SIZE);
 			for (u_int i = 0; i < WEIGHT_LUT_SIZE; ++i) {
 				const float alpha = 2.f;
 				const float r2 = static_cast<float>(i) / static_cast<float>(WEIGHT_LUT_SIZE - 1);
@@ -1001,7 +1001,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 	}
 	case BILINEAR:
 	case NEAREST:
-		singleMap = new BlockedArray<T>(sres, tres, img);
+		singleMap = new luxrays::BlockedArray<T>(sres, tres, img);
 		nLevels = 0;
 		break;
 	default:
@@ -1012,16 +1012,16 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 template <class T>
 float MIPMapFastImpl<T>::Texel(Channel channel, u_int level, int s, int t) const
 {
-	const BlockedArray<T> &l = *pyramid[level];
+	const luxrays::BlockedArray<T> &l = *pyramid[level];
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1039,16 +1039,16 @@ template <class T>
 SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw, u_int level,
 	int s, int t) const
 {
-	const BlockedArray<T> &l = *pyramid[level];
+	const luxrays::BlockedArray<T> &l = *pyramid[level];
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1065,16 +1065,16 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw, u_int level,
 template <class T>
 RGBAColor MIPMapFastImpl<T>::Texel(u_int level, int s, int t) const
 {
-	const BlockedArray<T> &l = *pyramid[level];
+	const luxrays::BlockedArray<T> &l = *pyramid[level];
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1092,16 +1092,16 @@ RGBAColor MIPMapFastImpl<T>::Texel(u_int level, int s, int t) const
 template <class T>
 float MIPMapFastImpl<T>::Texel(Channel channel, int s, int t) const
 {
-	const BlockedArray<T> &l = *singleMap;
+	const luxrays::BlockedArray<T> &l = *singleMap;
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1119,16 +1119,16 @@ template <class T>
 SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw,
 	int s, int t) const
 {
-	const BlockedArray<T> &l = *singleMap;
+	const luxrays::BlockedArray<T> &l = *singleMap;
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1145,16 +1145,16 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw,
 template <class T>
 RGBAColor MIPMapFastImpl<T>::Texel(int s, int t) const
 {
-	const BlockedArray<T> &l = *singleMap;
+	const luxrays::BlockedArray<T> &l = *singleMap;
 	// Compute texel $(s,t)$ accounting for boundary conditions
 	switch (wrapMode) {
 		case TEXTURE_REPEAT:
-			s = Mod(s, static_cast<int>(l.uSize()));
-			t = Mod(t, static_cast<int>(l.vSize()));
+			s = luxrays::Mod(s, static_cast<int>(l.uSize()));
+			t = luxrays::Mod(t, static_cast<int>(l.vSize()));
 			break;
 		case TEXTURE_CLAMP:
-			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
-			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			s = luxrays::Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = luxrays::Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
 			break;
 		case TEXTURE_BLACK:
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
@@ -1171,7 +1171,7 @@ RGBAColor MIPMapFastImpl<T>::Texel(int s, int t) const
 
 template <class T>
 void MIPMapFastImpl<T>::GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const {
-	const BlockedArray<T> &map = (nLevels == 0) ? *singleMap : *pyramid[0];
+	const luxrays::BlockedArray<T> &map = (nLevels == 0) ? *singleMap : *pyramid[0];
 	float minv = INFINITY;
 	float maxv = -INFINITY;
 	for (u_int t = 0; t < map.vSize(); ++t) {

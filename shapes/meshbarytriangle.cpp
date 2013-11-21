@@ -21,10 +21,10 @@
  ***************************************************************************/
 
 #include "mesh.h"
-#include "mc.h"
 #include "color.h"
 
 using namespace lux;
+using namespace luxrays;
 
 MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
 	mesh(m), v(&(mesh->triVertexIndex[3 * n])), is_Degenerate(false)

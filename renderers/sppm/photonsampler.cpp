@@ -26,7 +26,6 @@
 #include "integrators/sppm.h"
 #include "reflection/bxdf.h"
 #include "renderers/sppmrenderer.h"
-#include "mcdistribution.h"
 
 #include "photonsampler.h"
 

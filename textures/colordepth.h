@@ -42,7 +42,7 @@ public:
 		return Ln(color->Evaluate(sw, dg).Clamp(1e-9f, 1.f)) / d;
 	}
 	virtual float Y() const { return Filter(); }
-	virtual float Filter() const { return logf(Clamp(color->Filter(), 1e-9f, 1.f)) / d; }
+	virtual float Filter() const { return logf(luxrays::Clamp(color->Filter(), 1e-9f, 1.f)) / d; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }

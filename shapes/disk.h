@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "shape.h"
-#include "mc.h"
+#include "luxrays/utils/mc.h"
 
 namespace lux
 {
@@ -40,7 +40,7 @@ public:
 	virtual float Area() const;
 	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		Point p;
-		ConcentricSampleDisk(u1, u2, &p.x, &p.y);
+		luxrays::ConcentricSampleDisk(u1, u2, &p.x, &p.y);
 		p.x *= radius;
 		p.y *= radius;
 		p.z = height;

@@ -30,6 +30,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // MixMaterial Method Definitions
 BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

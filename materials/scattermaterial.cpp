@@ -33,6 +33,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // ScatterMaterial Method Definitions
 BSDF *ScatterMaterial::GetBSDF(MemoryArena &arena,

@@ -43,7 +43,7 @@ public:
 		Kd(kd), Ks(ks), Ka(ka),
 		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
 	virtual ~GlossyCombined() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	
@@ -71,7 +71,7 @@ public:
 		depth(d), index(i), nu(u), nv(v), sigma(s), 
 		multibounce(mb) { }
 	virtual ~Glossy2() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
@@ -109,7 +109,7 @@ public:
 		const ParamSet &mp) : Material("GlossyCoating-" + boost::lexical_cast<string>(this), mp),
 		basemat(bmat), Ks(ks), Ka(ka), depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
 	virtual ~GlossyCoating() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	

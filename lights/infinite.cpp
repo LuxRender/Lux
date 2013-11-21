@@ -23,7 +23,6 @@
 // infinite.cpp*
 #include "infinite.h"
 #include "imagereader.h"
-#include "mc.h"
 #include "paramset.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
@@ -31,6 +30,7 @@
 #include "sampling.h"
 #include "scene.h"
 #include "dynload.h"
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

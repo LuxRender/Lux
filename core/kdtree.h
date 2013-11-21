@@ -24,7 +24,6 @@
 #define LUX_KDTREE_H
 // kdtree.h*
 #include "lux.h"
-#include "memory.h"
 #include "luxrays/core/geometry/bbox.h"
 using luxrays::BBox;
 // KdTree Declarations
@@ -55,7 +54,7 @@ public:
 	// KdTree Public Methods
 	KdTree(const vector<NodeData> &data);
 	~KdTree() {
-		FreeAligned(nodes);
+		luxrays::FreeAligned(nodes);
 		delete[] nodeData;
 	}
 	void recursiveBuild(u_int nodeNum, u_int start, u_int end,
@@ -88,7 +87,7 @@ KdTree<NodeData,
        LookupProc>::KdTree(const vector<NodeData> &d) {
 	nNodes = d.size();
 	nextFreeNode = 1;
-	nodes = AllocAligned<KdNode>(nNodes);
+	nodes = luxrays::AllocAligned<KdNode>(nNodes);
 	nodeData = new NodeData[nNodes];
 	vector<const NodeData *> buildNodes;
 	for (u_int i = 0; i < nNodes; ++i)

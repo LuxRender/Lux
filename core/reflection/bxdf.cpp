@@ -24,12 +24,14 @@
 #include "bxdf.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
-#include "mc.h"
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 namespace lux
 {

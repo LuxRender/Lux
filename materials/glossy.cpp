@@ -35,6 +35,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Glossy Method Definitions
 BSDF *Glossy::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

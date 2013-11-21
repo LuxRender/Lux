@@ -28,7 +28,8 @@
 #include "spectrumwavelengths.h"
 #include "kdtree.h"
 #include "bxdf.h"
-#include "mc.h"
+
+#include "luxrays/utils/mc.h"
 
 namespace lux
 {
@@ -149,12 +150,12 @@ public:
 	}
 
 	float Sample(Vector *wi, float u1, float u2, float u3) const {
-		size_t dn = Clamp<size_t>(static_cast<size_t>(
+		size_t dn = luxrays::Clamp<size_t>(static_cast<size_t>(
 			std::upper_bound(dirs.begin(), dirs.end(), Direction(u3)) - dirs.begin()),
 			0U, dirs.size() - 1);
 
 		Vector vx, vy;
-		CoordinateSystem(dirs[dn].dir, &vx, &vy);
+		luxrays::CoordinateSystem(dirs[dn].dir, &vx, &vy);
 		*wi = UniformSampleCone(u1, u2, dirs[dn].cosRadius, vx, vy, dirs[dn].dir);
 
 		return Pdf(*wi);
@@ -163,7 +164,7 @@ public:
 		float pdf = 0.f;
 		for (u_int i = 0; i < dirs.size(); ++i) {
 			if (Dot(dirs[i].dir, wi) > dirs[i].cosRadius)
-				pdf += UniformConePdf(dirs[i].cosRadius);
+				pdf += luxrays::UniformConePdf(dirs[i].cosRadius);
 		}
 		return pdf;
 	}

@@ -46,7 +46,7 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		const float cs[COLOR_SAMPLES] = { s - Floor2Int(s), t - Floor2Int(t), 0.f };
+		const float cs[COLOR_SAMPLES] = { s - luxrays::Floor2Int(s), t - luxrays::Floor2Int(t), 0.f };
 		return SWCSpectrum(sw, RGBColor(cs));
 	}
 	virtual float Y() const {

@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // UnsafeKdTreeAccel Method Definitions
 UnsafeKdTreeAccel::UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,

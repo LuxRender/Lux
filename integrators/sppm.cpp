@@ -29,7 +29,6 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "path.h"
-#include "mc.h"
 
 using namespace lux;
 

@@ -24,7 +24,6 @@
 #include "distant.h"
 #include "memory.h"
 #include "color.h"
-#include "mc.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"
@@ -32,6 +31,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 class DistantBxDF : public BxDF
 {

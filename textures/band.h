@@ -56,7 +56,7 @@ public:
 			return tex.back()->Evaluate(sw, dg);
 		u_int p = upper_bound(offsets.begin(), offsets.end(), a) -
 			offsets.begin();
-		return Lerp((a - offsets[p - 1]) / (offsets[p] - offsets[p - 1]),
+		return luxrays::Lerp((a - offsets[p - 1]) / (offsets[p] - offsets[p - 1]),
 			tex[p - 1]->Evaluate(sw, dg), tex[p]->Evaluate(sw, dg));
 	}
 	virtual float Y() const {
@@ -93,8 +93,8 @@ public:
 		tex[p]->GetDuv(sw, dg, delta, &du2, &dv2);
 		float d = tex[p]->EvalFloat(sw, dg) -
 			tex[p - 1]->EvalFloat(sw, dg);
-		*du = Lerp(a, du1, du2) + d * dua;
-		*dv = Lerp(a, dv1, dv2) + d * dva;
+		*du = luxrays::Lerp(a, du1, du2) + d * dua;
+		*dv = luxrays::Lerp(a, dv1, dv2) + d * dva;
 	}
 	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
 		tex.front()->GetMinMaxFloat(minValue, maxValue);

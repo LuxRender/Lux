@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Sphere Method Definitions
 Sphere::Sphere(const Transform &o2w, bool ro, const string &name, 

@@ -42,7 +42,7 @@ public:
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		const Point P(mapping->Map(dg));
-		return Clamp(expf(-decay * Dot(P - origin, upDir)), 0.f, 1.f);
+		return luxrays::Clamp(expf(-decay * Dot(P - origin, upDir)), 0.f, 1.f);
 	}
 	virtual float Y() const { return .5f; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,

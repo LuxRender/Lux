@@ -21,9 +21,9 @@
  ***************************************************************************/
 
 #include "mesh.h"
-#include "mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 	: MeshBaryTriangle(m, n)

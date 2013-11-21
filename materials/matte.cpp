@@ -33,6 +33,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Matte Method Definitions
 BSDF *Matte::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

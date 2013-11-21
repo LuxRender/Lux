@@ -25,7 +25,6 @@
 #include "scene.h"
 #include "light.h"
 #include "camera.h"
-#include "mcdistribution.h"
 #include "reflection/bxdf.h"
 #include "sampling.h"
 #include "film.h"
@@ -33,7 +32,10 @@
 #include "dynload.h"
 #include "paramset.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 {

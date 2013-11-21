@@ -30,6 +30,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Glass Method Definitions
 BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

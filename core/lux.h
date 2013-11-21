@@ -46,8 +46,11 @@ using std::sort;
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/version.hpp>
 
+#include "luxrays/luxrays.h"
+#include "luxrays/core/epsilon.h"
+#include "luxrays/core/geometry/transform.h"
 #include "luxrays/core/utils.h"
-#include "memory.h"
+#include "luxrays/utils/memory.h"
 
 // boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011
 // https://svn.boost.org/trac/boost/ticket/6940
@@ -62,10 +65,6 @@ using std::sort;
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isinf(f) (!_finite((f)))
-#  if !defined(isnan)
-#    define isnan(a) (_isnan(a))
-#  endif
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
@@ -118,26 +117,14 @@ inline void ChangeConsoleColor(WORD col)
 	SetConsoleTextAttribute(hConsole, col);
 }
 }
-#else
-using std::isinf;
-using std::isnan;
 #endif
+
 #if defined (__INTEL_COMPILER) && !defined(WIN32)
 // Dade - to fix a problem with expf undefined with Intel CC
 inline float expf(float a) { return exp(a); }
 #endif
 
 // Global Constants
-#ifdef M_PI
-#  undef M_PI
-#endif
-#define M_PI           3.14159265358979323846f
-#define INV_PI  0.31830988618379067154f
-#define INV_TWOPI  0.15915494309189533577f
-#ifndef INFINITY
-#  define INFINITY HUGE_VAL
-//#define INFINITY std::numeric_limits<float>::max()
-#endif
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
@@ -145,27 +132,12 @@ inline float expf(float a) { return exp(a); }
 #endif
 
 // Global Type Declarations
-typedef unsigned char u_char;
-typedef unsigned short u_short;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
 #define BC_GRID_SIZE 40
 typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 #define GRID(v) (int((v) * BC_GRID_SIZE))
 
 // Global Forward Declarations
 class Timer;
-
-namespace luxrays {
-  class BBox;
-  class MachineEpsilon;
-  class Matrix4x4;
-  class Normal;
-  class Point;
-  class Ray;
-  class Transform;
-  class Vector;
-}
 
 namespace lux
 {
@@ -255,9 +227,6 @@ namespace lux
   class InterpolatedTransform;
   class MotionSystem;
   class MotionTransform;
-  class Distribution1D;
-  class Distribution2D;
-  class IrregularDistribution1D;
   class SampleableSphericalFunction;
 
   class Context;
@@ -272,120 +241,6 @@ namespace lux
   // converts paths to portable format and 
   // provides fallback mechanism for missing files
   string AdjustFilename(const string filename, bool silent = false);
-
-// Global Inline Functions
-template<class T> inline T Lerp(float t, T v1, T v2) {
-	return v1 + t * (v2 - v1);
-}
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
-inline int Round2Int(double val) {
-	return static_cast<int>(val > 0. ? val + .5 : val - .5);
-}
-inline int Round2Int(float val) {
-	return static_cast<int>(val > 0.f ? val + .5f : val - .5f);
-}
-inline u_int Round2UInt(double val) {
-	return static_cast<u_int>(val > 0. ? val + .5 : 0.);
-}
-inline u_int Round2UInt(float val) {
-	return static_cast<u_int>(val > 0.f ? val + .5f : 0.f);
-}
-inline int Mod(int a, int b) {
-	// note - radiance - added 0 check to prevent divide by zero error(s)
-	if (b == 0)
-		b = 1;
-
-	a %= b;
-	if (a < 0)
-		a += b;
-	return a;
-}
-inline float Radians(float deg) {
-	return (M_PI / 180.f) * deg;
-}
-inline float Degrees(float rad) {
-	return (180.f / M_PI) * rad;
-}
-inline float Log2(float x) {
-	return logf(x) / logf(2.f);
-}
-inline int Log2Int(float v) {
-	return Round2Int(Log2(v));
-}
-inline bool IsPowerOf2(int v) {
-	return (v & (v - 1)) == 0;
-}
-inline bool IsPowerOf2(u_int v) {
-	return (v & (v - 1)) == 0;
-}
-inline u_int RoundUpPow2(u_int v) {
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	return v+1;
-}
-template<class T> inline int Float2Int(T val) {
-	return static_cast<int>(val);
-}
-template<class T> inline u_int Float2UInt(T val) {
-	return val >= 0 ? static_cast<u_int>(val) : 0;
-}
-inline int Floor2Int(double val) {
-	return static_cast<int>(floor(val));
-}
-inline int Floor2Int(float val) {
-	return static_cast<int>(floorf(val));
-}
-inline u_int Floor2UInt(double val) {
-	return val > 0. ? static_cast<u_int>(floor(val)) : 0;
-}
-inline u_int Floor2UInt(float val) {
-	return val > 0.f ? static_cast<u_int>(floorf(val)) : 0;
-}
-inline int Ceil2Int(double val) {
-	return static_cast<int>(ceil(val));
-}
-inline int Ceil2Int(float val) {
-	return static_cast<int>(ceilf(val));
-}
-inline u_int Ceil2UInt(double val) {
-	return val > 0. ? static_cast<u_int>(ceil(val)) : 0;
-}
-inline u_int Ceil2UInt(float val) {
-	return val > 0.f ? static_cast<u_int>(ceilf(val)) : 0;
-}
-inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
-	// Find quadratic discriminant
-	float discrim = B * B - 4.f * A * C;
-	if (discrim < 0.f)
-		return false;
-	float rootDiscrim = sqrtf(discrim);
-	// Compute quadratic _t_ values
-	float q;
-	if (B < 0)
-		q = -.5f * (B - rootDiscrim);
-	else
-		q = -.5f * (B + rootDiscrim);
-	*t0 = q / A;
-	*t1 = C / q;
-	if (*t0 > *t1)
-		swap(*t0, *t1);
-	return true;
-}
-inline float SmoothStep(float min, float max, float value) {
-	float v = Clamp((value - min) / (max - min), 0.f, 1.f);
-	return v * v * (-2.f * v  + 3.f);
-}
-
-template <class T> int SignOf(T x)
-{
-	return (x > 0) - (x < 0);
-}
 
 }
 

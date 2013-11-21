@@ -184,7 +184,7 @@ public:
 			for (sn = 0; sn < primitives.size() - 1; ++sn)
 				if (u3 < areaCDF[sn]) break;
 		} else {
-			sn = Clamp<size_t>(static_cast<size_t>(std::upper_bound(areaCDF.begin(),
+			sn = luxrays::Clamp<size_t>(static_cast<size_t>(std::upper_bound(areaCDF.begin(),
 				areaCDF.end(), u3) - areaCDF.begin()),
 				0U, primitives.size() - 1U);
 		}

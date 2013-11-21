@@ -37,7 +37,7 @@ public:
 		const ParamSet &mp) : Material("MixMaterial-" + boost::lexical_cast<string>(this), mp, false),
 		amount(a), mat1(m1), mat2(m2) { }
 	virtual ~MixMaterial() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

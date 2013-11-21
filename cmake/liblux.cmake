@@ -73,7 +73,6 @@ SET(lux_core_src
 	core/imagereader.cpp
 	core/light.cpp
 	core/material.cpp
-	core/mc.cpp
 	core/motionsystem.cpp
 	core/osfunc.cpp
 	core/paramset.cpp
@@ -517,8 +516,6 @@ SET(lux_core_hdr
 	core/light.h
 	core/lux.h
 	core/material.h
-	core/mc.h
-	core/mcdistribution.h
 	core/memory.h
 	core/mipmap.h
 	core/motionsystem.h

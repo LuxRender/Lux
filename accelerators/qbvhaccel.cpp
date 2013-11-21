@@ -25,6 +25,8 @@
 #include "dynload.h"
 #include "error.h"
 
+using namespace luxrays;
+
 namespace lux
 {
 

@@ -64,7 +64,7 @@ inline RGBColor FalsetoRGB_STD(float falseValue)
 {
 	RGBColor res;
 
-	int value = Clamp(falseValue, 0.f, 1.f) * 1023;
+	int value = luxrays::Clamp(falseValue, 0.f, 1.f) * 1023;
 
 	int i = value / 128; //halfstep
 	int v = value % 128;
@@ -129,7 +129,7 @@ inline RGBColor FalsetoRGB_LMK(float falseValue)
 {
 	RGBColor res;
 
-	int value = Clamp(falseValue, 0.f, 1.f) * 1279;
+	int value = luxrays::Clamp(falseValue, 0.f, 1.f) * 1279;
 
 	int i = value / 256;
 	int v = value % 256;
@@ -179,7 +179,7 @@ inline RGBColor FalsetoRGB_SPEOS(float falseValue)
 {
 	RGBColor res;
 
-	int value = Clamp(falseValue, 0.f, 1.f) * 1535;
+	int value = luxrays::Clamp(falseValue, 0.f, 1.f) * 1535;
 
 	int i = value / 256;
 	int v = value % 256;
@@ -234,7 +234,7 @@ inline RGBColor FalsetoRGB_RED(float falseValue)
 {
 	RGBColor res;
 
-	float value = Clamp(falseValue, 0.f, 1.f);
+	float value = luxrays::Clamp(falseValue, 0.f, 1.f);
 
 	if (value == 0) { //for easiest debugging
 		res.c[0] = 0;
@@ -253,7 +253,7 @@ inline RGBColor FalsetoRGB_WHITE(float falseValue)
 {
 	RGBColor res;
 
-	float value = Clamp(falseValue, 0.f, 1.f);
+	float value = luxrays::Clamp(falseValue, 0.f, 1.f);
 
 	if (value == 0) { //for easiest debugging
 		res.c[0] = 0;
@@ -272,7 +272,7 @@ inline RGBColor FalsetoRGB_YELLOW(float falseValue)
 {
 	RGBColor res;
 
-	float value = Clamp(falseValue, 0.f, 1.f);
+	float value = luxrays::Clamp(falseValue, 0.f, 1.f);
 
 	if (value == 0) { //for easiest debugging
 		res.c[0] = 0;

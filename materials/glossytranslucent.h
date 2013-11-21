@@ -54,7 +54,7 @@ public:
 		index(i), index_bf(i2), nu(u), nu_bf(u2), nv(v), nv_bf(v2),
 		multibounce(mb), multibounce_bf(mb2) { }
 	virtual ~GlossyTranslucent() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	

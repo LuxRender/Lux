@@ -23,7 +23,6 @@
 // sky.cpp*
 #include "sky.h"
 #include "memory.h"
-#include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
 #include "regular.h"
@@ -36,7 +35,10 @@
 
 #include "data/skychroma_spect.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 class  SkyBSDF : public BSDF  {
 public:
@@ -313,7 +315,7 @@ float SkyLight::Power(const Scene &scene) const
 		for (u_int j = 0; j < steps; ++j) {
 			float theta = acosf(cosTheta);
 			float gamma = RiAngleBetween(theta, phi, thetaS, phiS);
-			theta = min(theta, M_PI * .5f - .001f);
+			theta = Min<float>(theta, M_PI * .5f - .001f);
 			power += zenith_Y * PerezBase(perez_Y, theta, gamma);
 			cosTheta += deltaStep;
 		}
@@ -620,7 +622,7 @@ void SkyLight::GetSkySpectralRadiance(const SpectrumWavelengths &sw,
 	const Vector &w, SWCSpectrum * const dst_spect) const
 {
 	// add bottom half of hemisphere with horizon colour
-	const float theta = min(SphericalTheta(w), (M_PI * .5f) - .001f);
+	const float theta = Min<float>(SphericalTheta(w), (M_PI * .5f) - .001f);
 	const float gamma = RiAngleBetween(w, sundir);
 
 	// Compute xyY values

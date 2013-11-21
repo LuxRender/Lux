@@ -28,6 +28,7 @@
 #include "data/xyzbasis.h"
 
 using namespace lux;
+using namespace luxrays;
 
 void SPD::AllocateSamples(u_int n) {
 	 // Allocate memory for samples

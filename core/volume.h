@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "luxrays/core/geometry/bbox.h"
+#include "luxrays/utils/mc.h"
 using luxrays::BBox;
 #include "primitive.h"
 #include "spectrum.h"
@@ -42,7 +43,6 @@ float PhaseIsotropic(const Vector &w, const Vector &wp);
 float PhaseRayleigh(const Vector &w, const Vector &wp);
 float PhaseMieHazy(const Vector &w, const Vector &wp);
 float PhaseMieMurky(const Vector &w, const Vector &wp);
-float PhaseHG(const Vector &w, const Vector &wp, float g);
 float PhaseSchlick(const Vector &w, const Vector &wp, float g);
 
 class Volume : public Queryable {
@@ -94,7 +94,7 @@ public:
 	virtual float P(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg,
 		const Vector &w, const Vector &wp) const {
-		return PhaseHG(w, wp, g);
+		return luxrays::PhaseHG(w, wp, g);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const {
@@ -239,7 +239,7 @@ public:
 		const float length = r.d.Length();
 		if (!(length > 0.f))
 			return SWCSpectrum(0.f);
-		const u_int N = Ceil2UInt((r.maxt - r.mint) * length / stepSize);
+		const u_int N = luxrays::Ceil2UInt((r.maxt - r.mint) * length / stepSize);
 		const float step = (r.maxt - r.mint) / N;
 		DifferentialGeometry dg;
 		dg.nn = Normal(-r.d);

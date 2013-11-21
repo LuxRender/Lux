@@ -40,7 +40,7 @@ public:
 		const ParamSet &mp) : Material("ScatterMaterial-" + boost::lexical_cast<string>(this), mp, false),
 		Kd(kd), G(g) { }
 	virtual ~ScatterMaterial() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
@@ -59,7 +59,7 @@ public:
 		float &g_) : Material("UniformRGBScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
 		kS(ks), kA(ka), g(g_) { }
 	virtual ~UniformRGBScatterMaterial() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 private:
@@ -77,7 +77,7 @@ public:
 		: Material("VolumeScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
 		volume(v), G(g) { }
 	virtual ~VolumeScatterMaterial() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 private:

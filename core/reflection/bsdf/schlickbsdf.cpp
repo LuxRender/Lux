@@ -24,12 +24,13 @@
 #include "schlickbsdf.h"
 #include "spectrum.h"
 #include "fresnel.h"
-#include "mc.h"
 #include "sampling.h"
 #include "luxrays/core/epsilon.h"
 using luxrays::MachineEpsilon;
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 static RandomGenerator rng(1);
 

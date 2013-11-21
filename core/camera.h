@@ -27,6 +27,7 @@
 #include "geometry/transform.h"
 #include "motionsystem.h"
 #include "queryable.h"
+#include "luxrays/utils/memory.h"
 
 namespace lux
 {
@@ -107,7 +108,7 @@ public:
 	 * @return true if the sampling is correct and the returned values
 	 * can be used, false otherwise
 	 */
-	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, SWCSpectrum *We) const = 0;
 	/**
@@ -143,7 +144,7 @@ public:
 	 * @return true if the sampling is correct and the returned values
 	 * can be used, false otherwise
 	 */
-	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		float *pdfDirect, SWCSpectrum *We) const = 0;
@@ -225,7 +226,7 @@ public:
 	Film *film;
 	Transform CameraToWorld;
 protected:
-	bool GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
+	bool GenerateRay(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float o1, float o2, float d1, float d2,
 		Ray *ray) const;
 	// Camera Protected Data

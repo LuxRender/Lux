@@ -27,11 +27,12 @@
 
 // lenscomponent.cpp*
 #include "lenscomponent.h"
-#include "mc.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // LensComponent Method Definitions
 LensComponent::LensComponent(const Transform &o2w, bool ro, const string &name, 

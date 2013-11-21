@@ -24,15 +24,15 @@
 #include "layeredbsdf.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
-#include "mc.h"
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"
 #include "luxrays/core/epsilon.h"
 using luxrays::MachineEpsilon;
-
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // LayeredBSDF Method Definitions
 

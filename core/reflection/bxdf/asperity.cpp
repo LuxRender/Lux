@@ -23,7 +23,7 @@
 // asperity.cpp*
 #include "asperity.h"
 #include "spectrum.h"
-#include "mc.h"
+#include "luxrays/utils/mc.h"
 
 // Asperity scattering BRDF as described in "The Secret of Velvety Skin. J. Koendering and S. Pont, 2002"
 // Phase function limited to four coefficients of Legendre polynomials (first assumed to be 1.0 by the paper)
@@ -52,4 +52,3 @@ void Asperity::F(const SpectrumWavelengths &sw, const Vector &wo,
 	
 	f_->AddWeighted(p, R);
 }
-

@@ -36,7 +36,7 @@ public:
 		AddBoolAttribute(*this, "architectural", "Glass architectural flag", &Glass2::architectural);
 	}
 	virtual ~Glass2() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	

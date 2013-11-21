@@ -23,7 +23,8 @@
 // lafortune.cpp*
 #include "lafortune.h"
 #include "spectrum.h"
-#include "mc.h"
+
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

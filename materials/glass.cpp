@@ -34,6 +34,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Glass Method Definitions
 BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

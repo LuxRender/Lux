@@ -64,7 +64,7 @@ public:
 		// Alternative with interreflection in the coating creases
 		if (multibounce)
 			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) / den +
-				Clamp((1.f - G) / den, 0.f, 1.f);
+				luxrays::Clamp((1.f - G) / den, 0.f, 1.f);
 		else
 			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) / den;
 	}
@@ -118,7 +118,7 @@ public:
 		// Alternative with interreflection in the coating creases
 		if (multibounce_bf)
 			return G * SchlickZBack(fabsf(H.z)) * SchlickABack(H) / den +
-				Clamp((1.f - G) / den, 0.f, 1.f);
+				luxrays::Clamp((1.f - G) / den, 0.f, 1.f);
 		else
 			return G * SchlickZBack(fabsf(H.z)) * SchlickABack(H) / den;
 	}

@@ -30,6 +30,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // DoubleSideMaterial Method Definitions
 BSDF *DoubleSideMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

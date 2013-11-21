@@ -32,6 +32,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Velvet Method Definitions
 BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

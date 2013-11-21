@@ -36,7 +36,7 @@ public:
 		const ParamSet &mp) : Material("Matte-" + boost::lexical_cast<string>(this), mp),
 			Kd(kd), sigma(sig) { }
 	virtual ~Matte() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

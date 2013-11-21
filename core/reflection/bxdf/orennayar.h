@@ -36,7 +36,7 @@ public:
 	OrenNayar(const SWCSpectrum &reflectance, float sig)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance) {
-		float sigma = Radians(sig);
+		float sigma = luxrays::Radians(sig);
 		float sigma2 = sigma*sigma;
 		A = 1.f - (sigma2 / (2.f * (sigma2 + 0.33f)));
 		B = 0.45f * sigma2 / (sigma2 + 0.09f);

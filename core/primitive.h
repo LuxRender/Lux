@@ -215,7 +215,7 @@ public:
 	// Intersection Public Methods
 	Intersection() : primitive(NULL), material(NULL), exterior(NULL),
 		interior(NULL), arealight(NULL) { }
-	BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Ray &ray) const;
 	bool Le(const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,

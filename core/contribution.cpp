@@ -27,6 +27,8 @@
 
 #include <boost/thread/locks.hpp>
 
+using namespace luxrays;
+
 namespace lux
 {
 

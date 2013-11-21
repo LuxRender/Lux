@@ -79,8 +79,8 @@ public:
 
 	Yarn(float y_psi, float y_umax, float y_kappa,
 		float y_width, float y_length, float y_centerU,
-		float y_centerV, u_int y_index) : psi(Radians(y_psi)),
-		umax(Radians(y_umax)), kappa(y_kappa), width(y_width),
+		float y_centerV, u_int y_index) : psi(luxrays::Radians(y_psi)),
+		umax(luxrays::Radians(y_umax)), kappa(y_kappa), width(y_width),
 		length(y_length), centerU(y_centerU), centerV(y_centerV),
 		index(y_index) {  }
 	virtual ~Yarn() { }
@@ -167,10 +167,10 @@ public:
 		ss(w_ss), hWidth(w_hWidth), warpArea(w_warpArea),
 		weftArea(w_weftArea), tileWidth(w_tileWidth),
 		tileHeight(w_tileHeight),
-		dWarpUmaxOverDWarp(Radians(w_dWarpUmaxOverDWarp)),
-		dWarpUmaxOverDWeft(Radians(w_dWarpUmaxOverDWeft)),
-		dWeftUmaxOverDWarp(Radians(w_dWeftUmaxOverDWarp)),
-		dWeftUmaxOverDWeft(Radians(w_dWeftUmaxOverDWeft)),
+		dWarpUmaxOverDWarp(luxrays::Radians(w_dWarpUmaxOverDWarp)),
+		dWarpUmaxOverDWeft(luxrays::Radians(w_dWarpUmaxOverDWeft)),
+		dWeftUmaxOverDWarp(luxrays::Radians(w_dWeftUmaxOverDWarp)),
+		dWeftUmaxOverDWeft(luxrays::Radians(w_dWeftUmaxOverDWeft)),
 		fineness(w_fineness), period(w_period),
 		repeat_u(w_repeat_u), repeat_v(w_repeat_v) { }
 

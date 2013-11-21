@@ -22,7 +22,6 @@
 
 // area.cpp*
 #include "light.h"
-#include "mc.h"
 #include "shape.h"
 #include "context.h"
 #include "paramset.h"

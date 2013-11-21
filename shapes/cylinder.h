@@ -40,7 +40,7 @@ public:
 	virtual float Area() const;
 	virtual Point Sample(float u1, float u2, float u3, 
 			Normal *Ns) const {
-		float z = Lerp(u1, zmin, zmax);
+		float z = luxrays::Lerp(u1, zmin, zmax);
 		float t = u2 * phiMax;
 		Point p = Point(radius * cosf(t), radius * sinf(t), z);
 		*Ns = Normalize(ObjectToWorld * Normal(p.x, p.y, 0.));

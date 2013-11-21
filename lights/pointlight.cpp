@@ -22,15 +22,16 @@
 
 // point.cpp*
 #include "pointlight.h"
-#include "mc.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sphericalfunction.h"
 #include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 class  UniformBSDF : public BSDF  {
 public:

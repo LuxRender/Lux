@@ -24,6 +24,7 @@
 #include "geometry/matrix3x3.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // checks if quad is degenerate or if any points coincide
 bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {

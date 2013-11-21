@@ -41,6 +41,7 @@
 #include <fstream>
 
 using namespace lux;
+using namespace luxrays;
 
 Metal::Metal(const std::string &metalName,
 	boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 

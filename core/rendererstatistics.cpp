@@ -32,6 +32,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 using boost::posix_time::time_duration;
 
+using namespace luxrays;
+
 namespace lux
 {
 

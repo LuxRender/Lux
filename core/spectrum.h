@@ -212,7 +212,7 @@ public:
 	               Scalar high = INFINITY) const {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = lux::Clamp(c[i], low, high);
+			ret.c[i] = luxrays::Clamp(c[i], low, high);
 		return ret;
 	}
 	bool IsNaN() const {

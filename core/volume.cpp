@@ -45,12 +45,6 @@ float PhaseIsotropic(const Vector &, const Vector &) {
 	return (0.5f + 16.5f * powf(0.5f * (1.f + costheta), 32.f)) / (4.f * M_PI);
 }
 
-float PhaseHG(const Vector &w, const Vector &wp, float g) {
-	const float costheta = Dot(w, wp);
-	return 1.f / (4.f * M_PI) * (1.f - g * g) /
-		powf(1.f + g * g - 2.f * g * costheta, 1.5f);
-}
-
 float PhaseSchlick(const Vector &w,
                    const Vector &wp, float g) {
 	const float k = g * (1.5f - .5f * g * g);

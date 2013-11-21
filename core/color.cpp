@@ -277,7 +277,7 @@ RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 		case 2:
 			return rgb.Clamp(0.f, 1.f);
 		case 3:
-			return Lerp(1.f / max(rgb.c[0], max(rgb.c[1], rgb.c[2])),
+			return luxrays::Lerp(1.f / max(rgb.c[0], max(rgb.c[1], rgb.c[2])),
 				RGBColor(0.f), rgb);
 		default:
 		{
@@ -304,7 +304,7 @@ RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 			}
 
 			// Now finally compute the limited RGB weights.
-			return Lerp(parameter, RGBColor(l), rgb);
+			return luxrays::Lerp(parameter, RGBColor(l), rgb);
 		}
 		}
 	}

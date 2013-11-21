@@ -23,9 +23,11 @@
 // orennayar.cpp*
 #include "orennayar.h"
 #include "spectrum.h"
-#include "mc.h"
+
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 void OrenNayar::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const

@@ -23,7 +23,6 @@
 // orthographic.cpp*
 #include "orthographic.h"
 #include "sampling.h"
-#include "mc.h"
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
 #include "specularreflection.h"
@@ -32,6 +31,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "motionsystem.h"
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

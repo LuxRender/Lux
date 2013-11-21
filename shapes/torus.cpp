@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 int signR(double Z)
 {

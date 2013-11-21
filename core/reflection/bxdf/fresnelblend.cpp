@@ -23,10 +23,12 @@
 // fresnelblend.cpp*
 #include "fresnelblend.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "microfacetdistribution.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 	const SWCSpectrum &s,

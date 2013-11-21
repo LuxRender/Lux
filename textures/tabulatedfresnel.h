@@ -22,7 +22,6 @@
 
 // tabulatedfresnel.h*
 #include "lux.h"
-#include "memory.h"
 #include "texture.h"
 #include "irregular.h"
 #include "fresnelgeneral.h"

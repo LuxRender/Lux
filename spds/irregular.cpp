@@ -24,6 +24,7 @@
 #include "irregular.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // creates an irregularly sampled SPD
 // may "truncate" the edges to fit the new resolution

@@ -22,7 +22,9 @@
 
 #include "sphericalfunction_ies.h"
 #include "error.h"
-#include "mcdistribution.h"
+#include "luxrays/utils/mcdistribution.h"
+
+using namespace luxrays;
 
 namespace lux {
 

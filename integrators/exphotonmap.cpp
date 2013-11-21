@@ -31,7 +31,6 @@
 #include "sampling.h"
 #include "scene.h"
 #include "color.h"
-#include "mc.h"
 
 using namespace lux;
 

@@ -26,7 +26,8 @@
 // tabreckdtree.cpp*
 #include "lux.h"
 #include "primitive.h"
-#include "memory.h"
+
+using namespace luxrays;
 
 namespace lux
 {

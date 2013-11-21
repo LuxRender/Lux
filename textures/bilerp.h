@@ -51,8 +51,8 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		return (1.f - s) * (1.f - t) * v00 + (1.f - s) * t * v01 +
 			s * (1.f - t) * v10 + s * t * v11;
 	}
@@ -62,8 +62,8 @@ public:
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		const float d = v00 + v11 - v01 - v10;
 		*du = dsdu * (v10 - v00 + t * d) + dtdu * (v01 - v00 + s * d);
 		*dv = dsdv * (v10 - v00 + t * d) + dtdv * (v01 - v00 + s * d);
@@ -100,8 +100,8 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		return SWCSpectrum(sw, (1.f - s) * (1.f - t) * v00 +
 			(1.f - s) * t * v01 + s * (1.f - t) * v10 +
 			s * t * v11);
@@ -117,8 +117,8 @@ public:
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		const float d = RGBColor(v00 + v11 - v01 - v10).Filter();
 		const float d1 = RGBColor(v10 - v00).Filter();
 		const float d2 = RGBColor(v01 - v00).Filter();
@@ -157,8 +157,8 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		return (1.f - s) * (1.f - t) * v00->Evaluate(sw, dg) +
 			(1.f - s) * t * v01->Evaluate(sw, dg) +
 			s * (1.f - t) * v10->Evaluate(sw, dg) +
@@ -175,8 +175,8 @@ public:
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
-		s -= Floor2Int(s);
-		t -= Floor2Int(t);
+		s -= luxrays::Floor2Int(s);
+		t -= luxrays::Floor2Int(t);
 		const float d = v00->Filter() + v11->Filter() - v01->Filter() - v10->Filter();
 		const float d1 = v10->Filter() - v00->Filter();
 		const float d2 = v01->Filter() - v00->Filter();

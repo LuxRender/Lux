@@ -195,7 +195,7 @@ static bool writeTransmitFilm(string &filename)
 
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Writing film samples to file '" << tempfile << "'";
 
-	ofstream out(tempfile.c_str(), ios::out | ios::binary);
+	std::ofstream out(tempfile.c_str(), ios::out | ios::binary);
 	Context::GetActive()->WriteFilmToStream(out, false);
 	out.close();
 
@@ -222,7 +222,7 @@ static void writeTransmitFilm(socket_stream_t &stream, const string &filename)
 		return;
 
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Transmitting film samples from file '" << file << "'";
-	ifstream in(file.c_str(), ios::in | ios::binary);
+	std::ifstream in(file.c_str(), ios::in | ios::binary);
 
 	boost::iostreams::copy(in, stream);
 
@@ -268,7 +268,7 @@ static bool receiveFile(const std::string &filename, const std::string &filehash
 
 	// Dade - fix for bug 514: avoid to create the file if it is empty
 	if (len > 0) {
-		ofstream out(filename.c_str(), ios::out | ios::binary);
+		std::ofstream out(filename.c_str(), ios::out | ios::binary);
 
 		//std::streamsize written = boost::iostreams::copy(
 		//	boost::iostreams::restrict(stream, 0, len), out);

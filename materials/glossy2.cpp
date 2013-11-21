@@ -40,6 +40,7 @@
 #include "microfacet.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Glossy Method Definitions
 BSDF *GlossyCombined::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

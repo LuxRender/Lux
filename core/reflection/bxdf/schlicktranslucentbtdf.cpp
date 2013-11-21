@@ -23,10 +23,12 @@
 // schlicktranslucentbtdf.cpp*
 #include "schlicktranslucentbtdf.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "microfacetdistribution.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 SchlickTranslucentBTDF::SchlickTranslucentBTDF(const SWCSpectrum &d,
 	const SWCSpectrum &t, const SWCSpectrum &s, const SWCSpectrum &s2,

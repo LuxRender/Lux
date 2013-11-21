@@ -34,6 +34,8 @@
 #include <png.h>
 #endif
 
+using namespace luxrays;
+
 using boost::uint8_t;
 using boost::uint16_t;
 

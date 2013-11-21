@@ -26,7 +26,6 @@
 // unsafekdtree.cpp*
 #include "lux.h"
 #include "primitive.h"
-#include "memory.h"
 
 namespace lux {
 
@@ -42,7 +41,7 @@ struct MailboxPrim {
 struct UnsafeKdAccelNode {
     // UnsafeKdAccelNode Methods
     void initLeaf(int *primNums, int np,
-            MailboxPrim *mailboxPrims, MemoryArena &arena) {
+            MailboxPrim *mailboxPrims, luxrays::MemoryArena &arena) {
         // Update kd leaf node allocation statistics
         // radiance - disabled for threading // static StatsCounter numLeafMade("Kd-Tree Accelerator","Leaf kd-tree nodes made");
         // radiance - disabled for threading // static StatsCounter maxDepth("Kd-Tree Accelerator","Maximum kd-tree depth");
@@ -147,7 +146,7 @@ private:
     UnsafeKdAccelNode *nodes;
     int nAllocedNodes, nextFreeNode;
 
-    MemoryArena arena;
+    luxrays::MemoryArena arena;
 };
 
 struct KdToDo {

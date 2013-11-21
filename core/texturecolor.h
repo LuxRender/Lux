@@ -153,7 +153,7 @@ public:
 		float high = INFINITY) const {
 		TextureColor<T, colorSamples> ret;
 		for (u_int i = 0; i < colorSamples; ++i)
-			ret.c[i] = lux::Clamp<float>(c[i], low, high);
+			ret.c[i] = luxrays::Clamp<float>(c[i], low, high);
 		return ret;
 	}
 	// Color Public Data

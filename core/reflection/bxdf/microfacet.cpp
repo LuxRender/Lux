@@ -23,9 +23,10 @@
 // microfacet.cpp*
 #include "microfacet.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "fresnel.h"
 #include "microfacetdistribution.h"
+
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

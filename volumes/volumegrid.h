@@ -36,9 +36,9 @@ public:
 	virtual ~VolumeGrid() { }
 	virtual float Density(const Point &Pobj) const;
 	float D(int x, int y, int z) const {
-		x = Clamp(x, 0, nx - 1);
-		y = Clamp(y, 0, ny - 1);
-		z = Clamp(z, 0, nz - 1);
+		x = luxrays::Clamp(x, 0, nx - 1);
+		y = luxrays::Clamp(y, 0, ny - 1);
+		z = luxrays::Clamp(z, 0, nz - 1);
 		return density[z * nx * ny + y * nx + x];
 	}
 	

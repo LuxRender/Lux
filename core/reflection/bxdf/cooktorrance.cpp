@@ -23,9 +23,10 @@
 // cooktorrance.cpp*
 #include "cooktorrance.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "microfacetdistribution.h"
 #include "fresnel.h"
+
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

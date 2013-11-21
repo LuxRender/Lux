@@ -70,7 +70,6 @@ header file.
 
 #include "sky2.h"
 #include "memory.h"
-#include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
 #include "regular.h"
@@ -82,8 +81,10 @@ header file.
 #include "dynload.h"
 
 #include "data/ArHosekSkyModelData.h"
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // internal functions
 

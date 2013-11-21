@@ -74,7 +74,7 @@ private:
 
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
-	Distribution2D *uvDistrib;
+	luxrays::Distribution2D *uvDistrib;
 	float mean_y;
 };
 

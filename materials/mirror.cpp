@@ -33,6 +33,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Mirror Method Definitions
 BSDF *Mirror::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

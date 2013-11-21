@@ -24,8 +24,6 @@
 
 // metrosampler.cpp*
 #include "metrosampler.h"
-#include "memory.h"
-#include "mcdistribution.h"
 #include "scene.h"
 #include "dynload.h"
 #include "timer.h"

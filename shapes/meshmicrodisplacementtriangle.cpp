@@ -26,17 +26,17 @@
 
 
 #include "mesh.h"
-#include "mc.h"
 #include "texture.h"
 #include "spectrumwavelengths.h"
 #include <algorithm>
 
 using namespace lux;
+using namespace luxrays;
 
 // Bilinear patch class
 // created by Shaun David Ramsey and Kristin Potter copyright (c) 2003
 // email ramsey()cs.utah.edu with any quesitons
-// modified by Asjørn Heid 2011
+// modified by Asjï¿½rn Heid 2011
 /*
 This copyright notice is available at:
 http://www.opensource.org/licenses/mit-license.php

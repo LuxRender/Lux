@@ -23,7 +23,6 @@
 // environment.cpp*
 #include "environment.h"
 #include "sampling.h"
-#include "mc.h"
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
 #include "bxdf.h"
@@ -31,6 +30,8 @@
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"
+
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

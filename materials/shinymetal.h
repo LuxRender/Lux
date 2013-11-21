@@ -40,7 +40,7 @@ public:
 		const ParamSet &mp) : Material("ShinyMetal-" + boost::lexical_cast<string>(this), mp),
 		Ks(ks), Kr(kr), nu(u), nv(v), film(flm), filmindex(flmindex) { }
 	virtual ~ShinyMetal() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

@@ -26,16 +26,17 @@
 #include "spd.h"
 #include "regular.h"
 #include "irregular.h"
-#include "mc.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "luxrays/utils/mc.h"
 
 #include "data/sun_spect.h"
 
 using namespace lux;
+using namespace luxrays;
 
 class  SunBSDF : public BSDF  {
 public:

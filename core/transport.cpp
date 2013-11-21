@@ -25,11 +25,14 @@
 #include "scene.h"
 #include "bxdf.h"
 #include "light.h"
-#include "mc.h"
 #include "volume.h"
 #include "camera.h"
 #include "sampling.h"
 #include "material.h"
+
+#include "luxrays/utils/mc.h"
+
+using namespace luxrays;
 
 namespace lux
 {

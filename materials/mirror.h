@@ -38,7 +38,7 @@ public:
 		Kr(r), film(flm),
 		filmindex(flmindex) { }
 	virtual ~Mirror() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

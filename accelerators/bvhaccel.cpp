@@ -29,7 +29,6 @@
 #include "bvhaccel.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "memory.h"
 
 #include "error.h"
 
@@ -38,6 +37,7 @@ using std::bind2nd;
 using std::ptr_fun;
 
 using namespace lux;
+using namespace luxrays;
 
 // BVHAccel Method Definitions
 BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus) :

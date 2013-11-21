@@ -22,8 +22,6 @@
 
 #include "photonmap.h"
 #include "light.h"
-#include "mc.h"
-#include "mcdistribution.h"
 #include "spectrumwavelengths.h"
 #include "primitive.h"
 #include "scene.h"
@@ -33,10 +31,14 @@
 #include "randomgen.h"
 #include "osfunc.h"
 
+#include "luxrays/utils/mc.h"
+#include "luxrays/utils/mcdistribution.h"
+
 #include <fstream>
 #include <boost/thread/xtime.hpp>
 
 using namespace lux;
+using namespace luxrays;
 
 namespace lux
 {

@@ -53,7 +53,7 @@ public:
 		const float t1 = tex1->Evaluate(sw, dg);
 		const float t2 = tex2->Evaluate(sw, dg);
 
-		return Lerp(GetF(P), t1, t2);
+		return luxrays::Lerp(GetF(P), t1, t2);
 	}
 	virtual float Y() const { return (tex1->Y() + tex2->Y()) * .5f; }
 	virtual float Filter() const {

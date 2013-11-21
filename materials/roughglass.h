@@ -43,7 +43,7 @@ public:
 		cauchyb(cbf), uroughness(urough), vroughness(vrough),
 		dispersion(disp) { }
 	virtual ~RoughGlass() { }
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 

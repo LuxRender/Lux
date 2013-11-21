@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Cylinder Method Definitions
 Cylinder::Cylinder(const Transform &o2w, bool ro, const string &name, 

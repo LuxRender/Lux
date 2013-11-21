@@ -25,6 +25,8 @@
 
 #include "lux.h"
 
+#include "luxrays/utils/mcdistribution.h"
+
 namespace lux {
 
 //******************************************************************************
@@ -165,7 +167,7 @@ public:
 	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 
 protected:
-	Distribution1D *lightDistribution;
+	luxrays::Distribution1D *lightDistribution;
 };
 
 class LSSOnePowerImportance : public LSSOneImportance {

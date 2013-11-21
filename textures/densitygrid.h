@@ -56,17 +56,17 @@ public:
 		switch (wrapMode) {
 		case WRAP_REPEAT:
 			x = P.x * nx;
-			vx = Floor2Int(x);
+			vx = luxrays::Floor2Int(x);
 			x -= vx;
-			vx = Mod(vx, nx);
+			vx = luxrays::Mod(vx, nx);
 			y = P.y * ny;
-			vy = Floor2Int(y);
+			vy = luxrays::Floor2Int(y);
 			y -= vy;
-			vy = Mod(vy, ny);
+			vy = luxrays::Mod(vy, ny);
 			z = P.z * nz;
-			vz = Floor2Int(z);
+			vz = luxrays::Floor2Int(z);
 			z -= vz;
-			vz = Mod(vz, nz);
+			vz = luxrays::Mod(vz, nz);
 			break;
 		case WRAP_BLACK:
 			if (P.x < 0.f || P.x >= 1.f ||
@@ -74,13 +74,13 @@ public:
 				P.z < 0.f || P.z >= 1.f)
 				return 0.f;
 			x = P.x * nx;
-			vx = Floor2Int(x);
+			vx = luxrays::Floor2Int(x);
 			x -= vx;
 			y = P.y * ny;
-			vy = Floor2Int(y);
+			vy = luxrays::Floor2Int(y);
 			y -= vy;
 			z = P.z * nz;
-			vz = Floor2Int(z);
+			vz = luxrays::Floor2Int(z);
 			z -= vz;
 			break;
 		case WRAP_WHITE:
@@ -89,35 +89,35 @@ public:
 				P.z < 0.f || P.z >= 1.f)
 				return 1.f;
 			x = P.x * nx;
-			vx = Floor2Int(x);
+			vx = luxrays::Floor2Int(x);
 			x -= vx;
 			y = P.y * ny;
-			vy = Floor2Int(y);
+			vy = luxrays::Floor2Int(y);
 			y -= vy;
 			z = P.z * nz;
-			vz = Floor2Int(z);
+			vz = luxrays::Floor2Int(z);
 			z -= vz;
 			break;
 		case WRAP_CLAMP:
-			x = Clamp(P.x, 0.f, 1.f) * nx;
-			vx = min(Floor2Int(x), nx - 1);
+			x = luxrays::Clamp(P.x, 0.f, 1.f) * nx;
+			vx = min(luxrays::Floor2Int(x), nx - 1);
 			x -= vx;
-			y = Clamp(P.y, 0.f, 1.f) * ny;
-			vy = min(Floor2Int(P.y * ny), ny - 1);
+			y = luxrays::Clamp(P.y, 0.f, 1.f) * ny;
+			vy = min(luxrays::Floor2Int(P.y * ny), ny - 1);
 			y -= vy;
-			z = Clamp(P.z, 0.f, 1.f) * nz;
-			vz = min(Floor2Int(P.z * nz), nz - 1);
+			z = luxrays::Clamp(P.z, 0.f, 1.f) * nz;
+			vz = min(luxrays::Floor2Int(P.z * nz), nz - 1);
 			z -= vz;
 			break;
 		default:
 			return 0.f;
 		}
 		// Trilinear interpolation of the grid element
-		return Lerp(z,
-			Lerp(y, Lerp(x, D(vx, vy, vz), D(vx + 1, vy, vz)),
-			Lerp(x, D(vx, vy + 1, vz), D(vx + 1, vy + 1, vz))),
-			Lerp(y, Lerp(x, D(vx, vy, vz + 1), D(vx + 1, vy, vz + 1)),
-			Lerp(x, D(vx, vy + 1, vz + 1), D(vx + 1, vy + 1, vz + 1))));
+		return luxrays::Lerp(z,
+			luxrays::Lerp(y, luxrays::Lerp(x, D(vx, vy, vz), D(vx + 1, vy, vz)),
+			luxrays::Lerp(x, D(vx, vy + 1, vz), D(vx + 1, vy + 1, vz))),
+			luxrays::Lerp(y, luxrays::Lerp(x, D(vx, vy, vz + 1), D(vx + 1, vy, vz + 1)),
+			luxrays::Lerp(x, D(vx, vy + 1, vz + 1), D(vx + 1, vy + 1, vz + 1))));
 	}
 	virtual float Y() const { return dMean; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,
@@ -158,7 +158,7 @@ public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	float D(int x, int y, int z) const {
-		return density[((Clamp(z, 0, nz - 1) * ny) + Clamp(y, 0, ny - 1)) * nx + Clamp(x, 0, nx - 1)];
+		return density[((luxrays::Clamp(z, 0, nz - 1) * ny) + luxrays::Clamp(y, 0, ny - 1)) * nx + luxrays::Clamp(x, 0, nx - 1)];
 	}
 	// DensityGridTexture Private Data
 	int nx, ny, nz;

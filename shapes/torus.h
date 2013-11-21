@@ -22,7 +22,6 @@
 
 // torus.cpp*
 #include "shape.h"
-#include "mc.h"
 
 namespace lux
 {

@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Disk Method Definitions
 Disk::Disk(const Transform &o2w, bool ro, const string &name, 

@@ -49,7 +49,7 @@ public:
 	Material(const string &name, const ParamSet &mp, const bool hasBumpMap = true);
 	virtual ~Material() { }
 
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const = 0;
 	void Bump(const SpectrumWavelengths &sw,

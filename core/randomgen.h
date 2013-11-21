@@ -25,8 +25,8 @@
 // MASK assures 64bit safety
 
 // Usage in luxrender:
-// lux::random::floatValue() returns a random float
-// lux::random::uintValue() returns a random uint
+// random::floatValue() returns a random float
+// random::uintValue() returns a random uint
 //
 // NOTE: calling random values outside of a renderthread will result in a crash
 // thread safety/uniqueness using thread specific ptr (boost)
@@ -35,7 +35,7 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-#include "memory.h"
+#include "luxrays/utils/memory.h"
 #include <boost/noncopyable.hpp>
 
 #define MASK 0xffffffffUL
@@ -43,25 +43,27 @@
 
 #define RAN_BUFFER_AMOUNT 2048
 
-static const float invUI = (1.f / (FLOATMASK + 1UL));
+using namespace luxrays;
 
 namespace lux
 {
+
+static const float invUI = (1.f / (FLOATMASK + 1UL));
 
 class RandomGenerator : boost::noncopyable
 {
 public:
 	RandomGenerator() {
-		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
+		buf = AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 	RandomGenerator(unsigned long tn) {
-		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
+		buf = AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
 		taus113_set(tn);
 	}
 
-	~RandomGenerator() { lux::FreeAligned(buf); }
+	~RandomGenerator() { FreeAligned(buf); }
 
 	inline void init(unsigned long tn) {
 		taus113_set(tn);

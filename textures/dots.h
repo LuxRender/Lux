@@ -45,8 +45,8 @@ public:
 		// Compute cell indices for dots
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		const int sCell = Floor2Int(s + .5f);
-		const int tCell = Floor2Int(t + .5f);
+		const int sCell = luxrays::Floor2Int(s + .5f);
+		const int tCell = luxrays::Floor2Int(t + .5f);
 		// Return _insideDot_ result if point is inside dot
 		if (Noise(sCell + .5f, tCell + .5f) > 0.f) {
 			const float radius = .35f;
@@ -72,8 +72,8 @@ public:
 		// Compute cell indices for dots
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
-		const int sCell = Floor2Int(s + .5f);
-		const int tCell = Floor2Int(t + .5f);
+		const int sCell = luxrays::Floor2Int(s + .5f);
+		const int tCell = luxrays::Floor2Int(t + .5f);
 		// Return _insideDot_ result if point is inside dot
 		if (Noise(sCell + .5f, tCell + .5f) <= 0.f) {
 			*du = *dv = 0.f;

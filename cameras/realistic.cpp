@@ -29,16 +29,17 @@
 #include "realistic.h"
 #include "sampling.h"
 #include "shape.h"
-#include "mc.h"
 #include "film.h"
 #include "dynload.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "luxrays/utils/mc.h"
 
 #include <fstream>
 using std::ifstream;
 
 using namespace lux;
+using namespace luxrays;
 
 RealisticCamera::RealisticCamera(const MotionSystem &world2cam,
                  const float Screen[4],

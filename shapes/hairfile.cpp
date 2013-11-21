@@ -28,6 +28,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 //------------------------------------------------------------------------------
 // CatmullRomCurve class definition

@@ -34,6 +34,7 @@ using std::fputc;
 using std::fclose;
 
 using namespace lux;
+using namespace luxrays;
 
 namespace lux
 {

@@ -113,17 +113,6 @@ template <class T> static string ToClassName(T *ptr) {
 		return "NULL";
 }
 
-template <class T> static string ToString(T &v) {
-	return boost::lexical_cast<string>(v);
-}
-
-static string ToString(float v) {
-	std::ostringstream ss;
-    ss << std::setprecision(24) << v;
-
-	return ss.str();
-}
-
 //------------------------------------------------------------------------------
 // LuxCoreHostDescription
 //------------------------------------------------------------------------------
@@ -743,7 +732,7 @@ static luxrays::Properties GetLuxCoreCommonMatProps(const string &matName,
 	if (emissionTexName != "0.0 0.0 0.0") {
 		props <<
 				luxrays::Property(prefix + ".emission")(emissionTexName) <<
-				luxrays::Property(prefix + ".emission.gain")(emissionGain) <<
+				luxrays::Property(prefix + ".emission.gain")(emissionGain, emissionGain, emissionGain) <<
 				luxrays::Property(prefix + ".emission.power")(emissionPower) <<
 				luxrays::Property(prefix + ".emission.efficency")(emissionEfficency) <<
 				luxrays::Property(prefix + ".emission.id")(lightID);
@@ -1489,6 +1478,15 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			continue;
 		}
 
+		//----------------------------------------------------------------------
+		// Check if it is an area light source
+		//----------------------------------------------------------------------	
+		AreaLight *areaLight = dynamic_cast<AreaLight *>(scene->lights[i].get());
+		if (areaLight) {
+			// I can just ignore area lights
+			continue;
+		}
+
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only infinite, sky, sky2, sun and point light source (i.e. not " <<
 				ToClassName(scene->lights[i].get()) << "). Ignoring the unsupported light source.";
 	}
@@ -2162,7 +2160,7 @@ void LuxCoreRenderer::Render(Scene *s) {
 		session->UpdateStats();
 		const luxrays::Properties &stats = session->GetStats();
 		luxrays::Property devices = stats.Get("stats.renderengine.devices");
-		lcStats->triangleCount = stats.Get("stats.dataset.trianglecount").Get<size_t>();
+		lcStats->triangleCount = stats.Get("stats.dataset.trianglecount").Get<u_longlong>();
 
 		lcStats->deviceCount = devices.GetSize();
 		if (lcStats->deviceCount > 0) {
@@ -2173,8 +2171,8 @@ void LuxCoreRenderer::Render(Scene *s) {
 					ss << ",";
 
 				string name = devices.Get<string>(i);
-				lcStats->deviceMaxMemory[i] = stats.Get("stats.renderengine.devices." + name +".memory.total").Get<size_t>();
-				lcStats->deviceMemoryUsed[i] = stats.Get("stats.renderengine.devices." + name +".memory.used").Get<size_t>();
+				lcStats->deviceMaxMemory[i] = stats.Get("stats.renderengine.devices." + name +".memory.total").Get<u_longlong>();
+				lcStats->deviceMemoryUsed[i] = stats.Get("stats.renderengine.devices." + name +".memory.used").Get<u_longlong>();
 
 				// I'm paranoid...				
 				boost::replace_all(name, ",", "_");
@@ -2284,7 +2282,7 @@ void LuxCoreRenderer::Render(Scene *s) {
 				for (u_int i = 0; i < luxrays::Min<u_int>(lcStats->deviceCount, lcStats->deviceMaxMemory.size()); ++i) {
 					string name = devices.Get<string>(i);					
 					lcStats->deviceRaySecs[i] = stats.Get("stats.renderengine.devices." + name +".performance.total").Get<double>();
-					lcStats->deviceMemoryUsed[i] = stats.Get("stats.renderengine.devices." + name +".memory.used").Get<size_t>();
+					lcStats->deviceMemoryUsed[i] = stats.Get("stats.renderengine.devices." + name +".memory.used").Get<u_longlong>();
 				}
 
 				// Print some information about the rendering progress
@@ -2292,7 +2290,7 @@ void LuxCoreRenderer::Render(Scene *s) {
 						"[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]") %
 						int(elapsedTime) % int(haltTime) % pass % haltSpp % (100.f * convergence) %
 						(lcStats->averageSampleSec / 1000000.0) %
-						(stats.Get("stats.dataset.trianglecount").Get<size_t>() / 1000.0)));
+						(stats.Get("stats.dataset.trianglecount").Get<u_longlong>() / 1000.0)));
 
 				film->CheckWriteOuputInterval();
 			}

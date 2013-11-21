@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // NURBS Evaluation Functions
 static u_int KnotOffset(const float *knot, u_int order, u_int np, float t) {

@@ -26,12 +26,12 @@
 #include "lux.h"
 #include "api.h"
 #include "color.h"
-#include "memory.h"
 #include "queryable.h"
 #include "bsh.h"
-#include "mcdistribution.h"
 #include "fastmutex.h"
 
+#include "luxrays/utils/mcdistribution.h"
+#include "luxrays/utils/memory.h"
 #include "slg/utils/convtest/convtest.h"
 
 #include <boost/thread/mutex.hpp>
@@ -144,7 +144,7 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const = 0;
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const = 0;
 	u_int xPixelCount, yPixelCount;
-	BlockedArray<Pixel> pixels;
+	luxrays::BlockedArray<Pixel> pixels;
 	float scaleFactor;
 	bool isFramebuffer;
 };
@@ -250,7 +250,7 @@ public:
 		}
 		return pixel.V / pixel.weightSum;
 	} 
-	BlockedArray<FloatPixel> floatpixels;
+	luxrays::BlockedArray<FloatPixel> floatpixels;
 };
 
 // Per screen normalized XYZColor buffer
@@ -488,7 +488,7 @@ public:
 			return -1.f; // -1 means a pixel that have yet to be sampled
 	}
 
-	BlockedArray<VariancePixel> pixels;
+	luxrays::BlockedArray<VariancePixel> pixels;
 };
 
 //------------------------------------------------------------------------------
@@ -522,8 +522,8 @@ public:
 	~FilterLUTs() {	}
 
 	const FilterLUT &GetLUT(const float x, const float y) const {
-		const int ix = max<int>(0, min<int>(Floor2Int(lutsSize * (x + 0.5f)), lutsSize - 1));
-		const int iy = max<int>(0, min<int>(Floor2Int(lutsSize * (y + 0.5f)), lutsSize - 1));
+		const int ix = max<int>(0, min<int>(luxrays::Floor2Int(lutsSize * (x + 0.5f)), lutsSize - 1));
+		const int iy = max<int>(0, min<int>(luxrays::Floor2Int(lutsSize * (y + 0.5f)), lutsSize - 1));
 
 		return luts[ix + iy * lutsSize];
 	}
@@ -696,21 +696,21 @@ public:
 
 	virtual void EnableNoiseAwareMap();
 	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
-		boost::shared_ptr<Distribution2D> &distrib);
+		boost::shared_ptr<luxrays::Distribution2D> &distrib);
 	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
 	virtual float *GetNoiseAwareMap();
 	virtual void SetNoiseAwareMap(const float *map);
 	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
 	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
 	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
-		boost::shared_ptr<Distribution2D> &distrib);
+		boost::shared_ptr<luxrays::Distribution2D> &distrib);
 	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
 	virtual float *GetUserSamplingMap();
 	virtual void SetUserSamplingMap(const float *map);
 
 	// Return noise-aware map * user sampling map
 	virtual const bool GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
-		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib);
+		boost::shared_array<float> &map, boost::shared_ptr<luxrays::Distribution2D> &distrib);
 
 	/*
 	 * Accessor for samplePerPass
@@ -796,17 +796,17 @@ protected: // Put it here for better data alignment
 	// gone)
 	boost::shared_array<float> noiseAwareMap;
 	u_int noiseAwareMapVersion;
-	boost::shared_ptr<Distribution2D> noiseAwareDistribution2D;
+	boost::shared_ptr<luxrays::Distribution2D> noiseAwareDistribution2D;
 
 	// May be enabled by the user
 	string userSamplingMapFileName;
 	boost::shared_array<float> userSamplingMap;
 	u_int userSamplingMapVersion;
-	boost::shared_ptr<Distribution2D> userSamplingDistribution2D;
+	boost::shared_ptr<luxrays::Distribution2D> userSamplingDistribution2D;
 	
 	// Noise-aware map * user sampling map
 	boost::shared_array<float> samplingMap;
-	boost::shared_ptr<Distribution2D> samplingDistribution2D;
+	boost::shared_ptr<luxrays::Distribution2D> samplingDistribution2D;
 	fast_mutex samplingMapMutex;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;

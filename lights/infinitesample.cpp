@@ -23,12 +23,13 @@
 // infinitesample.cpp*
 #include "infinitesample.h"
 #include "imagereader.h"
-#include "mcdistribution.h"
 #include "paramset.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"
 #include "dynload.h"
+
+#include "luxrays/utils/mcdistribution.h"
 
 using namespace lux;
 

@@ -36,8 +36,6 @@
 #include "randomgen.h"
 #include "context.h"
 #include "light.h"
-#include "mc.h"
-#include "mcdistribution.h"
 #include "spectrumwavelengths.h"
 #include "reflection/bxdf.h"
 #include "sppmrenderer.h"

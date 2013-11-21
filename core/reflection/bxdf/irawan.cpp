@@ -44,10 +44,12 @@
 // irawan.cpp*
 #include "irawan.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "textures/blender_noiselib.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 static uint64_t sampleTEA(uint32_t v0, uint32_t v1, u_int rounds = 4)
 {

@@ -46,11 +46,11 @@ public:
 		const DifferentialGeometry &dg) const {
 		T t1 = tex1->Evaluate(sw, dg), t2 = tex2->Evaluate(sw, dg);
 		float amt = amount->Evaluate(sw, dg);
-		return Lerp(amt, t1, t2);
+		return luxrays::Lerp(amt, t1, t2);
 	}
-	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(),
+	virtual float Y() const { return luxrays::Lerp(amount->Y(), tex1->Y(),
 		tex2->Y()); }
-	virtual float Filter() const { return Lerp(amount->Y(), tex1->Filter(),
+	virtual float Filter() const { return luxrays::Lerp(amount->Y(), tex1->Filter(),
 		tex2->Filter()); }
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
@@ -62,8 +62,8 @@ public:
 		float a = amount->Evaluate(sw, dg);
 		float d = tex2->EvalFloat(sw, dg) -
 			tex1->EvalFloat(sw, dg);
-		*du = Lerp(a, du1, du2) + d * dua;
-		*dv = Lerp(a, dv1, dv2) + d * dva;
+		*du = luxrays::Lerp(a, du1, du2) + d * dua;
+		*dv = luxrays::Lerp(a, dv1, dv2) + d * dva;
 	}
 	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
 		float mina, min1, min2;
@@ -71,8 +71,8 @@ public:
 		amount->GetMinMaxFloat(&mina, &maxa);
 		tex1->GetMinMaxFloat(&min1, &max1);
 		tex2->GetMinMaxFloat(&min2, &max2);
-		*minValue = min(Lerp(mina, min1, min2), Lerp(maxa, min1, min2));
-		*maxValue = max(Lerp(mina, max1, max2), Lerp(maxa, max1, max2));
+		*minValue = min(luxrays::Lerp(mina, min1, min2), luxrays::Lerp(maxa, min1, min2));
+		*maxValue = max(luxrays::Lerp(mina, max1, max2), luxrays::Lerp(maxa, max1, max2));
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures

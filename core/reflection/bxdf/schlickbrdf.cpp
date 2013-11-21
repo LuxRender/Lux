@@ -23,11 +23,13 @@
 // schlickbrdf.cpp*
 #include "schlickbrdf.h"
 #include "spectrum.h"
-#include "mc.h"
 #include "microfacetdistribution.h"
 #include "fresnel.h"
 
+#include "luxrays/utils/mc.h"
+
 using namespace lux;
+using namespace luxrays;
 
 SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
 	const SWCSpectrum &a, float dep, float r, float p, bool mb)

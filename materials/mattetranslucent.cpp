@@ -34,6 +34,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Matte Method Definitions
 BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,

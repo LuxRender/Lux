@@ -34,6 +34,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // RoughGlass Method Definitions
 BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

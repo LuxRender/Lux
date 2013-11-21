@@ -25,14 +25,16 @@
 #include "transport.h"
 #include "scene.h"
 #include "light.h"
-#include "mcdistribution.h"
 #include "bxdf.h"
 #include "sampling.h"
 #include "paramset.h"
 
+#include "luxrays/utils/mcdistribution.h"
+
 #include <boost/assert.hpp>
 
 using namespace lux;
+using namespace luxrays;
 
 //------------------------------------------------------------------------------
 // Light Rendering Hints

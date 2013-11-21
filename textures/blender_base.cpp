@@ -24,6 +24,7 @@
 #include "geometry/raydifferential.h"
 #include <sstream>
 
+using namespace luxrays;
 using namespace blender;
 using std::stringstream;
 

@@ -154,12 +154,12 @@ public:
 		}
 	}
 	virtual float Y() const {
-		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
-		return Lerp(m, tex2->Y(), tex1->Y());
+		const float m = powf(luxrays::Clamp(1.f - mortarsize, 0.f, 1.f), 3);
+		return luxrays::Lerp(m, tex2->Y(), tex1->Y());
 	}
 	virtual float Filter() const {
-		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
-		return Lerp(m, tex2->Filter(), tex1->Filter());
+		const float m = powf(luxrays::Clamp(1.f - mortarsize, 0.f, 1.f), 3);
+		return luxrays::Lerp(m, tex2->Filter(), tex1->Filter());
 	}
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg,

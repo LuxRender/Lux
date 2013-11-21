@@ -23,7 +23,6 @@
 // perspective.cpp*
 #include "perspective.h"
 #include "sampling.h"
-#include "mc.h"
 #include "scene.h" // for Intersection
 #include "film.h" // for Film
 #include "bxdf.h"
@@ -34,8 +33,10 @@
 #include "error.h"
 #include "luxrays/core/epsilon.h"
 using luxrays::MachineEpsilon;
+#include "luxrays/utils/mc.h"
 
 using namespace lux;
+using namespace luxrays;
 
 class  PerspectiveBSDF : public BSDF {
 public:

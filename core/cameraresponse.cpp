@@ -37,6 +37,7 @@
 #include <algorithm>
 
 using namespace lux;
+using namespace luxrays;
 
 namespace lux {
 

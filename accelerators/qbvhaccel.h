@@ -25,7 +25,6 @@
 #define LUX_QBVHACCEL_H
 
 #include "lux.h"
-#include "memory.h"
 #include "primitive.h"
 
 #include <xmmintrin.h>
@@ -341,11 +340,11 @@ protected:
 		const BBox &nodeBbox) {
 		int32_t index = nNodes++; // increment after assignment
 		if (nNodes >= maxNodes) {
-			QBVHNode *newNodes = AllocAligned<QBVHNode>(2 * maxNodes);
+			QBVHNode *newNodes = luxrays::AllocAligned<QBVHNode>(2 * maxNodes);
 			memcpy(newNodes, nodes, sizeof(QBVHNode) * maxNodes);
 			for (u_int i = 0; i < maxNodes; ++i)
 				newNodes[maxNodes + i] = QBVHNode();
-			FreeAligned(nodes);
+			luxrays::FreeAligned(nodes);
 			nodes = newNodes;
 			maxNodes *= 2;
 		}

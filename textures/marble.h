@@ -59,17 +59,17 @@ public:
 			{ .58f, .58f, .6f }, {.2f, .2f, .33f }, { .58f, .58f, .6f }, };
 		#define NC  sizeof(c) / sizeof(c[0])
 		#define NSEG (NC-3)
-		int first = Floor2Int(t * NSEG);
+		int first = luxrays::Floor2Int(t * NSEG);
 		t = (t * NSEG - first);
 		RGBColor c0(c[first]), c1(c[first+1]), c2(c[first+2]), c3(c[first+3]);
 		// Bezier spline evaluated with de Castilejau's algorithm
-		RGBColor s0(Lerp(t, c0, c1));
-		RGBColor s1(Lerp(t, c1, c2));
-		RGBColor s2(Lerp(t, c2, c3));
-		s0 = Lerp(t, s0, s1);
-		s1 = Lerp(t, s1, s2);
+		RGBColor s0(luxrays::Lerp(t, c0, c1));
+		RGBColor s1(luxrays::Lerp(t, c1, c2));
+		RGBColor s2(luxrays::Lerp(t, c2, c3));
+		s0 = luxrays::Lerp(t, s0, s1);
+		s1 = luxrays::Lerp(t, s1, s2);
 		// Extra scale of 1.5 to increase variation among colors
-		return SWCSpectrum(sw, 1.5f * Lerp(t, s0, s1));
+		return SWCSpectrum(sw, 1.5f * luxrays::Lerp(t, s0, s1));
 	}
 	virtual float Y() const {
 		static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },

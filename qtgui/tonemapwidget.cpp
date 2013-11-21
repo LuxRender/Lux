@@ -39,10 +39,9 @@ static double exposure_presets[NUM_EXPOSURE_PRESETS] = {30.0f, 20.0f, 10.0f, 5.0
 
 static double fstop_presets[NUM_FSTOP_PRESETS] = {128.0, 90.0, 64.0, 45.0, 32.0, 22.0, 16.0, 11.0, 8.0, 5.6, 4.0, 2.8, 2.0, 1.4, 1.0, 0.7, 0.5};
 
-#define DEFAULT_EPSILON_MIN 1e-7f
 static bool EqualDouble(const double a, const double b)
 {
-	return (std::fabs(a-b) < DEFAULT_EPSILON_MIN);
+	return (std::fabs(a-b) < 1e-7f);
 }
 
 using namespace std;
@@ -779,7 +778,7 @@ void ToneMapWidget::falseDrawLegend(QPaintDevice * dev)
 		tabVal[0] = m_TM_FalseMaxSat;
 		for (u_int i = 0; i < nb; ++i) {
 			const float coeff = 1.f - i / (nb - 1.f);
-			tabPix[i] = lux::Floor2Int(_heightPix * coeff);
+			tabPix[i] = luxrays::Floor2Int(_heightPix * coeff);
 
 			tabVal[i] = Clamp<float>(lux::ValueScale(lux::FalseScaleMethod(m_false_method), coeff) *
 				(m_TM_FalseMaxSat - m_TM_FalseMinSat) +

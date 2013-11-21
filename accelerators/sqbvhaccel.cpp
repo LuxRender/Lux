@@ -26,6 +26,8 @@
 #include "error.h"
 #include "qbvhaccel.h"
 
+using namespace luxrays;
+
 namespace lux
 {
 

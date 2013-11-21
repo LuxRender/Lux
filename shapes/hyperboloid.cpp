@@ -26,6 +26,7 @@
 #include "dynload.h"
 
 using namespace lux;
+using namespace luxrays;
 
 // Hyperboloid Method Definitions
 Hyperboloid::Hyperboloid(const Transform &o2w, bool ro, const string &name, 
