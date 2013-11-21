@@ -516,7 +516,6 @@ SET(lux_core_hdr
 	core/light.h
 	core/lux.h
 	core/material.h
-	core/memory.h
 	core/mipmap.h
 	core/motionsystem.h
 	core/octree.h
