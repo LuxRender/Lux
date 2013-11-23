@@ -47,6 +47,7 @@ public:
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
 	Texture<SWCSpectrum> *GetLbaseTexture() { return Lbase.get(); }
+	const SampleableSphericalFunction *GetFunc() const { return func; }
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

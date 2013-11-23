@@ -103,6 +103,7 @@
 
 #include "volumes/clearvolume.h"
 #include "film/fleximage.h"
+#include "sphericalfunction.h"
 
 using namespace lux;
 
@@ -1441,7 +1442,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 		}
 		
 		//----------------------------------------------------------------------
-		// Check if it is an infinite light source
+		// Check if it is an point light source
 		//----------------------------------------------------------------------
 		PointLight *pointLight = dynamic_cast<PointLight *>(scene->lights[i].get());
 		if (pointLight) {
@@ -1454,7 +1455,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				colorB = (*constRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only point light with constant color. (i.e. not " <<
-				ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
@@ -1466,12 +1467,32 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			const Transform &light2World = pointLight->GetTransform();
 
 			const string prefix = "scene.lights.pointlight_" + ToString(i);
-			const luxrays::Properties createPointLightProps(
-				luxrays::Property(prefix + ".type")("point") <<
+			luxrays::Properties createPointLightProps;
+			// Check if it is a Point or MapPoint light
+			const SampleableSphericalFunction *ssf = pointLight->GetFunc();
+			if (ssf) {
+				createPointLightProps << luxrays::Property(prefix + ".type")("mappoint");
+
+				const SphericalFunction *sf = ssf->GetFunc();
+				if (dynamic_cast<const MipMapSphericalFunction *>(sf)) {
+					const MipMapSphericalFunction *mmsf = dynamic_cast<const MipMapSphericalFunction *>(sf);
+
+					const string imageMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 1.f);
+					createPointLightProps << luxrays::Property(prefix + ".type")("mappoint") <<
+							luxrays::Property(prefix + ".mapfile")(imageMapName);
+				} else {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Unsupported type of SphericalFunction in a point light (i.e. " <<
+						ToClassName(sf) << "). Ignoring the unsupported feature.";
+					createPointLightProps << luxrays::Property(prefix + ".type")("point");
+				}	
+			} else
+				createPointLightProps << luxrays::Property(prefix + ".type")("point");
+			
+			createPointLightProps <<
 				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
 				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
 				luxrays::Property(prefix + ".transformation")(light2World.m) <<
-				luxrays::Property(prefix + ".id")(lightId));
+				luxrays::Property(prefix + ".id")(lightId);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating pointlight: [\n" << createPointLightProps << "]";
 			lcScene->Parse(createPointLightProps);
 

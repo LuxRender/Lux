@@ -85,6 +85,9 @@ public:
 
 	using SphericalFunction::f;
 	SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const;
+
+	const MIPMap *GetMipMap() const { return mipMap.get(); }
+
 private:
 	boost::shared_ptr<const MIPMap> mipMap;
 };
@@ -108,6 +111,10 @@ public:
 			ret *= funcs[i]->f(sw, phi, theta);
 		return ret;
 	}
+
+	const size_t GetFuncCount() const { return funcs.size(); }
+	const SphericalFunction *GetFunc(const u_int index) const { return funcs[index].get(); }
+
 private:
 	vector<boost::shared_ptr<const SphericalFunction> > funcs;
 };
@@ -153,6 +160,9 @@ public:
 	 * @return The average function value.
 	 */
 	float Average_f() const;
+
+	const SphericalFunction *GetFunc() const { return func.get(); }
+
 private:
 	luxrays::Distribution2D* uvDistrib;
 	boost::shared_ptr<const SphericalFunction> func;
