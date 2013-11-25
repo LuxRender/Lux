@@ -104,6 +104,7 @@ public:
 	virtual bool IsEnvironmental() const { return false; }
 
 	virtual Texture<SWCSpectrum> *GetTexture() = 0;
+	virtual const SampleableSphericalFunction *GetFunc() const = 0;
 
 protected:
 	// AreaLight Protected Data
@@ -131,6 +132,7 @@ public:
 		SWCSpectrum *Le) const;
 
 	virtual Texture<SWCSpectrum> *GetTexture() { return Le.get(); }
+	virtual const SampleableSphericalFunction *GetFunc() const { return func; }
 
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
@@ -252,6 +254,9 @@ public:
 
 	virtual Texture<SWCSpectrum> *GetTexture() {
 		return light->GetTexture();
+	}	
+	virtual const SampleableSphericalFunction *GetFunc() const {
+		return light->GetFunc();
 	}
 
 protected:
@@ -295,6 +300,9 @@ public:
 
 	virtual Texture<SWCSpectrum> *GetTexture() {
 		return light->GetTexture();
+	}
+	virtual const SampleableSphericalFunction *GetFunc() const {
+		return light->GetFunc();
 	}
 
 protected:
