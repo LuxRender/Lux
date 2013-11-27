@@ -50,12 +50,14 @@ public:
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
-	
+
+	Texture<SWCSpectrum> *GetLbaseTexture() { return Lbase.get(); }
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:
 	// SpotLight Private Data
-	float cosTotalWidth, cosFalloffStart;
+	float coneAngle, coneDeltaAngle, cosTotalWidth, cosFalloffStart;
 	Point lightPos;
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	float gain;

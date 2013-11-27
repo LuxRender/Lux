@@ -68,6 +68,7 @@
 #include "lights/infinite.h"
 #include "lights/infinitesample.h"
 #include "lights/pointlight.h"
+#include "lights/spot.h"
 
 #include "materials/matte.h"
 #include "materials/mirror.h"
@@ -1513,6 +1514,50 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				luxrays::Property(prefix + ".id")(lightId);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating pointlight: [\n" << createPointLightProps << "]";
 			lcScene->Parse(createPointLightProps);
+
+			continue;
+		}
+		
+		//----------------------------------------------------------------------
+		// Check if it is a spot light source
+		//----------------------------------------------------------------------
+		SpotLight *spotLight = dynamic_cast<SpotLight *>(scene->lights[i].get());
+		if (spotLight) {
+			float colorR, colorG, colorB;
+			if (dynamic_cast<const ConstantRGBColorTexture *>(spotLight->GetLbaseTexture())) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(spotLight->GetLbaseTexture());
+
+				colorR = (*constRGBTex)["color.r"].FloatValue();
+				colorG = (*constRGBTex)["color.g"].FloatValue();
+				colorB = (*constRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only spot light with constant color. (i.e. not " <<
+					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				colorR = 1.f;
+				colorG = 1.f;
+				colorB = 1.f;
+			}
+
+			const float gain = (*spotLight)["gain"].FloatValue();
+			const u_int lightId = (*spotLight)["group"].IntValue();
+			const float coneAngle = (*spotLight)["coneangle"].FloatValue();
+			const float coneDeltaAngle = (*spotLight)["conedeltaangle"].FloatValue();
+
+			const Transform &light2World = spotLight->GetTransform();
+
+			const string prefix = "scene.lights.spotlight_" + ToString(i);
+
+			const luxrays::Properties createSpotLightProps(
+				luxrays::Property(prefix + ".type")("spot") <<
+				luxrays::Property(prefix + ".conedeltaangle")(coneDeltaAngle) <<
+				luxrays::Property(prefix + ".coneangle")(coneAngle) <<
+				luxrays::Property(prefix + ".conedeltaangle")(coneDeltaAngle) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating spotlight: [\n" << createSpotLightProps << "]";
+			lcScene->Parse(createSpotLightProps);
 
 			continue;
 		}

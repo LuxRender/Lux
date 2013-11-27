@@ -86,6 +86,8 @@ SpotLight::SpotLight(const Transform &light2world,
 {
 	lightPos = LightToWorld * Point(0,0,0);
 
+	coneAngle = width;
+	coneDeltaAngle = width - fall;
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
 
@@ -95,6 +97,10 @@ SpotLight::SpotLight(const Transform &light2world,
 		(1.f - .5f * (cosFalloffStart + cosTotalWidth)));
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
+
+	AddFloatAttribute(*this, "gain", "PointLight gain", &SpotLight::gain);
+	AddFloatAttribute(*this, "coneangle", "SpotLight cone angle", &SpotLight::coneAngle);
+	AddFloatAttribute(*this, "conedeltaangle", "SpotLight cone delta angle", &SpotLight::coneDeltaAngle);
 }
 SpotLight::~SpotLight()
 {
