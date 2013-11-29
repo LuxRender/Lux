@@ -1406,24 +1406,34 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			const float gain = (*infiniteAreaLight)["gain"].FloatValue();
 			const u_int lightId = (*infiniteAreaLight)["group"].IntValue();
 
-			const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
-
 			MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
-			const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
+			if (mipMap) {
+				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
+				const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
 
-			const Transform &light2World = infiniteAreaLight->GetTransform();
+				const Transform &light2World = infiniteAreaLight->GetTransform();
 
-			const string prefix = "scene.lights.infinitelight_" + ToString(i);
-			const luxrays::Properties createInfiniteLightProps(
-				luxrays::Property(prefix + ".type")("infinite") <<
-				luxrays::Property(prefix + ".file")(imageMapName) <<
-				luxrays::Property(prefix + ".gamma")(gamma) <<
-				luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
-				luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
-				luxrays::Property(prefix + ".transformation")(light2World.m) <<
-				luxrays::Property(prefix + ".id")(lightId));
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
-			lcScene->Parse(createInfiniteLightProps);
+				const string prefix = "scene.lights.infinitelight_" + ToString(i);
+				const luxrays::Properties createInfiniteLightProps(
+					luxrays::Property(prefix + ".type")("infinite") <<
+					luxrays::Property(prefix + ".file")(imageMapName) <<
+					luxrays::Property(prefix + ".gamma")(gamma) <<
+					luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
+					luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
+					luxrays::Property(prefix + ".transformation")(light2World.m) <<
+					luxrays::Property(prefix + ".id")(lightId));
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
+				lcScene->Parse(createInfiniteLightProps);
+			} else {
+				const string prefix = "scene.lights.constantinfinitelight_" + ToString(i);
+				const luxrays::Properties createInfiniteLightProps(
+					luxrays::Property(prefix + ".type")("constantinfinite") <<
+					luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+					luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+					luxrays::Property(prefix + ".id")(lightId));
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating constantinfinitelight: [\n" << createInfiniteLightProps << "]";
+				lcScene->Parse(createInfiniteLightProps);
+			}
 
 			continue;
 		}
@@ -1439,25 +1449,35 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			const float gain = (*infiniteAreaLightIS)["gain"].FloatValue();
 			const u_int lightId = (*infiniteAreaLightIS)["group"].IntValue();
 
-			const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
-
 			MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
-			const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
+			if (mipMap) {
+				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
+				const string imageMapName = GetLuxCoreImageMapName(lcScene, mipMap, gamma);
 
-			const Transform &light2World = infiniteAreaLightIS->GetTransform();
+				const Transform &light2World = infiniteAreaLightIS->GetTransform();
 
-			const string prefix = "scene.lights.infinitelightIS_" + ToString(i);
-			const luxrays::Properties createInfiniteLightProps(
-				luxrays::Property(prefix + ".type")("infinite") <<
-				luxrays::Property(prefix + ".file")(imageMapName) <<
-				luxrays::Property(prefix + ".gamma")(gamma) <<
-				luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
-				luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
-				luxrays::Property(prefix + ".transformation")(light2World.m) <<
-				luxrays::Property(prefix + ".id")(lightId));
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
-			lcScene->Parse(createInfiniteLightProps);
-			
+				const string prefix = "scene.lights.infinitelightIS_" + ToString(i);
+				const luxrays::Properties createInfiniteLightProps(
+					luxrays::Property(prefix + ".type")("infinite") <<
+					luxrays::Property(prefix + ".file")(imageMapName) <<
+					luxrays::Property(prefix + ".gamma")(gamma) <<
+					luxrays::Property(prefix + ".shift")(0.f, 0.f) <<
+					luxrays::Property(prefix + ".gain")(gain * colorR, gain * colorG, gain * colorB) <<
+					luxrays::Property(prefix + ".transformation")(light2World.m) <<
+					luxrays::Property(prefix + ".id")(lightId));
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProps << "]";
+				lcScene->Parse(createInfiniteLightProps);
+			} else {
+				const string prefix = "scene.lights.constantinfinitelightIS_" + ToString(i);
+				const luxrays::Properties createInfiniteLightProps(
+					luxrays::Property(prefix + ".type")("constantinfinite") <<
+					luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+					luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+					luxrays::Property(prefix + ".id")(lightId));
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating constantinfinitelight: [\n" << createInfiniteLightProps << "]";
+				lcScene->Parse(createInfiniteLightProps);
+			}
+
 			continue;
 		}
 		
