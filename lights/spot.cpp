@@ -98,7 +98,7 @@ SpotLight::SpotLight(const Transform &light2world,
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
 
-	AddFloatAttribute(*this, "gain", "PointLight gain", &SpotLight::gain);
+	AddFloatAttribute(*this, "gain", "SpotLight gain", &SpotLight::gain);
 	AddFloatAttribute(*this, "coneangle", "SpotLight cone angle", &SpotLight::coneAngle);
 	AddFloatAttribute(*this, "conedeltaangle", "SpotLight cone delta angle", &SpotLight::coneDeltaAngle);
 }

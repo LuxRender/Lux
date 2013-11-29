@@ -103,12 +103,13 @@ private:
 ProjectionLight::ProjectionLight(const Transform &light2world,
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float g, const string &texname,
-		float fov)
+		float foview)
 	: Light("ProjectionLight-" + boost::lexical_cast<string>(this), light2world),
 	Lbase(L) {
 	lightPos = LightToWorld * Point(0,0,0);
 	Lbase->SetIlluminant();
 	gain = g;
+	fov = foview;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
 	std::auto_ptr<ImageData> imgdata(ReadImage(texname));
@@ -140,6 +141,9 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 	float tanDiag = opposite * sqrtf(1.f + 1.f / (aspect * aspect));
 	cosTotalWidth = cosf(atanf(tanDiag));
 	area = 4.f * opposite * opposite / aspect;
+
+	AddFloatAttribute(*this, "gain", "ProjectionLight gain", &ProjectionLight::gain);
+	AddFloatAttribute(*this, "fov", "ProjectionLight cone angle", &ProjectionLight::fov);
 }
 ProjectionLight::~ProjectionLight()
 {

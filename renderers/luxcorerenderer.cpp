@@ -69,6 +69,7 @@
 #include "lights/infinitesample.h"
 #include "lights/pointlight.h"
 #include "lights/spot.h"
+#include "lights/projection.h"
 
 #include "materials/matte.h"
 #include "materials/mirror.h"
@@ -1230,7 +1231,7 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, const Primitive *p
 			if (dynamic_cast<const MipMapSphericalFunction *>(sf)) {
 				const MipMapSphericalFunction *mmsf = dynamic_cast<const MipMapSphericalFunction *>(sf);
 
-				emissionMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 1.f);
+				emissionMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 2.2f);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Unsupported type of SphericalFunction in an area light (i.e. " <<
 					ToClassName(sf) << "). Ignoring the unsupported feature.";
@@ -1496,7 +1497,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				if (dynamic_cast<const MipMapSphericalFunction *>(sf)) {
 					const MipMapSphericalFunction *mmsf = dynamic_cast<const MipMapSphericalFunction *>(sf);
 
-					const string imageMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 1.f);
+					const string imageMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 2.2f);
 					createPointLightProps << luxrays::Property(prefix + ".type")("mappoint") <<
 							luxrays::Property(prefix + ".mapfile")(imageMapName);
 				} else {
@@ -1517,7 +1518,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 
 			continue;
 		}
-		
+
 		//----------------------------------------------------------------------
 		// Check if it is a spot light source
 		//----------------------------------------------------------------------
@@ -1558,6 +1559,49 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				luxrays::Property(prefix + ".id")(lightId));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating spotlight: [\n" << createSpotLightProps << "]";
 			lcScene->Parse(createSpotLightProps);
+
+			continue;
+		}
+
+		//----------------------------------------------------------------------
+		// Check if it is a projection light source
+		//----------------------------------------------------------------------
+		ProjectionLight *projectionLight = dynamic_cast<ProjectionLight *>(scene->lights[i].get());
+		if (projectionLight) {
+			float colorR, colorG, colorB;
+			if (dynamic_cast<const ConstantRGBColorTexture *>(projectionLight->GetLbaseTexture())) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(projectionLight->GetLbaseTexture());
+
+				colorR = (*constRGBTex)["color.r"].FloatValue();
+				colorG = (*constRGBTex)["color.g"].FloatValue();
+				colorB = (*constRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only projection light with constant color. (i.e. not " <<
+					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				colorR = 1.f;
+				colorG = 1.f;
+				colorB = 1.f;
+			}
+
+			const float gain = (*projectionLight)["gain"].FloatValue();
+			const u_int lightId = (*projectionLight)["group"].IntValue();
+			const float fov = (*projectionLight)["fov"].FloatValue();
+			const string imageMapName = GetLuxCoreImageMapName(lcScene, projectionLight->GetMap(), 2.2f);
+
+			const Transform &light2World = projectionLight->GetTransform();
+
+			const string prefix = "scene.lights.projectionlight_" + ToString(i);
+
+			const luxrays::Properties createProjectionLightProps(
+				luxrays::Property(prefix + ".type")("projection") <<
+				luxrays::Property(prefix + ".mapfile")(imageMapName) <<
+				luxrays::Property(prefix + ".fov")(fov) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating projectionlight: [\n" << createProjectionLightProps << "]";
+			lcScene->Parse(createProjectionLightProps);
 
 			continue;
 		}

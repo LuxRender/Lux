@@ -51,7 +51,10 @@ public:
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
-	
+
+	MIPMap *GetMap() { return projectionMap; }
+	Texture<SWCSpectrum> *GetLbaseTexture() { return Lbase.get(); }
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:
@@ -61,7 +64,7 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	float gain;
 	Transform lightProjection;
-	float hither, yon;
+	float fov, hither, yon;
 	float screenX0, screenX1, screenY0, screenY1, area;
 	float cosTotalWidth;
 };
