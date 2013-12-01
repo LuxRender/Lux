@@ -70,6 +70,7 @@
 #include "lights/pointlight.h"
 #include "lights/spot.h"
 #include "lights/projection.h"
+#include "lights/distant.h"
 
 #include "materials/matte.h"
 #include "materials/mirror.h"
@@ -1622,6 +1623,56 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				luxrays::Property(prefix + ".id")(lightId));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating projectionlight: [\n" << createProjectionLightProps << "]";
 			lcScene->Parse(createProjectionLightProps);
+
+			continue;
+		}
+
+		//----------------------------------------------------------------------
+		// Check if it is a distant light source
+		//----------------------------------------------------------------------
+		DistantLight *distantLight = dynamic_cast<DistantLight *>(scene->lights[i].get());
+		if (distantLight) {
+			float colorR, colorG, colorB;
+			if (dynamic_cast<const ConstantRGBColorTexture *>(distantLight->GetLbaseTexture())) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(distantLight->GetLbaseTexture());
+
+				colorR = (*constRGBTex)["color.r"].FloatValue();
+				colorG = (*constRGBTex)["color.g"].FloatValue();
+				colorB = (*constRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only distant light with constant color. (i.e. not " <<
+					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				colorR = 1.f;
+				colorG = 1.f;
+				colorB = 1.f;
+			}
+
+			const float theta = distantLight->GetTheta();
+			const float gain = (*distantLight)["gain"].FloatValue();
+			const u_int lightId = (*distantLight)["group"].IntValue();
+
+			const Transform &light2World = distantLight->GetTransform();
+
+			const string prefix = "scene.lights.distantlight_" + ToString(i);
+
+			luxrays::Properties createDistantLightProps;
+			if (theta == 0.f) {
+				createDistantLightProps <<
+						luxrays::Property(prefix + ".type")("sharpdistant");
+			} else {
+				createDistantLightProps <<
+						luxrays::Property(prefix + ".type")("distant") <<
+						luxrays::Property(prefix + ".type")(theta);
+			}
+
+			createDistantLightProps <<
+				luxrays::Property(prefix + ".direction")(distantLight->GetDirection()) <<
+				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
+				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
+				luxrays::Property(prefix + ".transformation")(light2World.m) <<
+				luxrays::Property(prefix + ".id")(lightId);
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating distantlight: [\n" << createDistantLightProps << "]";
+			lcScene->Parse(createDistantLightProps);
 
 			continue;
 		}

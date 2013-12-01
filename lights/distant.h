@@ -56,14 +56,18 @@ public:
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
-	
+
+	Texture<SWCSpectrum> *GetLbaseTexture() { return Lbase.get(); }
+	const Vector &GetDirection() const { return lightDir; }
+	const float GetTheta() const { return theta; }
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:
 	// DistantLight Private Data
 	Vector x, y, lightDir;
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
-	float gain, sin2ThetaMax, cosThetaMax;
+	float gain, theta, sin2ThetaMax, cosThetaMax;
 	BxDF *bxdf;
 };
 

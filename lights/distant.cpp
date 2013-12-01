@@ -70,10 +70,11 @@ private:
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
 	const boost::shared_ptr<Texture<SWCSpectrum> > &L, 
-	float g, float theta, const Vector &dir, u_int ns)
+	float g, float t, const Vector &dir, u_int ns)
 	: Light("DistantLight-" + boost::lexical_cast<string>(this), light2world, ns),
 	Lbase(L) {
 	lightDir = Normalize(LightToWorld * dir);
+	theta = t;
 	CoordinateSystem(lightDir, &x, &y);
 	Lbase->SetIlluminant();
 	gain = g;
@@ -85,6 +86,8 @@ DistantLight::DistantLight(const Transform &light2world,
 		cosThetaMax = cosf(theta);
 	}
 	bxdf = new DistantBxDF(sin2ThetaMax, cosThetaMax);
+
+	AddFloatAttribute(*this, "gain", "DistantLight gain", &DistantLight::gain);
 }
 
 DistantLight::~DistantLight()
