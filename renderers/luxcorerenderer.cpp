@@ -1369,8 +1369,6 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			// for compatibility with past scene
 			const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
 
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer doesn't support Sky2 light. It will use Sky instead.";
-
 			const float dirX = (*sky2Light)["dir.x"].FloatValue();
 			const float dirY = (*sky2Light)["dir.y"].FloatValue();
 			const float dirZ = (*sky2Light)["dir.z"].FloatValue();
@@ -1384,13 +1382,13 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 
 			const string prefix = "scene.lights.skylight2_" + ToString(i);
 			const luxrays::Properties createSkyLightProps(
-				luxrays::Property(prefix + ".type")("sky") <<
+				luxrays::Property(prefix + ".type")("sky2") <<
 				luxrays::Property(prefix + ".dir")(dirX, dirY, dirZ) <<
 				luxrays::Property(prefix + ".turbidity")(turbidity) <<
 				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
 				luxrays::Property(prefix + ".transformation")(light2World.m) <<
 				luxrays::Property(prefix + ".id")(lightId));
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProps << "]";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight2: [\n" << createSkyLightProps << "]";
 			lcScene->Parse(createSkyLightProps);
 
 			continue;

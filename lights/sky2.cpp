@@ -386,7 +386,7 @@ Sky2Light::Sky2Light(const Transform &light2world, float skyscale, u_int ns,
 	AddFloatAttribute(*this, "dir.y", "Sky light direction Y", &Sky2Light::GetDirectionY);
 	AddFloatAttribute(*this, "dir.z", "Sky light direction Z", &Sky2Light::GetDirectionZ);
 	AddFloatAttribute(*this, "turbidity", "Sky light turbidity", &Sky2Light::turbidity);
-	AddFloatAttribute(*this, "gain", "Sun light gain", &Sky2Light::skyScale);
+	AddFloatAttribute(*this, "gain", "Sky light gain", &Sky2Light::skyScale);
 }
 
 float Sky2Light::Power(const Scene &scene) const
