@@ -42,7 +42,13 @@ public:
 	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	              
+
+	Texture<SWCSpectrum> *GetKdTexture() { return Kd.get(); }
+	Texture<float> *GetP1Texture() { return P1.get(); }
+	Texture<float> *GetP2Texture() { return P2.get(); }
+	Texture<float> *GetP3Texture() { return P3.get(); }
+	Texture<float> *GetThicknessTexture() { return Thickness.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:

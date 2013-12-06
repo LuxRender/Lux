@@ -83,6 +83,7 @@
 #include "materials/mixmaterial.h"
 #include "materials/metal2.h"
 #include "materials/roughglass.h"
+#include "materials/velvet.h"
 
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
@@ -1164,12 +1165,42 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
+	}
+	//------------------------------------------------------------------
+	// Check if it is material Velvet
+	//------------------------------------------------------------------
+	if (dynamic_cast<Velvet *>(mat)) {
+		// Define the material
+		Velvet *velvet = dynamic_cast<Velvet *>(mat);
+		matName = velvet->GetName();
+
+		// Check if the material has already been defined
+		if (!lcScene->IsMaterialDefined(matName)) {
+			// Textures
+			const string kdTexName = GetLuxCoreTexName(lcScene, velvet->GetKdTexture());
+			const string p1TexName = GetLuxCoreTexName(lcScene, velvet->GetP1Texture());
+			const string p2TexName = GetLuxCoreTexName(lcScene, velvet->GetP2Texture());
+			const string p3TexName = GetLuxCoreTexName(lcScene, velvet->GetP3Texture());
+			const string thicknessTexName = GetLuxCoreTexName(lcScene, velvet->GetThicknessTexture());
+
+			const luxrays::Properties matProps(
+					luxrays::Property("scene.materials." + matName +".type")("velvet") <<
+					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
+					luxrays::Property("scene.materials." + matName +".p1")(p1TexName) <<
+					luxrays::Property("scene.materials." + matName +".p2")(p2TexName) <<
+					luxrays::Property("scene.materials." + matName +".p3")(p2TexName) <<
+					luxrays::Property("scene.materials." + matName +".thickness")(thicknessTexName));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
+			lcScene->Parse(matProps);
+		}
 	} else
 	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2, Metal2 and RoughGlass material (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2, Metal2, RoughGlass and Velvet material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
 		return "mat_default";
 	}
