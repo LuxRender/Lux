@@ -1165,7 +1165,7 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
-	}
+    } else
 	//------------------------------------------------------------------
 	// Check if it is material Velvet
 	//------------------------------------------------------------------
