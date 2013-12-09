@@ -425,7 +425,7 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		meshTris.push_back(i1);
 		meshTris.push_back(i2);
 		// First triangle normal
-		const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+		const Normal n0 = Normal(Cross(meshVerts[i2] - meshVerts[i0], meshVerts[i1] - meshVerts[i0]));
 		meshNorms[i0] += n0;
 		meshNorms[i1] += n0;
 		meshNorms[i2] += n0;
@@ -435,7 +435,7 @@ void HairFile::TessellateRibbon(const vector<Point> &hairPoints,
 		meshTris.push_back(i3);
 		meshTris.push_back(i2);
 		// Second triangle normal
-		const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i1], meshVerts[i2] - meshVerts[i1]));
+		const Normal n1 = Normal(Cross(meshVerts[i2] - meshVerts[i1], meshVerts[i3] - meshVerts[i1]));
 		meshNorms[i1] += n1;
 		meshNorms[i2] += n1;
 		meshNorms[i3] += n1;
@@ -568,7 +568,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 			meshTris.push_back(i0);
 			meshTris.push_back(i1);
 			meshTris.push_back(i2);
-			const Normal n0 = Normal(Cross(meshVerts[i1] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+			const Normal n0 = Normal(Cross(meshVerts[i2] - meshVerts[i0], meshVerts[i1] - meshVerts[i0]));
 			meshNorms[i0] += n0;
 			meshNorms[i1] += n0;
 			meshNorms[i2] += n0;
@@ -577,7 +577,7 @@ void HairFile::TessellateSolid(const vector<Point> &hairPoints,
 			meshTris.push_back(i1);
 			meshTris.push_back(i3);
 			meshTris.push_back(i2);
-			const Normal n1 = Normal(Cross(meshVerts[i3] - meshVerts[i0], meshVerts[i2] - meshVerts[i0]));
+			const Normal n1 = Normal(Cross(meshVerts[i2] - meshVerts[i0], meshVerts[i3] - meshVerts[i0]));
 			meshNorms[i1] += n1;
 			meshNorms[i3] += n1;
 			meshNorms[i2] += n1;
