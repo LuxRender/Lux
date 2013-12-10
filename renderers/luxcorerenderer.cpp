@@ -885,18 +885,18 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
 
 			if (absorbRGBTex) {
-				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
-				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
-				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
+				ktRGB.c[0] = (*absorbRGBTex)["color.r"].FloatValue();
+				ktRGB.c[1] = (*absorbRGBTex)["color.g"].FloatValue();
+				ktRGB.c[2] = (*absorbRGBTex)["color.b"].FloatValue();
 
 				ktRGB = ktRGB * ktRGB;
-				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
-				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
-				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
+				ktRGB.c[0] = Clamp(ktRGB.c[0], 0.f, 20.f) / 20.f;
+				ktRGB.c[1] = Clamp(ktRGB.c[1], 0.f, 20.f) / 20.f;
+				ktRGB.c[2] = Clamp(ktRGB.c[2], 0.f, 20.f) / 20.f;
 
-				ktRGB.r = 1.f - ktRGB.r;
-				ktRGB.g = 1.f - ktRGB.g;
-				ktRGB.b = 1.f - ktRGB.b;
+				ktRGB.c[0] = 1.f - ktRGB.c[0];
+				ktRGB.c[1] = 1.f - ktRGB.c[1];
+				ktRGB.c[2] = 1.f - ktRGB.c[2];
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
 					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
@@ -918,7 +918,7 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 				matProps << luxrays::Property("scene.materials." + matName +".type")("glass") <<
 						GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
 							emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
-						luxrays::Property("scene.materials." + matName +".kr")(krRGB.r) <<
+						luxrays::Property("scene.materials." + matName +".kr")(krRGB) <<
 						luxrays::Property("scene.materials." + matName +".kt")(ktRGB) <<
 						luxrays::Property("scene.materials." + matName +".ioroutside")(1.f) <<
 						luxrays::Property("scene.materials." + matName +".iorinside")(index);
@@ -2178,7 +2178,7 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 						const float newDepth = previousFilm_DEPTH ?
 							channel_DEPTH[pixelX + pixelY * width] : 0.f;
 
-						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+						XYZColor xyz = colorSpace.ToXYZ(deltaRadiance);
 
 						if (xyz.Y() >= 0.f) {
 							// Flip the image upside down
@@ -2227,7 +2227,7 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 						const float newDepth = previousFilm_DEPTH ?
 							channel_DEPTH[pixelX + pixelY * width] : 0.f;
 
-						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+						XYZColor xyz = colorSpace.ToXYZ(deltaRadiance);
 
 						if (xyz.Y() >= 0.f) {
 							// Flip the image upside down

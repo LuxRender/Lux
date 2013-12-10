@@ -22,7 +22,7 @@
 
 // mixbxdf.cpp*
 #include "mixbsdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 using namespace lux;
 

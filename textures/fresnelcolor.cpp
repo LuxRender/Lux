@@ -22,7 +22,7 @@
 
 // fresnelcolortexture.cpp*
 #include "fresnelcolor.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "dynload.h"
 
 using namespace lux;

@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// frequency.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/frequencyspd.h"
+using luxrays::FrequencySPD;
+
 #include "lux.h"
-#include "spectrum.h"
 #include "texture.h"
-#include "frequencyspd.h"
 #include "paramset.h"
 
 namespace lux

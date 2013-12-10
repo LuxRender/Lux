@@ -25,7 +25,7 @@
 
 #include "lux.h"
 #include "film.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"

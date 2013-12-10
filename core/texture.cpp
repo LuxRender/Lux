@@ -24,7 +24,7 @@
 #include "texture.h"
 #include "paramset.h"
 #include "shape.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "fresnelgeneral.h"
 #include "luxrays/core/geometry/vector.h"
 

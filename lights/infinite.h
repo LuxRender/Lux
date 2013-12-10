@@ -20,10 +20,11 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// infinite.cpp*
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBIllumSPD;
+
 #include "lux.h"
 #include "light.h"
-#include "rgbillum.h"
 #include "texture.h"
 #include "mipmap.h"
 

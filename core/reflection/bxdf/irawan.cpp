@@ -43,7 +43,7 @@
 
 // irawan.cpp*
 #include "irawan.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "textures/blender_noiselib.h"
 
 #include "luxrays/utils/mc.h"

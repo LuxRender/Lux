@@ -32,7 +32,7 @@
 #include "error.h"
 #include "bxdf.h"
 #include "light.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "transport.h"
 
 #include <boost/bind.hpp>

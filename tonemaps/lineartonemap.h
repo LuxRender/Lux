@@ -23,7 +23,7 @@
 // lineartonemap.h*
 #include "lux.h"
 #include "tonemap.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "context.h"
 // #include <math.h>
 

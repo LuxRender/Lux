@@ -25,7 +25,7 @@
 
 // checkerboard.cpp*
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
 #include "paramset.h"
 #include "sampling.h"

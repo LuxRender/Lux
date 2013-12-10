@@ -23,7 +23,7 @@
 // tgaio.cpp*
 #include "tgaio.h"
 #include "error.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 #include <cstring>
 using std::memset;

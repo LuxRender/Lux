@@ -20,12 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// bilerp.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBIllumSPD;
+
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "color.h"
-#include "spds/rgbillum.h"
+#include "luxrays/core/color/color.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
 #include "error.h"

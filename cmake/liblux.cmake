@@ -61,7 +61,6 @@ SET(lux_core_src
 	core/asyncstream.cpp
 	core/camera.cpp
 	core/cameraresponse.cpp
-	core/color.cpp
 	core/context.cpp
 	core/contribution.cpp
 	core/partialcontribution.cpp
@@ -85,9 +84,6 @@ SET(lux_core_src
 	core/sampling.cpp
 	core/scene.cpp
 	core/shape.cpp
-	core/spd.cpp
-	core/spectrum.cpp
-	core/spectrumwavelengths.cpp
 	core/texture.cpp
 	core/tgaio.cpp
 	core/timer.cpp
@@ -349,18 +345,6 @@ SET(lux_shapes_src
 	)
 SOURCE_GROUP("Source Files\\Shapes" FILES ${lux_shapes_src})
 
-SET(lux_spds_src
-	spds/blackbodyspd.cpp
-	spds/equalspd.cpp
-	spds/frequencyspd.cpp
-	spds/gaussianspd.cpp
-	spds/irregular.cpp
-	spds/regular.cpp
-	spds/rgbillum.cpp
-	spds/rgbrefl.cpp
-	)
-SOURCE_GROUP("Source Files\\SPDs" FILES ${lux_spds_src})
-
 SET(lux_blender_textures_src
 	textures/blender_base.cpp
 	textures/blender_blend.cpp
@@ -467,7 +451,6 @@ SET(lux_modules_src
 	${lux_rendererstatistics_src}
 	${lux_samplers_src}
 	${lux_shapes_src}
-	${lux_spds_src}
 	${lux_textures_all_src}
 	${lux_tonemaps_src}
 	${lux_volumes_src}
@@ -499,7 +482,6 @@ SET(lux_core_hdr
 	core/bsh.h
 	core/camera.h
 	core/cameraresponse.h
-	core/color.h
 	core/context.h
 	core/contribution.h
 	core/partialcontribution.h
@@ -532,9 +514,6 @@ SET(lux_core_hdr
 	core/sampling.h
 	core/scene.h
 	core/shape.h
-	core/spd.h
-	core/spectrum.h
-	core/spectrumwavelengths.h
 	core/streamio.h
 	core/texture.h
 	core/texturecolor.h
@@ -555,7 +534,6 @@ SET(lux_core_external_hdr
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
 	core/geometry/matrix2x2.h
-	core/geometry/matrix3x3.h
 	core/geometry/quaternion.h
 	core/geometry/raydifferential.h
 	core/geometry/transform.h
@@ -773,23 +751,6 @@ SET(lux_shapes_hdr
 	shapes/torus.h
 	)
 SOURCE_GROUP("Header Files\\Shapes" FILES ${lux_shapes_hdr})
-SET(lux_spds_hdr
-	spds/blackbodyspd.h
-	spds/equalspd.h
-	spds/frequencyspd.h
-	spds/gaussianspd.h
-	spds/irregular.h
-	spds/regular.h
-	spds/rgbillum.h
-	spds/rgbrefl.h
-	)
-SOURCE_GROUP("Header Files\\SPDs" FILES ${lux_spds_hdr})
-SET(lux_spds_data_hdr
-	spds/data/rgbD65_32.h
-	spds/data/rgbE_32.h
-	spds/data/xyzbasis.h
-	)
-SOURCE_GROUP("Header Files\\SPDs\\Data" FILES ${lux_spds_data_hdr})
 SET(lux_textures_hdr
 	textures/band.h
 	textures/bilerp.h
@@ -895,8 +856,6 @@ SET(lux_lib_hdr
 	${lux_rendererstatistics_hdr}
 	${lux_sampelrs_hdr}
 	${lux_shapes_hdr}
-	${lux_spds_hdr}
-	${lux_spds_data_hdr}
 	${lux_textures_hdr}
 	${lux_textures_blender_hdr}
 	${lux_textures_uniform_hdr}
@@ -918,7 +877,6 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
 	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
 	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
-	${CMAKE_SOURCE_DIR}/spds
 	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
 	${CMAKE_SOURCE_DIR}
 	${CMAKE_BINARY_DIR}

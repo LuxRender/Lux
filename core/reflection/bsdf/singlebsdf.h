@@ -25,7 +25,7 @@
 // singlebsdf.h*
 #include "bxdf.h"
 #include "geometry/raydifferential.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

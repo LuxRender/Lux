@@ -45,7 +45,7 @@
 // cloth.cpp*
 #include "lux.h"
 #include "material.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "irawan.h"
 
 namespace lux

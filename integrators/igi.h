@@ -27,7 +27,7 @@
 using luxrays::Point;
 #include "luxrays/core/geometry/normal.h"
 using luxrays::Normal;
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 
 namespace lux
 {

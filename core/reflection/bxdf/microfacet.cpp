@@ -22,7 +22,7 @@
 
 // microfacet.cpp*
 #include "microfacet.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "fresnel.h"
 #include "microfacetdistribution.h"
 

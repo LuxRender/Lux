@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// irregulardata.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/irregular.h"
+using luxrays::IrregularSPD;
+
 #include "lux.h"
-#include "spectrum.h"
 #include "texture.h"
-#include "irregular.h"
 #include "paramset.h"
 
 namespace lux

@@ -22,7 +22,7 @@
 
 // asperity.cpp*
 #include "asperity.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "luxrays/utils/mc.h"
 
 // Asperity scattering BRDF as described in "The Secret of Velvety Skin. J. Koendering and S. Pont, 2002"

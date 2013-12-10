@@ -25,12 +25,12 @@
 #include "bxdf.h"
 #include "light.h"
 #include "paramset.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "dynload.h"
 #include "camera.h"
 #include "sampling.h"
 #include "scene.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 using namespace lux;
 

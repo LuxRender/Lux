@@ -22,7 +22,7 @@
 
 #include "photonmap.h"
 #include "light.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "primitive.h"
 #include "scene.h"
 #include "sampling.h"

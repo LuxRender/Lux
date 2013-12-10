@@ -22,9 +22,6 @@
 
 #include "lux.h"
 #include "texture.h"
-#include "rgbrefl.h"
-#include "rgbillum.h"
-#include "fresnelgeneral.h"
 #include "paramset.h"
 #include "primitive.h"
 

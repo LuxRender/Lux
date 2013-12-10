@@ -22,7 +22,7 @@
 
 // fresnelconductor.cpp*
 #include "fresnelconductor.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 using namespace lux;
 

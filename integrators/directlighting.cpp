@@ -26,7 +26,7 @@
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 #include "dynload.h"
 

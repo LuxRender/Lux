@@ -23,7 +23,7 @@
 // distant.cpp*
 #include "distant.h"
 #include "memory.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"

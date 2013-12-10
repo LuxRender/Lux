@@ -30,7 +30,7 @@ using luxrays::Vector;
 using luxrays::Point;
 #include "luxrays/core/geometry/normal.h"
 using luxrays::Normal;
-#include "core/color.h"
+#include "luxrays/core/color/color.h"
 
 namespace lux
 {

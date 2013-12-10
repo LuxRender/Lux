@@ -23,7 +23,7 @@
 // volume.cpp*
 #include "volume.h"
 #include "sampling.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

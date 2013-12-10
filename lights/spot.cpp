@@ -23,7 +23,7 @@
 // spot.cpp*
 #include "spot.h"
 #include "memory.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"

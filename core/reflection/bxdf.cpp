@@ -22,8 +22,8 @@
 
 // bxdf.cpp*
 #include "bxdf.h"
-#include "spectrum.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"

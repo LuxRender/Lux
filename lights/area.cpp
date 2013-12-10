@@ -27,7 +27,7 @@
 #include "paramset.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
 #include "sphericalfunction.h"
 #include "sampling.h"

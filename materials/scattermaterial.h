@@ -25,7 +25,7 @@
 // scattermaterial.h*
 #include "lux.h"
 #include "material.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 
 namespace lux

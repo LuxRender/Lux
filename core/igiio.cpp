@@ -23,8 +23,8 @@
 // igiio.cpp*
 #include "lux.h"
 #include "error.h"
-#include "color.h"
-#include "spectrum.h"
+#include "luxrays/core/color/color.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 #include "igiio.h"
 

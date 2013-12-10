@@ -29,7 +29,7 @@
 #include "cameraresponse.h"
 #include "filter.h"
 #include "contribution.h"
-#include "blackbodyspd.h"
+#include "luxrays/core/color/spds/blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
 #include "exrio.h"

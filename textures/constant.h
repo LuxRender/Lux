@@ -20,11 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// constant.cpp*
+#include "luxrays/core/color/spds/rgbrefl.h"
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBReflSPD;
+using luxrays::RGBIllumSPD;
+
 #include "lux.h"
 #include "texture.h"
-#include "rgbrefl.h"
-#include "rgbillum.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
 

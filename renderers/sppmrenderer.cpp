@@ -36,7 +36,7 @@
 #include "randomgen.h"
 #include "context.h"
 #include "light.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "reflection/bxdf.h"
 #include "sppmrenderer.h"
 #include "integrators/sppm.h"

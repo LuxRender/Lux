@@ -22,7 +22,7 @@
 
 // singlebsdf.cpp*
 #include "singlebsdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "luxrays/core/epsilon.h"
 using luxrays::MachineEpsilon;
 

@@ -25,7 +25,7 @@
 // film.h*
 #include "lux.h"
 #include "api.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "queryable.h"
 #include "bsh.h"
 #include "fastmutex.h"

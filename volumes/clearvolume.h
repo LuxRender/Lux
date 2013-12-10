@@ -26,7 +26,7 @@
 #include "geometry/raydifferential.h"
 #include "fresnel.h"
 #include "sampling.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

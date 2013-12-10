@@ -27,7 +27,7 @@
 
 #include "mesh.h"
 #include "texture.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include <algorithm>
 
 using namespace lux;

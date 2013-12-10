@@ -22,7 +22,7 @@
 
 // fresnel.cpp*
 #include "fresnel.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 using namespace lux;
 

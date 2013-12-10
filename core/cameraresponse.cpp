@@ -23,7 +23,7 @@
 // cameraresponse.cpp*
 // Original code by Daniel90
 #include "cameraresponse.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "error.h"
 
 #include "film/data/cameraresponsefunctions.h"

@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "bxdf.h"
 #include "geometry/raydifferential.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "randomgen.h"
 #include <boost/thread/mutex.hpp>
 

@@ -20,10 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// tabulatedfresnel.h*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/irregular.h"
+using luxrays::IrregularSPD;
+
 #include "lux.h"
 #include "texture.h"
-#include "irregular.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
 

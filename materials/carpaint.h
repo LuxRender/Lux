@@ -23,7 +23,7 @@
 // carpaint.cpp*
 #include "lux.h"
 #include "material.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 namespace lux
 {

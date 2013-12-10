@@ -22,7 +22,6 @@
 
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "lux.h"
-#include "spd.h"
 #include "material.h"
 
 namespace lux

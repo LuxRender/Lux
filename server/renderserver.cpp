@@ -28,7 +28,7 @@
 #include "context.h"
 #include "paramset.h"
 #include "error.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "osfunc.h"
 #include "version.h"
 #include "tigerhash.h"

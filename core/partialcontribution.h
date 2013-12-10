@@ -25,7 +25,7 @@
 
 #include <vector>
 
-#include "core/spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "core/sampling.h"
 
 namespace lux

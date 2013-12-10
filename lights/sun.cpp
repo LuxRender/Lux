@@ -20,12 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// sun.cpp*
+#include "luxrays/core/color/spds/regular.h"
+using luxrays::RegularSPD;
+#include "luxrays/core/color/spds/irregular.h"
+using luxrays::IrregularSPD;
+
 #include "sun.h"
 #include "memory.h"
-#include "spd.h"
-#include "regular.h"
-#include "irregular.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "sampling.h"

@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// regulardata.cpp*
+#include "luxrays/core/color/spds/regular.h"
+using luxrays::RegularSPD;
+
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "regular.h"
 #include "paramset.h"
 
 namespace lux

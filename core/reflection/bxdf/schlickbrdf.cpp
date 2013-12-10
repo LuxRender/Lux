@@ -22,7 +22,7 @@
 
 // schlickbrdf.cpp*
 #include "schlickbrdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "microfacetdistribution.h"
 #include "fresnel.h"
 

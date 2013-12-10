@@ -29,7 +29,7 @@
 #include "lambertian.h"
 #include "orennayar.h"
 #include "texture.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 #include "dynload.h"
 

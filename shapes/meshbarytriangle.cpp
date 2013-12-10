@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "mesh.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 using namespace lux;
 using namespace luxrays;

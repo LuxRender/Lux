@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// equalenergy.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/equalspd.h"
+using luxrays::EqualSPD;
+
 #include "lux.h"
-#include "spectrum.h"
 #include "texture.h"
-#include "equalspd.h"
 #include "paramset.h"
 
 namespace lux

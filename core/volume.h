@@ -29,9 +29,9 @@
 #include "luxrays/utils/mc.h"
 using luxrays::BBox;
 #include "primitive.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "fresnelgeneral.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "materials/scattermaterial.h"
 #include "queryable.h"
 

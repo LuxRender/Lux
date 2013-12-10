@@ -22,7 +22,7 @@
 
 // pngio.cpp*
 #include "pngio.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "error.h"
 #include "osfunc.h"
 #include <limits>

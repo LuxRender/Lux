@@ -23,7 +23,7 @@
 // maxwhite.cpp*
 #include "lux.h"
 #include "tonemap.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 namespace lux
 {

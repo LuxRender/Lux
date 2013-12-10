@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// blackbody.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/blackbodyspd.h"
+using luxrays::BlackbodySPD;
+
 #include "lux.h"
-#include "spectrum.h"
 #include "texture.h"
-#include "blackbodyspd.h"
 #include "paramset.h"
 
 namespace lux

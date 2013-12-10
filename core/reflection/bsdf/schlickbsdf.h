@@ -26,7 +26,7 @@
 #include "bxdf.h"
 #include "microfacetdistribution.h"
 #include "geometry/raydifferential.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

@@ -31,7 +31,7 @@
 #include "paramset.h"
 #include "renderfarm.h"
 #include "camera.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "film.h"
 #include "osfunc.h"
 #include "streamio.h"

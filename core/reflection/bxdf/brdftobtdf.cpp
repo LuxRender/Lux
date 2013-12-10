@@ -22,8 +22,8 @@
 
 // brdftobtdf.cpp*
 #include "brdftobtdf.h"
-#include "spectrum.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 
 using namespace lux;
 

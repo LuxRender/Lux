@@ -22,9 +22,9 @@
 
 // uv.cpp*
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation

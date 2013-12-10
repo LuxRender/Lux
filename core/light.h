@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "motionsystem.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "error.h"
 #include "renderinghints.h"
 #include "queryable.h"

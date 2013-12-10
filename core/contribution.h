@@ -24,7 +24,7 @@
 #define LUX_CONTRIBUTION_H
 // contribution.h*
 #include "lux.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "fastmutex.h"
 #include "osfunc.h"
 

@@ -20,7 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// infinite.cpp*
+#include "luxrays/utils/mc.h"
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBIllumSPD;
+
 #include "infinite.h"
 #include "imagereader.h"
 #include "paramset.h"
@@ -30,7 +33,6 @@
 #include "sampling.h"
 #include "scene.h"
 #include "dynload.h"
-#include "luxrays/utils/mc.h"
 
 using namespace lux;
 

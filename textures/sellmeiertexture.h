@@ -24,7 +24,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "fresnelgeneral.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "memory.h"
 #include "paramset.h"
 

@@ -25,7 +25,7 @@
 #include "imagereader.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"

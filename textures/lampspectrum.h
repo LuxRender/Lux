@@ -23,7 +23,6 @@
 // lampspectrum.cpp*
 #include "lux.h"
 #include "texture.h"
-#include "irregular.h"
 #include "paramset.h"
 
 namespace lux

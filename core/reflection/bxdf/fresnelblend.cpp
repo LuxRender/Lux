@@ -22,7 +22,7 @@
 
 // fresnelblend.cpp*
 #include "fresnelblend.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "microfacetdistribution.h"
 
 #include "luxrays/utils/mc.h"

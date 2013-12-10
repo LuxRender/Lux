@@ -24,9 +24,9 @@
 // scale.cpp*
 #include "lux.h"
 #include "context.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "paramset.h"
 
 #include <map>

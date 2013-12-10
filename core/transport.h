@@ -25,7 +25,7 @@
 // transport.h*
 #include "queryable.h"
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 #include "luxrays/luxrays.h"
 

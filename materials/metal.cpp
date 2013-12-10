@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include "luxrays/core/color/spds/irregular.h"
+using luxrays::IrregularSPD;
+
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "metal.h"
 #include "memory.h"
@@ -33,8 +36,6 @@
 #include "dynload.h"
 #include "filedata.h"
 #include "error.h"
-
-#include "irregular.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>

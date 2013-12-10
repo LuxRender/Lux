@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "geometry/raydifferential.h"
 #include "geometry/transform.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

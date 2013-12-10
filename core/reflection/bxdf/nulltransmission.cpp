@@ -22,7 +22,7 @@
 
 // nulltransmission.cpp*
 #include "nulltransmission.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 using namespace lux;
 

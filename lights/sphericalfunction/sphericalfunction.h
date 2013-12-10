@@ -24,7 +24,7 @@
 #define LUX_SPHERICALFUNCTION_H
 
 #include "lux.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "mipmap.h"
 #include "luxrays/utils/mcdistribution.h"
 

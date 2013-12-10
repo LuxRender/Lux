@@ -22,7 +22,7 @@
 
 // schlickbsdf.cpp*
 #include "schlickbsdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "fresnel.h"
 #include "sampling.h"
 #include "luxrays/core/epsilon.h"

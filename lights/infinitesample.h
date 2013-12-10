@@ -20,12 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
-// infinitesample.cpp*
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBIllumSPD;
+
 #include "lux.h"
 #include "light.h"
 #include "scene.h"
 #include "mipmap.h"
-#include "rgbillum.h"
 
 namespace lux
 {

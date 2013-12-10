@@ -22,7 +22,7 @@
 
 // lafortune.cpp*
 #include "lafortune.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 #include "luxrays/utils/mc.h"
 

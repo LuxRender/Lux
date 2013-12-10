@@ -26,7 +26,7 @@ using luxrays::SphericalDirection;
 #include "mipmap.h"
 #include "paramset.h"
 #include "imagereader.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "luxrays/utils/mcdistribution.h"
 
 using namespace luxrays;

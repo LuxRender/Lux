@@ -22,7 +22,7 @@
 
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "geometry/raydifferential.h"
 #include "shape.h"
 

@@ -27,7 +27,7 @@
 #include "primitive.h"
 #include "schlickscatter.h"
 #include "texture.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "volume.h"
 #include "paramset.h"
 #include "dynload.h"

@@ -31,7 +31,7 @@
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "nulltransmission.h"
 
 using namespace lux;

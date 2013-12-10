@@ -22,9 +22,9 @@
 
 // mix.cpp*
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
 

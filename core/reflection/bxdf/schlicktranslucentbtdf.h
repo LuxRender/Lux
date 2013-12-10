@@ -27,7 +27,7 @@
 
 #include "lux.h"
 #include "bxdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 namespace lux
 {

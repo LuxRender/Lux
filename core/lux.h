@@ -49,6 +49,7 @@ using std::sort;
 #include "luxrays/luxrays.h"
 #include "luxrays/core/epsilon.h"
 #include "luxrays/core/geometry/transform.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "luxrays/core/utils.h"
 #include "luxrays/utils/memory.h"
 
@@ -163,12 +164,14 @@ namespace lux
   class Intersection;
   class ImageData;
   class MIPMap;
-  class SWCSpectrum;
-  class SpectrumWavelengths;
-  class RGBColor;
-  class XYZColor;
-  class ColorSystem;
-  class SPD;
+  using luxrays::SWCSpectrum;
+  using luxrays::SpectrumWavelengths;
+  using luxrays::RGBColor;
+  using luxrays::RGBAColor;
+  using luxrays::XYZColor;
+  using luxrays::ColorSystem;
+  using luxrays::ColorAdaptator;
+  using luxrays::SPD;
   class Camera;
   class CameraResponse;
   class ProjectiveCamera;

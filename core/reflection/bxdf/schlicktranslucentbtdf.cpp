@@ -22,7 +22,7 @@
 
 // schlicktranslucentbtdf.cpp*
 #include "schlicktranslucentbtdf.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "microfacetdistribution.h"
 
 #include "luxrays/utils/mc.h"

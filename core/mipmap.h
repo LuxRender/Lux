@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "texturecolor.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "error.h"
 #include "queryable.h"
 #include "luxrays/utils/memory.h"

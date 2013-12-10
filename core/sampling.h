@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "randomgen.h"
 #include "contribution.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "film.h"
 #include "queryable.h"
 

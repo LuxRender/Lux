@@ -24,8 +24,8 @@
 #define LUX_COLORBASE_H
 // color.h*
 #include "lux.h"
-#include "color.h"
-#include "spectrum.h"
+#include "luxrays/core/color/color.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 #include <boost/serialization/access.hpp>
 

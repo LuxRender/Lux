@@ -25,7 +25,7 @@
 // fresnelslick.h*
 #include "lux.h"
 #include "fresnel.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 
 namespace lux
 {

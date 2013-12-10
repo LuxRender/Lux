@@ -22,7 +22,7 @@
 
 // schlickscatter.cpp*
 #include "schlickscatter.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 
 using namespace lux;
 

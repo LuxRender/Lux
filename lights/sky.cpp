@@ -20,12 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// sky.cpp*
+#include "luxrays/core/color/spectrumwavelengths.h"
+#include "luxrays/core/color/spds/regular.h"
+using luxrays::RegularSPD;
+
 #include "sky.h"
 #include "memory.h"
-#include "spectrumwavelengths.h"
 #include "paramset.h"
-#include "regular.h"
 #include "bxdf.h"
 #include "singlebsdf.h"
 #include "primitive.h"

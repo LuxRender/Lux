@@ -33,7 +33,7 @@
 
 // Lux headers
 #include "api.h"
-#include "color.h"
+#include "luxrays/core/color/color.h"
 
 // CPP API headers
 #include "lux_api.h"

@@ -24,8 +24,8 @@
 #define LUX_PHOTONMAP_H
 
 #include "lux.h"
-#include "spectrum.h"
-#include "spectrumwavelengths.h"
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spectrumwavelengths.h"
 #include "kdtree.h"
 #include "bxdf.h"
 

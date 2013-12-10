@@ -23,8 +23,8 @@
 // exrio.cpp*
 #include "lux.h"
 #include "error.h"
-#include "color.h"
-#include "spectrum.h"
+#include "luxrays/core/color/color.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "imagereader.h"
 #include "texturecolor.h"
 #include <algorithm>
@@ -76,8 +76,8 @@ using namespace cimg_library;
 /*#ifndef __APPLE__
 #include "lux.h"
 #include "error.h"
-#include "color.h"
-#include "spectrum.h"
+#include "luxrays/core/color/color.h"
+#include "luxrays/core/color/swcspectrum.h"
 #endif*/
 using namespace Imf;
 using namespace Imath;

@@ -20,11 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// gaussian.cpp*
+#include "luxrays/core/color/spds/gaussianspd.h"
+using luxrays::GaussianSPD;
+
 #include "lux.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "texture.h"
-#include "gaussianspd.h"
 #include "paramset.h"
 
 namespace lux

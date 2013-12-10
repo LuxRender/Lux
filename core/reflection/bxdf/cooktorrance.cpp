@@ -22,7 +22,7 @@
 
 // cooktorrance.cpp*
 #include "cooktorrance.h"
-#include "spectrum.h"
+#include "luxrays/core/color/swcspectrum.h"
 #include "microfacetdistribution.h"
 #include "fresnel.h"
 

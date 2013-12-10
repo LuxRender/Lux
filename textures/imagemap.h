@@ -20,15 +20,16 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// imagemap.cpp*
+#include "luxrays/core/color/swcspectrum.h"
+#include "luxrays/core/color/spds/rgbillum.h"
+using luxrays::RGBIllumSPD;
+
 #include "lux.h"
-#include "spectrum.h"
 #include "texture.h"
 #include "mipmap.h"
 #include "imagereader.h"
 #include "paramset.h"
 #include "error.h"
-#include "rgbillum.h"
 #include <map>
 using std::map;
 
