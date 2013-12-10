@@ -1331,10 +1331,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			const float dirZ = (*sunLight)["dir.z"].FloatValue();
 			const float turbidity = (*sunLight)["turbidity"].FloatValue();
 			const float relSize = (*sunLight)["relSize"].FloatValue();
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
-				INV_PI;
+			const float gain = (*sunLight)["gain"].FloatValue();
 			const u_int lightId = (*sunLight)["group"].IntValue();
 
 			const Transform &light2World = sunLight->GetTransform();
@@ -1360,17 +1357,11 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 		if (skyLight) {
 			// Add a SkyLight to the scene
 
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
-
 			const float dirX = (*skyLight)["dir.x"].FloatValue();
 			const float dirY = (*skyLight)["dir.y"].FloatValue();
 			const float dirZ = (*skyLight)["dir.z"].FloatValue();
 			const float turbidity = (*skyLight)["turbidity"].FloatValue();
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
+			const float gain = (*skyLight)["gain"].FloatValue();
 			const u_int lightId = (*skyLight)["group"].IntValue();
 
 			const Transform &light2World = skyLight->GetTransform();
@@ -1396,17 +1387,11 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 		if (sky2Light) {
 			// Add a SkyLight to the scene
 
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
-
 			const float dirX = (*sky2Light)["dir.x"].FloatValue();
 			const float dirY = (*sky2Light)["dir.y"].FloatValue();
 			const float dirZ = (*sky2Light)["dir.z"].FloatValue();
 			const float turbidity = (*sky2Light)["turbidity"].FloatValue();
-			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in LuxCore code
-			// for compatibility with past scene
-			const float gain = (*sky2Light)["gain"].FloatValue() * gainAdjustFactor;
+			const float gain = (*sky2Light)["gain"].FloatValue();
 			const u_int lightId = (*sky2Light)["group"].IntValue();
 
 			const Transform &light2World = sky2Light->GetTransform();
