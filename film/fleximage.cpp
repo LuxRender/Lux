@@ -230,6 +230,33 @@ void FlexImageFilm::CreateBuffers() {
 	}
 }
 
+Film *FlexImageFilm::CreateFilmFromFLMFromStream(char* buffer, unsigned int bufSize, const string &flmFileName){
+	// NOTE - lordcrc - FlexImageFilm takes ownership of filter
+	ParamSet dummyParams;
+	Filter *dummyFilter = MakeFilter("box", dummyParams);
+	// Create the default film
+	const string filename = flmFileName.substr(0, flmFileName.length() - 4); // remove .flm extention
+	static const bool boolTrue = true;
+	static const bool boolFalse = false;
+	ParamSet filmParams;
+	filmParams.AddString("filename", &filename );
+	filmParams.AddBool("write_resume_flm", &boolTrue);
+	filmParams.AddBool("restart_resume_flm", &boolFalse);
+	filmParams.AddBool("write_flm_direct", &boolFalse);
+	filmParams.AddBool("write_exr", &boolFalse);
+	filmParams.AddBool("write_exr_ZBuf", &boolFalse);
+	filmParams.AddBool("write_png", &boolFalse);
+	filmParams.AddBool("write_png_ZBuf", &boolFalse);
+	filmParams.AddBool("write_tga", &boolFalse);
+	filmParams.AddBool("write_tga_ZBuf", &boolFalse);
+	Film *film = FlexImageFilm::CreateFilm(filmParams, dummyFilter);
+	if (!film->LoadResumeFilmFromStream(buffer, bufSize)) {
+		delete film;
+		return NULL;
+	}
+	return film;
+}
+
 // Parameter Access functions
 void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value, u_int index)
 {

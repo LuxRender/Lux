@@ -29,13 +29,14 @@
 #include "version.h"
 #include "osfunc.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/thread/mutex.hpp>
 #include <vector>
 using std::vector;
 #include <string>
 using std::string;
 #include <iostream>
+#include <fstream>
 using std::cerr;
 using std::endl;
 #include <cstdarg>
@@ -602,6 +603,37 @@ extern "C" void luxLoadFLM(const char* name)
 extern "C" void luxSaveFLM(const char* name)
 {
 	Context::GetActive()->SaveFLM(string(name));
+}
+
+extern "C" void luxLoadFLMFromStream(char* buffer, unsigned int bufSize, const char* name)
+{
+	Context::GetActive()->LoadFLMFromStream(buffer, bufSize, string(name));
+}
+
+extern "C" void resetFlm()
+{
+	Context::GetActive()->ResetFLM();
+}
+
+extern "C" unsigned char* luxSaveFLMToStream(unsigned int& size)
+{
+	unsigned char* stream = Context::GetActive()->SaveFLMToStream(size);
+	Context::GetActive()->ResetFLM();
+	return stream;
+}
+
+extern "C" void luxDeleteFLMBuffer(unsigned char* buffer)
+{
+	delete[] buffer;
+}
+
+extern "C" double luxUpdateFLMFromStream(char* buffer, unsigned int bufSize)
+{
+	double samples = 0;
+	std::string str(buffer, bufSize);
+	std::basic_stringstream<char> stream(str);
+	samples = Context::GetActive()->UpdateFilmFromStream(stream); 
+	return samples;
 }
 
 extern "C" void luxOverrideResumeFLM(const char *name)

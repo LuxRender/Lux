@@ -60,6 +60,7 @@ LUX_EXPORT void luxStartRenderingAfterParse(const bool start);
 // Used to end the parse phase with luxStartRenderingAfterParse(false);
 LUX_EXPORT void luxParseEnd();
 LUX_EXPORT void luxCleanup();
+LUX_EXPORT void resetFlm();
 
 /* Basic control flow, scoping, stacks */
 LUX_EXPORT void luxIdentity();
@@ -127,6 +128,12 @@ LUX_EXPORT void luxWorldEnd();
 /* Load/Save FLM file */
 LUX_EXPORT void luxLoadFLM(const char* name);
 LUX_EXPORT void luxSaveFLM(const char* name);
+
+LUX_EXPORT unsigned char* luxSaveFLMToStream(unsigned int& size);
+LUX_EXPORT void luxDeleteFLMBuffer(unsigned char* buffer);
+LUX_EXPORT void luxLoadFLMFromStream(char* buffer, unsigned int bufSize, const char* name);
+LUX_EXPORT double luxUpdateFLMFromStream(char* buffer, unsigned int bufSize);
+
 /* Overrides the resume settings of the Film in the next scene to resume from the given FLM file, or use filename from scene if empty */
 LUX_EXPORT void luxOverrideResumeFLM(const char *name);
 /* Overrides the Film output filename */

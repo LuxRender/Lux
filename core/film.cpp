@@ -39,10 +39,12 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 //#include <boost/math/special_functions/bessel.hpp>
 #include <complex>
 
@@ -85,6 +87,7 @@ using namespace cimg_library;
 #endif
 
 using namespace lux;
+using namespace boost::iostreams;
 
 
 template<typename T> 
@@ -1144,8 +1147,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convTest(NULL), varianceBuffer(NULL),
-	noiseAwareMapVersion(0),
-	userSamplingMapFileName(samplingmapfilename), userSamplingMapVersion(0),
+	noiseAwareMap(NULL), noiseAwareMapVersion(0),
+	userSamplingMapFileName(samplingmapfilename), userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -1382,6 +1385,14 @@ void Film::ClearBuffers()
 
 		bufferGroup.numberOfSamples = 0;
 	}
+	ReSetSamplesNumber();
+}
+
+void Film::ReSetSamplesNumber()
+{
+	numberOfSamplesFromNetwork = 0;
+	numberOfLocalSamples = 0;
+	numberOfResumedSamples = 0;
 }
 
 void Film::SetGroupName(u_int index, const string& name) 
@@ -2576,6 +2587,184 @@ bool Film::LoadResumeFilm(const string &filename)
 	CreateBuffers();
 
 	return true;
+}
+
+double Film::UpdateFilm(std::basic_istream<char> &stream) {
+	const bool isLittleEndian = osIsLittleEndian();
+
+	filtering_stream<input> in;
+	in.push(gzip_decompressor());
+	in.push(stream);
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
+
+	// Read header
+	FlmHeader header;
+	if (!header.Read(in, isLittleEndian, this))
+		return 0.f;
+
+	// Read buffer groups
+	vector<double> bufferGroupNumSamples(bufferGroups.size());
+	vector<BlockedArray<Pixel>*> tmpPixelArrays(bufferGroups.size() * bufferConfigs.size());
+	for (u_int i = 0; i < bufferGroups.size(); i++) {
+		double numberOfSamples;
+		numberOfSamples = osReadLittleEndianDouble(isLittleEndian, in);
+		if (!in.good())
+			break;
+		bufferGroupNumSamples[i] = numberOfSamples;
+
+		// Read buffers
+		for(u_int j = 0; j < bufferConfigs.size(); ++j) {
+			const Buffer* localBuffer = bufferGroups[i].getBuffer(j);
+			// Read pixels
+			BlockedArray<Pixel> *tmpPixelArr = new BlockedArray<Pixel>(
+				localBuffer->xPixelCount, localBuffer->yPixelCount);
+			tmpPixelArrays[i*bufferConfigs.size() + j] = tmpPixelArr;
+			for (u_int y = 0; y < tmpPixelArr->vSize(); ++y) {
+				for (u_int x = 0; x < tmpPixelArr->uSize(); ++x) {
+					Pixel &pixel = (*tmpPixelArr)(x, y);
+					pixel.L.c[0] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.L.c[1] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.L.c[2] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.alpha = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.weightSum = osReadLittleEndianFloat(isLittleEndian, in);
+				}
+			}
+			if (!in.good())
+				break;
+		}
+		if (!in.good())
+			break;
+
+		LOG( LUX_DEBUG,LUX_NOERROR)
+			<< "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i
+			<< " (buffer config size: " << bufferConfigs.size() << ")";
+	}
+
+	// Check for errors
+	double totNumberOfSamples = 0.;
+	double maxTotNumberOfSamples = 0.;
+	if (in.good()) {
+		// Update parameters
+		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
+			it->Set(this);
+
+		// Dade - add all received data
+		for (u_int i = 0; i < bufferGroups.size(); ++i) {
+			BufferGroup &currentGroup = bufferGroups[i];
+			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+				const BlockedArray<Pixel> *receivedPixels = tmpPixelArrays[ i * bufferConfigs.size() + j ];
+				Buffer *buffer = currentGroup.getBuffer(j);
+
+				for (u_int y = 0; y < buffer->yPixelCount; ++y) {
+					for (u_int x = 0; x < buffer->xPixelCount; ++x) {
+						const Pixel &pixel = (*receivedPixels)(x, y);
+						Pixel &pixelResult = buffer->pixels(x, y);
+						pixelResult.L.c[0] += pixel.L.c[0];
+						pixelResult.L.c[1] += pixel.L.c[1];
+						pixelResult.L.c[2] += pixel.L.c[2];
+						pixelResult.alpha += pixel.alpha;
+						pixelResult.weightSum += pixel.weightSum;
+					}
+				}
+			}
+
+			currentGroup.numberOfSamples += bufferGroupNumSamples[i];
+			// Check if we have enough samples per pixel
+			if ((haltSamplesPerPixel > 0) &&
+				(currentGroup.numberOfSamples >= haltSamplesPerPixel * samplePerPass))
+				enoughSamplesPerPixel = true;
+			totNumberOfSamples += bufferGroupNumSamples[i];
+			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
+		}
+
+		numberOfSamplesFromNetwork += maxTotNumberOfSamples;
+
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Received film with " << totNumberOfSamples << " samples";
+	} else
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "IO error while receiving film buffers";
+
+	// Clean up
+	for (u_int i = 0; i < tmpPixelArrays.size(); ++i)
+		delete tmpPixelArrays[i];
+
+	return maxTotNumberOfSamples;
+}
+
+unsigned char* Film::WriteFilmToStream(unsigned int& size)
+{
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
+
+	std::stringstream stream(std::stringstream::in | std::stringstream::out);
+	
+	bool writeSuccessful = WriteFilmDataToStream(stream,true,true);
+	
+	std::string str = stream.str();
+	size = str.length();
+	unsigned char* buffer = new unsigned char[size];
+	memcpy((void *)buffer, (void *)str.c_str(), size);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file finish";
+	
+	return buffer;
+}
+
+bool Film::LoadResumeFilmFromStream(char* buffer, unsigned int bufSize){
+	// Read the FLM header
+	std::string str(buffer, bufSize);
+	std::basic_stringstream<char> stream(str);
+	std::basic_stringstream<char> bufferStream(str);
+	//std::ifstream stream(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+	filtering_stream<input> in;
+	in.push(gzip_decompressor());
+	in.push(stream);
+	const bool isLittleEndian = osIsLittleEndian();
+	FlmHeader header;
+	bool headerOk = header.Read(in, isLittleEndian, NULL);
+	//stream.close();
+	if (!headerOk)
+		return false;
+	xResolution = static_cast<int>(header.xResolution);
+	yResolution = static_cast<int>(header.yResolution);
+	xPixelStart = 0; // by default use full resolution
+	yPixelStart = 0; 
+	xPixelCount = xResolution;
+	yPixelCount = yResolution;
+
+	// Create the buffers (also loads the FLM file)
+	for (u_int i = 0; i < header.numBufferConfigs; ++i)
+		RequestBuffer(BufferType(header.bufferTypes[i]), BUF_FRAMEBUFFER, "");
+
+	vector<string> bufferGroups;
+	for (u_int i = 0; i < header.numBufferGroups; ++i) {
+		std::stringstream ss;
+		ss << "lightgroup #" << (i + 1);
+		bufferGroups.push_back(ss.str());
+	}
+	RequestBufferGroups(bufferGroups);
+	CreateBuffers(bufferStream);
+
+	return true;
+}
+
+void Film::CreateBuffers(std::basic_istream<char> &stream)
+{
+	if (bufferGroups.size() == 0)
+		bufferGroups.push_back(BufferGroup("default"));
+	for (u_int i = 0; i < bufferGroups.size(); ++i)
+		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
+
+	// Allocate ZBuf buffer if needed
+	if(use_Zbuf)
+		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
+
+	// initialize the contribution pool
+	contribPool = new ContributionPool(this);
+
+    // Dade - check if we have to resume a rendering and restore the buffers
+    if(writeResumeFlm) {
+		LOG(LUX_INFO,LUX_NOERROR)<< "Reading film status from file " << filename << ".flm";
+		MergeFilmFromStream(stream);
+    }
 }
 
 void Film::getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options)

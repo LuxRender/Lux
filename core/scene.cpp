@@ -23,6 +23,7 @@
 // scene.cpp*
 #include <sstream>
 #include <stdlib.h>
+#include <fstream>
 
 #include "scene.h"
 #include "camera.h"
@@ -71,6 +72,14 @@ float* Scene::GetAlphaBuffer() {
 
 float* Scene::GetZBuffer() {
     return camera()->film->getZBuffer();
+}
+
+unsigned char* Scene::SaveFLMToStream(unsigned int& size){
+	return camera()->film->WriteFilmToStream(size);
+}
+
+double Scene::UpdateFilmFromStream(std::basic_istream<char> &is){
+	return camera()->film->MergeFilmFromStream(is); 
 }
 
 // histogram access for GUI

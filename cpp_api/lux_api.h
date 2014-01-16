@@ -31,6 +31,7 @@
 #include "context.h"
 #include "queryable.h"
 #include "paramset.h"
+#include "queryableregistry.h"
 
 // CPP API Includes
 #include "lux_instance.h"

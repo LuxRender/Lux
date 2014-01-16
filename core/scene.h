@@ -112,6 +112,9 @@ public:
 	float* GetZBuffer();
 	bool SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
+	unsigned char* SaveFLMToStream(unsigned int& size);
+	double UpdateFilmFromStream(std::basic_istream<char> &is);
+
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width,
 		u_int height, int options);

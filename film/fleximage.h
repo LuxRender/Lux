@@ -92,6 +92,7 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
+	static Film *CreateFilmFromFLMFromStream(char* buffer, unsigned int bufSize, const string &flmFileName);
 	/**
 	 * Constructs an image film that loads its data from the give FLM file. This film is already initialized with
 	 * the necessary buffers. This is currently only used for loading and tonemapping an existing FLM file.

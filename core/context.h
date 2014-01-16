@@ -143,6 +143,11 @@ public:
 	void OverrideResumeFLM(const string &name);
 	void OverrideFilename(const string &filename);
 
+	unsigned char* SaveFLMToStream(unsigned int& size);
+	void LoadFLMFromStream(char* buffer, unsigned int bufSize, const string &name);
+	double UpdateFilmFromStream(std::basic_istream<char> &ifs);
+	void ResetFLM();
+
 	// Save OpenEXR image
 	bool SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 	
@@ -298,6 +303,7 @@ private:
 		bool gotSearchPath;
 		bool debugMode;
 		bool randomMode;
+		static Context *activeContext;
 	};
 
 	struct GraphicsState {

@@ -142,6 +142,12 @@ void lux::Context::Init() {
 }
 
 void lux::Context::Free() {
+void Context::ResetFLM()
+{
+	if (luxCurrentScene != 0)
+		luxCurrentScene->camera()->film->ClearBuffers();
+}
+
 	// Dade - free memory
 
 	delete luxCurrentRenderer;
@@ -1208,6 +1214,34 @@ void lux::Context::LoadFLM(const string &flmFileName) {
 }
 void lux::Context::SaveFLM(const string &flmFileName) {
 	luxCurrentScene->camera()->film->WriteFilmToFile(flmFileName);
+}
+
+void Context::LoadFLMFromStream(char* buffer, unsigned int bufSize, const string &name){
+	// Create the film
+	lux::Film* flm = FlexImageFilm::CreateFilmFromFLMFromStream(buffer, bufSize, name);
+	if (!flm) {
+		LOG(LUX_SEVERE,LUX_BUG)<< "Unable to create film";
+		return;
+	}
+	// Update context
+	MotionSystem dummyTransform;
+	ParamSet dummyParams;
+	lux::Camera *cam = MakeCamera("perspective", dummyTransform, dummyParams, flm);
+	if (!cam) {
+		LOG(LUX_SEVERE,LUX_BUG)<< "Unable to create dummy camera";
+		delete flm;
+		return;
+	}
+	luxCurrentScene = new Scene(cam);
+	luxCurrentScene->SetReady();
+}
+
+unsigned char* Context::SaveFLMToStream(unsigned int& size){
+	return luxCurrentScene->SaveFLMToStream(size);
+}
+
+double Context::UpdateFilmFromStream(std::basic_istream<char> &is){
+	return luxCurrentScene->UpdateFilmFromStream(is);
 }
 
 // Save current film to OpenEXR image

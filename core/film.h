@@ -653,6 +653,12 @@ public:
 	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
 	virtual void ClearBuffers();
 
+	virtual double UpdateFilm(std::basic_istream<char> &stream);
+	virtual unsigned char* WriteFilmToStream(unsigned int& size);
+	virtual bool LoadResumeFilmFromStream(char* buffer, unsigned int bufSize);
+	virtual void CreateBuffers(std::basic_istream<char> &stream);
+	virtual void ReSetSamplesNumber();
+
 	/**
 	 * Get the indexes that the current contribution spans.
 	 * Current implementation is limited to at most two tiles, ie the tiles are slabs.
