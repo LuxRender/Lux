@@ -141,13 +141,13 @@ void lux::Context::Init() {
 	shapeNo = 0;
 }
 
-void lux::Context::Free() {
-void Context::ResetFLM()
+void lux::Context::ResetFLM()
 {
 	if (luxCurrentScene != 0)
 		luxCurrentScene->camera()->film->ClearBuffers();
 }
 
+void lux::Context::Free() {
 	// Dade - free memory
 
 	delete luxCurrentRenderer;
@@ -1216,7 +1216,7 @@ void lux::Context::SaveFLM(const string &flmFileName) {
 	luxCurrentScene->camera()->film->WriteFilmToFile(flmFileName);
 }
 
-void Context::LoadFLMFromStream(char* buffer, unsigned int bufSize, const string &name){
+void lux::Context::LoadFLMFromStream(char* buffer, unsigned int bufSize, const string &name){
 	// Create the film
 	lux::Film* flm = FlexImageFilm::CreateFilmFromFLMFromStream(buffer, bufSize, name);
 	if (!flm) {
@@ -1236,11 +1236,11 @@ void Context::LoadFLMFromStream(char* buffer, unsigned int bufSize, const string
 	luxCurrentScene->SetReady();
 }
 
-unsigned char* Context::SaveFLMToStream(unsigned int& size){
+unsigned char* lux::Context::SaveFLMToStream(unsigned int& size){
 	return luxCurrentScene->SaveFLMToStream(size);
 }
 
-double Context::UpdateFilmFromStream(std::basic_istream<char> &is){
+double lux::Context::UpdateFilmFromStream(std::basic_istream<char> &is){
 	return luxCurrentScene->UpdateFilmFromStream(is);
 }
 
