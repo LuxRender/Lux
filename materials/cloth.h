@@ -68,6 +68,14 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
+	Texture<SWCSpectrum> *GetWarpKdTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kds[0]).get(); }
+	Texture<SWCSpectrum> *GetWarpKsTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kss[0]).get(); }
+	Texture<SWCSpectrum> *GetWeftKdTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kds[1]).get(); }
+	Texture<SWCSpectrum> *GetWeftKsTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kss[1]).get(); }
+	std::string GetPresetName() { return Pattern->name; }
+	float GetRepeatU() { return Pattern->repeat_u; }
+	float GetRepeatV() { return Pattern->repeat_v; }
+
 	static Material * CreateMaterial(const Transform &xform, const ParamSet &mp);
 private:
 	// Cloth Private Data
