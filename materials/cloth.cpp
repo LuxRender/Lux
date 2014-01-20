@@ -234,7 +234,7 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_ks,
 			boost::shared_ptr<WeavePattern> &pattern,
-			const ParamSet &mp) : Material("Cloth-" + boost::lexical_cast<string>(this), mp), Pattern(pattern)
+			const ParamSet &mp, string presetname) : Material("Cloth-" + boost::lexical_cast<string>(this), mp), Pattern(pattern), presetName(presetname)
 {
 	// Store warp and weft textures
 	Kds.push_back(warp_kd);
@@ -321,7 +321,7 @@ Material* Cloth::CreateMaterial(const Transform &xform, const ParamSet &mp)
 	else
 		pattern = DenimPattern(repeat_u, repeat_v);
 
-	return new Cloth(warp_kd, warp_ks, weft_kd, weft_ks, pattern, mp);
+	return new Cloth(warp_kd, warp_ks, weft_kd, weft_ks, pattern, mp, presetname);
 }
 
 static DynamicLoader::RegisterMaterial<Cloth> r("cloth");

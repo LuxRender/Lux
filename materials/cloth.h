@@ -61,7 +61,7 @@ public:
 		  boost::shared_ptr<Texture<SWCSpectrum> > &weft_kd,
 		  boost::shared_ptr<Texture<SWCSpectrum> > &weft_ks,
 		  boost::shared_ptr<WeavePattern> &pattern,
-		  const ParamSet &mp);
+		  const ParamSet &mp, string presetname);
 	virtual ~Cloth() { }
 
 	virtual BSDF *GetBSDF(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -72,7 +72,7 @@ public:
 	Texture<SWCSpectrum> *GetWarpKsTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kss[0]).get(); }
 	Texture<SWCSpectrum> *GetWeftKdTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kds[1]).get(); }
 	Texture<SWCSpectrum> *GetWeftKsTexture() { return ((boost::shared_ptr<Texture<SWCSpectrum> >)Kss[1]).get(); }
-	std::string GetPresetName() { return Pattern->name; }
+	std::string GetPresetName() { return presetName; }
 	float GetRepeatU() { return Pattern->repeat_u; }
 	float GetRepeatV() { return Pattern->repeat_v; }
 
@@ -81,6 +81,7 @@ private:
 	// Cloth Private Data
 	vector<boost::shared_ptr<Texture<SWCSpectrum> > >Kds, Kss;
 	boost::shared_ptr<WeavePattern> Pattern;
+	string presetName;
 	float specularNormalization;
 };
 
