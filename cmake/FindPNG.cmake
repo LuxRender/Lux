@@ -29,7 +29,7 @@
 
 # PNG depends on Zlib
 # Lookup user specified path first
-SET(PNG_INC_SUFFIXES include/libpng include Include Headers)
+SET(PNG_INC_SUFFIXES include/libpng include/png include Include Headers)
 FIND_PATH(ZLIB_INCLUDE_DIR
 	NAMES zlib.h
 	PATHS "${PNG_ROOT}" "${ZLIB_ROOT}"
