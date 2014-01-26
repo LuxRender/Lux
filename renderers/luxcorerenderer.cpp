@@ -72,19 +72,20 @@
 #include "lights/projection.h"
 #include "lights/distant.h"
 
-#include "materials/matte.h"
-#include "materials/mirror.h"
+#include "materials/carpaint.h"
+#include "materials/cloth.h"
 #include "materials/glass.h"
 #include "materials/glass2.h"
 #include "materials/glossy2.h"
-#include "materials/metal.h"
+#include "materials/matte.h"
 #include "materials/mattetranslucent.h"
-#include "materials/null.h"
-#include "materials/mixmaterial.h"
+#include "materials/metal.h"
 #include "materials/metal2.h"
+#include "materials/mirror.h"
+#include "materials/mixmaterial.h"
+#include "materials/null.h"
 #include "materials/roughglass.h"
 #include "materials/velvet.h"
-#include "materials/cloth.h"
 
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
@@ -1224,6 +1225,50 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 					luxrays::Property("scene.materials." + matName +".warp_ks")(warp_ks_TexName) <<
 					luxrays::Property("scene.materials." + matName +".weft_kd")(weft_kd_TexName) <<
 					luxrays::Property("scene.materials." + matName +".weft_ks")(weft_ks_TexName));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
+			lcScene->Parse(matProps);
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material CarPaint
+	//------------------------------------------------------------------
+	if (dynamic_cast<CarPaint *>(mat)) {
+		// Define the material
+		CarPaint *carpaint = dynamic_cast<CarPaint *>(mat);
+		matName = carpaint->GetName();
+
+		// Check if the material has already been defined
+		if (!lcScene->IsMaterialDefined(matName)) {
+			// Textures
+			const string kdTexName = GetLuxCoreTexName(lcScene, carpaint->GetKdTexture());
+			const string kaTexName = GetLuxCoreTexName(lcScene, carpaint->GetKaTexture());
+			const string ks1TexName = GetLuxCoreTexName(lcScene, carpaint->GetKs1Texture());
+			const string ks2TexName = GetLuxCoreTexName(lcScene, carpaint->GetKs2Texture());
+			const string ks3TexName = GetLuxCoreTexName(lcScene, carpaint->GetKs3Texture());
+			const string depthTexName = GetLuxCoreTexName(lcScene, carpaint->GetDepthTexture());
+			const string r1TexName = GetLuxCoreTexName(lcScene, carpaint->GetR1Texture());
+			const string r2TexName = GetLuxCoreTexName(lcScene, carpaint->GetR2Texture());
+			const string r3TexName = GetLuxCoreTexName(lcScene, carpaint->GetR3Texture());
+			const string m1TexName = GetLuxCoreTexName(lcScene, carpaint->GetM1Texture());
+			const string m2TexName = GetLuxCoreTexName(lcScene, carpaint->GetM2Texture());
+			const string m3TexName = GetLuxCoreTexName(lcScene, carpaint->GetM3Texture());
+
+			const luxrays::Properties matProps(
+					luxrays::Property("scene.materials." + matName +".type")("carpaint") <<
+					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
+					luxrays::Property("scene.materials." + matName +".ka")(kaTexName) <<
+					luxrays::Property("scene.materials." + matName +".ks1")(ks1TexName) <<
+					luxrays::Property("scene.materials." + matName +".ks2")(ks2TexName) <<
+					luxrays::Property("scene.materials." + matName +".ks3")(ks3TexName) <<
+					luxrays::Property("scene.materials." + matName +".d")(depthTexName) <<
+					luxrays::Property("scene.materials." + matName +".r1")(r1TexName) <<
+					luxrays::Property("scene.materials." + matName +".r2")(r2TexName) <<
+					luxrays::Property("scene.materials." + matName +".r3")(r3TexName) <<
+					luxrays::Property("scene.materials." + matName +".m1")(m1TexName) <<
+					luxrays::Property("scene.materials." + matName +".m2")(m2TexName) <<
+					luxrays::Property("scene.materials." + matName +".m3")(m3TexName));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
