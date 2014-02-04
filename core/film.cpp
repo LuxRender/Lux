@@ -1147,8 +1147,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convTest(NULL), varianceBuffer(NULL),
-	noiseAwareMap(NULL), noiseAwareMapVersion(0),
-	userSamplingMapFileName(samplingmapfilename), userSamplingMap(NULL), userSamplingMapVersion(0),
+	noiseAwareMapVersion(0),
+	userSamplingMapFileName(samplingmapfilename), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
