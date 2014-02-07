@@ -2164,12 +2164,14 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 			// Check LinearOp class for an explanation of the following formula
 			const float factor = exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma);
 
-			cfgProps.Set(luxrays::Property("film.imagepipeline.0.type")("LINEAR"));
+			cfgProps.Set(luxrays::Property("film.imagepipeline.0.type")("TONEMAP_LINEAR"));
 			cfgProps.Set(luxrays::Property("film.imagepipeline.0.linear.scale")(factor));
 			cfgProps.Set(luxrays::Property("film.imagepipeline.1.type")("GAMMA_CORRECTION"));
 			cfgProps.Set(luxrays::Property("film.imagepipeline.1.value")(2.2f));
-//		} else if (type == FlexImageFilm::TMK_AutoLinear) {
-//			cfgProps.Set(luxrays::Property("film.tonemap.type")("AUTOLINEAR"));
+		} else if (type == FlexImageFilm::TMK_AutoLinear) {
+			cfgProps.Set(luxrays::Property("film.imagepipeline.0.type")("TONEMAP_AUTOLINEAR"));
+			cfgProps.Set(luxrays::Property("film.imagepipeline.1.type")("GAMMA_CORRECTION"));
+			cfgProps.Set(luxrays::Property("film.imagepipeline.1.value")(2.2f));
 		} else
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxVR supports only linear tone mapping, ignoring tone mapping settings";
 	}
