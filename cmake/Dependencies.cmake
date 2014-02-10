@@ -222,6 +222,39 @@ ENDIF(FREEIMAGE_FOUND)
 
 #############################################################################
 #############################################################################
+##########################   OPENIMAGEIO LIBRARIES    #######################
+#############################################################################
+#############################################################################
+
+find_package(OpenImageIO REQUIRED)
+include_directories(SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
+find_package(OpenEXR REQUIRED)
+
+if(NOT APPLE)
+    # Apple has these available hardcoded and matched in macos repo, see Config_OSX.cmake
+
+    include_directories(SYSTEM ${OPENEXR_INCLUDE_DIRS})
+    find_package(TIFF REQUIRED)
+    include_directories(SYSTEM ${TIFF_INCLUDE_DIR})
+    find_package(JPEG REQUIRED)
+    include_directories(SYSTEM ${JPEG_INCLUDE_DIR})
+    find_package(PNG REQUIRED)
+    include_directories(SYSTEM ${PNG_PNG_INCLUDE_DIR})
+	# Find Python Libraries
+	find_package(PythonLibs)
+endif()
+
+IF(OPENIMAGEIO_FOUND)
+	MESSAGE(STATUS "OpenImageIO include directory: " ${OPENIMAGEIO_INCLUDE_DIR})
+	MESSAGE(STATUS "OpenImageIO library: " ${OPENIMAGEIO_LIBRARIES})
+	INCLUDE_DIRECTORIES(SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
+ELSE(OPENIMAGEIO_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find OpenImageIO")
+ENDIF(OPENIMAGEIO_FOUND)
+
+
+#############################################################################
+#############################################################################
 ######################### OPENEXR LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
