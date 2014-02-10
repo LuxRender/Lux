@@ -49,6 +49,12 @@ public:
 		const ParamSet &tp) {
 		return new BlenderCloudsTexture3D(tex2world, tp);
 	}
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const float GetNoiseDepth() const { return tex.noisedepth; }
+	const float GetNoiseT() const { return tex.noisetype; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux
