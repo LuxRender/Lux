@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 		string changed;
 		if (rendererName == "") {
 			// There isn't a Renderer command, just add one
-			changed = "Renderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]\n" + filetext;
+			changed = "Renderer \"luxcore\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]\n" + filetext;
 		} else {
 			// Get the list of options 
 			std::string::const_iterator start = rendererOptions.begin();
@@ -246,13 +246,13 @@ int main(int argc, char **argv) {
 				flags |= boost::match_not_bob;
 			}
 
-			string luxvrRenderer = "Renderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\" ";
+			string luxvrRenderer = "Renderer \"luxcore\" \"string config\" [";
 			if (opts.size() > 0) {
 				BOOST_FOREACH(string &opt, opts) {
 					luxvrRenderer += opt + " ";
 				}
 			}
-			luxvrRenderer += "]";
+			luxvrRenderer += " \"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "New Renderer command: " << luxvrRenderer;
 			changed = boost::regex_replace(filetext, rendererExpression, luxvrRenderer, boost::match_default | boost::format_all);
 		}
