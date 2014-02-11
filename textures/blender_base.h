@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#ifndef LUX_BLENDER_BASE_H
+#define LUX_BLENDER_BASE_H
+
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
@@ -104,3 +107,5 @@ protected:
 };
 
 } // namespace lux
+
+#endif

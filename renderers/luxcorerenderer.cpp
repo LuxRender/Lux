@@ -105,6 +105,7 @@
 #include "textures/uv.h"
 #include "textures/band.h"
 #include "textures/hitpointcolor.h"
+#include "textures/blender_clouds.h"
 #include "textures/blender_wood.h"
 
 #include "volumes/clearvolume.h"
@@ -612,6 +613,18 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("windy") <<
 					GetLuxCoreTexMapping(windy->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderCloudsTexture3D *>(tex)) {
+			const BlenderCloudsTexture3D *clouds = dynamic_cast<const BlenderCloudsTexture3D *>(tex);
+					std::string noisetype= "soft_noise";
+					if(clouds->GetNoiseT()) noisetype = "hard_noise";
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_clouds") <<
+					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(clouds->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".noisedepth")(ToString(clouds->GetNoiseDepth())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(clouds->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(clouds->GetContrast())) <<
+					GetLuxCoreTexMapping(clouds->GetTextureMapping3D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const BlenderWoodTexture3D *>(tex)) {
 			const BlenderWoodTexture3D *wood = dynamic_cast<const BlenderWoodTexture3D *>(tex);
 					std::string woodtype = "";
@@ -715,7 +728,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
 					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
 					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
-					"HitPointAlphaTexture, HitPointGreyTexture and BlenderWoodTexture3D"
+					"HitPointAlphaTexture, HitPointGreyTexture, BlenderCloudsTexture3D and BlenderWoodTexture3D"
 					"(i.e. not " << ToClassName(tex) << ").";
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("constfloat1") <<
