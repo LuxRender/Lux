@@ -7,12 +7,12 @@
 
 MESSAGE(STATUS "Using OSX Configuration settings")
 
-#Libs that have find_package modules
+# Libs that have find_package modules
 SET(FREEIMAGE_ROOT ${OSX_DEPENDENCY_ROOT})
 set(OPENIMAGEIO_ROOT_DIR ${OSX_DEPENDENCY_ROOT})
 set(OPENEXR_ROOT ${OSX_DEPENDENCY_ROOT})
 
-#Libs with hardoded pathes ( macos repo )
+# Libs with hardcoded pathes ( macos repo )
 set(TIFF_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/libtiff.a)
 set(TIFF_INCLUDE_DIR ${OSX_DEPENDENCY_ROOT}/include/tiff)
 include_directories(SYSTEM ${TIFF_INCLUDE_DIR})
