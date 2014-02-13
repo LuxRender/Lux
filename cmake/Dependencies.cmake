@@ -206,9 +206,6 @@ ENDIF(Boost_FOUND)
 #############################################################################
 #############################################################################
 
-IF(APPLE)
-	SET(FREEIMAGE_ROOT ${OSX_DEPENDENCY_ROOT})
-ENDIF(APPLE)
 FIND_PACKAGE(FreeImage REQUIRED)
 
 IF(FREEIMAGE_FOUND)
@@ -228,20 +225,12 @@ ENDIF(FREEIMAGE_FOUND)
 
 find_package(OpenImageIO REQUIRED)
 include_directories(SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
-find_package(OpenEXR REQUIRED)
 
 if(NOT APPLE)
-    # Apple has these available hardcoded and matched in macos repo, see Config_OSX.cmake
-
-    include_directories(SYSTEM ${OPENEXR_INCLUDE_DIRS})
     find_package(TIFF REQUIRED)
     include_directories(SYSTEM ${TIFF_INCLUDE_DIR})
     find_package(JPEG REQUIRED)
     include_directories(SYSTEM ${JPEG_INCLUDE_DIR})
-    find_package(PNG REQUIRED)
-    include_directories(SYSTEM ${PNG_PNG_INCLUDE_DIR})
-	# Find Python Libraries
-	find_package(PythonLibs)
 endif()
 
 IF(OPENIMAGEIO_FOUND)
@@ -260,9 +249,6 @@ ENDIF(OPENIMAGEIO_FOUND)
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
-IF(APPLE)
-	SET(OPENEXR_ROOT ${OSX_DEPENDENCY_ROOT})
-ENDIF(APPLE)
 FIND_PACKAGE(OpenEXR)
 IF (OPENEXR_INCLUDE_DIRS)
 	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
@@ -279,16 +265,13 @@ ENDIF(OPENEXR_INCLUDE_DIRS)
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
-IF(APPLE)
-	SET(PNG_ROOT ${OSX_DEPENDENCY_ROOT})
-ENDIF(APPLE)
-FIND_PACKAGE(PNG)
-IF(PNG_INCLUDE_DIRS)
-	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
+#FIND_PACKAGE(PNG)
+#IF(PNG_INCLUDE_DIRS)
+#	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
 	INCLUDE_DIRECTORIES(SYSTEM ${PNG_INCLUDE_DIRS})
-ELSE(PNG_INCLUDE_DIRS)
+#ELSE(PNG_INCLUDE_DIRS)
 	MESSAGE(STATUS "Warning : could not find PNG headers - building without png support")
-ENDIF(PNG_INCLUDE_DIRS)
+#ENDIF(PNG_INCLUDE_DIRS)
 
 
 #############################################################################
