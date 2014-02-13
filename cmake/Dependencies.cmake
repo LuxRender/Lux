@@ -265,14 +265,15 @@ ENDIF(OPENEXR_INCLUDE_DIRS)
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
-#FIND_PACKAGE(PNG)
-#IF(PNG_INCLUDE_DIRS)
-#	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
-	INCLUDE_DIRECTORIES(SYSTEM ${PNG_INCLUDE_DIRS})
-#ELSE(PNG_INCLUDE_DIRS)
-	MESSAGE(STATUS "Warning : could not find PNG headers - building without png support")
-#ENDIF(PNG_INCLUDE_DIRS)
-
+IF(NOT APPLE)
+	FIND_PACKAGE(PNG)
+	IF(PNG_INCLUDE_DIRS)
+		MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
+		INCLUDE_DIRECTORIES(SYSTEM ${PNG_INCLUDE_DIRS})
+	ELSE(PNG_INCLUDE_DIRS)
+		MESSAGE(STATUS "Warning : could not find PNG headers - building without png support")
+	ENDIF(PNG_INCLUDE_DIRS)
+ENDIF(NOT APPLE)
 
 #############################################################################
 #############################################################################
