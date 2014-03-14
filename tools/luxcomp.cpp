@@ -327,7 +327,7 @@ int main(int ac, char *av[]) {
 					boost::scoped_ptr<FlexImageFilm> testFilm;
 					testFilm.reset((FlexImageFilm *)FlexImageFilm::CreateFilmFromFLM(testFileName));
 					if (!testFilm) {
-						LOG( LUX_SEVERE,LUX_NOFILE) << "Error reading test FLM file '" << testFilm << "'";
+						LOG(LUX_SEVERE, LUX_NOFILE) << "Error reading test FLM file '" << testFileName << "'";
 						return 3;
 					}
 
