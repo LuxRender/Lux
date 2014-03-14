@@ -60,6 +60,7 @@
 
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
+#include "integrators/multi.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -109,6 +110,8 @@
 #include "textures/blender_wood.h"
 
 #include "volumes/clearvolume.h"
+#include "volumes/homogeneous.h"
+#include "volumes/heterogeneous.h"
 #include "film/fleximage.h"
 #include "sphericalfunction.h"
 
@@ -745,7 +748,8 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 static luxrays::Properties GetLuxCoreCommonMatProps(const string &matName,
 		const string &emissionTexName, const float emissionGain,const float emissionPower,
 		const float emissionEfficency, const string &emissionMapName, const u_int lightID,
-		const string &bumpTex, const string &normalTex) {
+		const string &bumpTex, const string &normalTex,
+		const string &interiorVol, const string &exteriorVol) {
 	const string prefix = "scene.materials." + matName;
 
 	luxrays::Properties props;
@@ -763,10 +767,119 @@ static luxrays::Properties GetLuxCoreCommonMatProps(const string &matName,
 	if (normalTex != "")
 		props << luxrays::Property(prefix + ".normaltex")(normalTex);
 
+	if (interiorVol != "")
+		props << luxrays::Property(prefix + ".volume.interior")(interiorVol);
+	if (exteriorVol != "")
+		props << luxrays::Property(prefix + ".volume.exterior")(exteriorVol);
+
 	return props;
 }
 
-static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
+static string GetLuxCoreVolumeName(Scene *scene, luxcore::Scene *lcScene, const Volume *vol) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Volume type: " << ToClassName(vol);
+
+	const string volName = vol->GetName();
+	// Check if the texture has already been defined
+	if (!lcScene->IsTextureDefined(volName)) {
+		luxrays::Properties volProps;
+
+		const bool multiscattering = (dynamic_cast<const MultiScattering *>(scene->volumeIntegrator) != NULL);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Multi-scattering: " << multiscattering;
+
+		//----------------------------------------------------------------------
+		// Clear volume
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const ClearVolume *>(vol)) {
+			const ClearVolume *clearVol = dynamic_cast<const ClearVolume *>(vol);
+
+			// Try to extract the index from Volume information
+			const Texture<FresnelGeneral> *fresnelTex = clearVol->GetFresnelTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+			float index = 1.f;
+			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+				const ConstantFresnelTexture *constFresnelTex = 
+					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+				index = (*constFresnelTex)["value"].FloatValue();
+				LOG(LUX_DEBUG, LUX_NOERROR) << "IOR: " << index;
+			}
+
+			const string absorpTexName = GetLuxCoreTexName(lcScene, clearVol->GetAbsorptionTexture());
+
+			volProps << luxrays::Property("scene.volumes." + volName + ".type")("clear") <<
+					luxrays::Property("scene.volumes." + volName + ".ior")(index) <<
+					luxrays::Property("scene.volumes." + volName + ".absorption")(absorpTexName);
+		} else
+		//----------------------------------------------------------------------
+		// HomogeneousVolume volume
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const HomogeneousVolume *>(vol)) {
+			const HomogeneousVolume *homoVol = dynamic_cast<const HomogeneousVolume *>(vol);
+
+			// Try to extract the index from Volume information
+			const Texture<FresnelGeneral> *fresnelTex = homoVol->GetFresnelTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+			float index = 1.f;
+			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+				const ConstantFresnelTexture *constFresnelTex = 
+					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+				index = (*constFresnelTex)["value"].FloatValue();
+				LOG(LUX_DEBUG, LUX_NOERROR) << "IOR: " << index;
+			}
+
+			const string absorpTexName = GetLuxCoreTexName(lcScene, homoVol->GetSigmaATexture());
+			const string scatTexName = GetLuxCoreTexName(lcScene, homoVol->GetSigmaSTexture());
+			const string phaseTexName = GetLuxCoreTexName(lcScene, homoVol->GetPhaseTexture());
+
+			volProps << luxrays::Property("scene.volumes." + volName + ".type")("homogeneous") <<
+					luxrays::Property("scene.volumes." + volName + ".ior")(index) <<
+					luxrays::Property("scene.volumes." + volName + ".absorption")(absorpTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".scattering")(scatTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".asymmetry")(phaseTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".multiscattering")(multiscattering ? "1" : "0");
+		} else
+		//----------------------------------------------------------------------
+		// HeterogeneousVolume volume
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const HeterogeneousVolume *>(vol)) {
+			const HeterogeneousVolume *heteroVol = dynamic_cast<const HeterogeneousVolume *>(vol);
+
+			// Try to extract the index from Volume information
+			const Texture<FresnelGeneral> *fresnelTex = heteroVol->GetFresnelTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+			float index = 1.f;
+			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+				const ConstantFresnelTexture *constFresnelTex = 
+					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+				index = (*constFresnelTex)["value"].FloatValue();
+				LOG(LUX_DEBUG, LUX_NOERROR) << "IOR: " << index;
+			}
+
+			const string absorpTexName = GetLuxCoreTexName(lcScene, heteroVol->GetSigmaATexture());
+			const string scatTexName = GetLuxCoreTexName(lcScene, heteroVol->GetSigmaSTexture());
+			const string phaseTexName = GetLuxCoreTexName(lcScene, heteroVol->GetPhaseTexture());
+
+			volProps << luxrays::Property("scene.volumes." + volName + ".type")("heterogeneous") <<
+					luxrays::Property("scene.volumes." + volName + ".ior")(index) <<
+					luxrays::Property("scene.volumes." + volName + ".absorption")(absorpTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".scattering")(scatTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".asymmetry")(phaseTexName) <<
+					luxrays::Property("scene.volumes." + volName + ".steps.size")(heteroVol->GetStepSize()) <<
+					luxrays::Property("scene.volumes." + volName + ".multiscattering")(multiscattering ? "1" : "0");
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ClearVolume, HomogeneousVolume and HeterogeneousVolume"
+					"(i.e. not " << ToClassName(vol) << ").";
+
+			return "";
+		}
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Defining volume " << volName << ": [\n" << volProps << "]";
+		lcScene->Parse(volProps);
+	}
+
+	return volName;
+}
+
+static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Material *mat,
 		const Primitive *prim, const string &emissionTexName,
 		const float emissionGain,const float emissionPower, const float emissionEfficency,
 		const string &emissionMapName, const u_int lightID, ColorSystem &colorSpace) {
@@ -791,6 +904,22 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 		}
 	}
 
+	//--------------------------------------------------------------------------
+	// Retrieve interior/exterior volume information too
+	//--------------------------------------------------------------------------
+	string interiorVol = "";
+	const Volume *intVol = prim->GetInterior();
+	if (intVol) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Interior volume type: " << ToClassName(intVol);
+		interiorVol = GetLuxCoreVolumeName(scene, lcScene, intVol);
+	}
+	string exteriorVol = "";
+	const Volume *extVol = prim->GetExterior();
+	if (extVol) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Exterior volume type: " << ToClassName(extVol);
+		exteriorVol = GetLuxCoreVolumeName(scene, lcScene, extVol);
+	}
+
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 	string matName = "mat_default";
 
@@ -809,7 +938,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("matte") <<
 				 GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".kd")(texName));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
@@ -830,7 +960,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("mirror") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".kr")(texName));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
@@ -858,11 +989,12 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")(architectural ? "archglass" : "glass") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".kr")(krTexName) <<
 				luxrays::Property("scene.materials." + matName +".kt")(ktTexName) <<
-				luxrays::Property("scene.materials." + matName +".ioroutside")(1.f) <<
-				luxrays::Property("scene.materials." + matName +".iorinside")(indexTexName));
+				luxrays::Property("scene.materials." + matName +".exteriorior")(1.f) <<
+				luxrays::Property("scene.materials." + matName +".interiorior")(indexTexName));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
@@ -877,46 +1009,6 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 
 		luxrays::Spectrum krRGB(1.f);
 		luxrays::Spectrum ktRGB(1.f);
-		float index = 1.41f;
-
-		const Volume *intVol = prim->GetInterior();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
-
-		if (dynamic_cast<const ClearVolume *>(intVol)) {
-			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
-
-			// Try to extract the index from Volume information
-			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
-			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
-				const ConstantFresnelTexture *constFresnelTex = 
-					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
-				index = (*constFresnelTex)["value"].FloatValue();
-			}
-
-			// Kt
-			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
-			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
-
-			if (absorbRGBTex) {
-				ktRGB.c[0] = (*absorbRGBTex)["color.r"].FloatValue();
-				ktRGB.c[1] = (*absorbRGBTex)["color.g"].FloatValue();
-				ktRGB.c[2] = (*absorbRGBTex)["color.b"].FloatValue();
-
-				ktRGB = ktRGB * ktRGB;
-				ktRGB.c[0] = Clamp(ktRGB.c[0], 0.f, 20.f) / 20.f;
-				ktRGB.c[1] = Clamp(ktRGB.c[1], 0.f, 20.f) / 20.f;
-				ktRGB.c[2] = Clamp(ktRGB.c[2], 0.f, 20.f) / 20.f;
-
-				ktRGB.c[0] = 1.f - ktRGB.c[0];
-				ktRGB.c[1] = 1.f - ktRGB.c[1];
-				ktRGB.c[2] = 1.f - ktRGB.c[2];
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
-			}
-		}
 
 		// Check if it is architectural glass
 		const bool architectural = (*glass2)["architectural"].BoolValue();
@@ -927,17 +1019,18 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			if (architectural) {
 				matProps << luxrays::Property("scene.materials." + matName +".type")("archglass") <<
 						GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-							emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+							emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 						luxrays::Property("scene.materials." + matName +".kr")(krRGB);
 			} else {
 				matProps << luxrays::Property("scene.materials." + matName +".type")("glass") <<
 						GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-							emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+							emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 						luxrays::Property("scene.materials." + matName +".kr")(krRGB) <<
-						luxrays::Property("scene.materials." + matName +".kt")(ktRGB) <<
-						luxrays::Property("scene.materials." + matName +".ioroutside")(1.f) <<
-						luxrays::Property("scene.materials." + matName +".iorinside")(index);
+						luxrays::Property("scene.materials." + matName +".kt")(ktRGB);
 			}
+
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 
@@ -970,7 +1063,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("metal2") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".n")(Nrgb.c[0], Nrgb.c[1], Nrgb.c[2]) <<
 				luxrays::Property("scene.materials." + matName +".k")(Krgb.c[0], Krgb.c[1], Krgb.c[2]) <<
 				luxrays::Property("scene.materials." + matName +".uroughness")(nuTexName) <<
@@ -995,7 +1089,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("mattetranslucent") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".kr")(krTexName) <<
 				luxrays::Property("scene.materials." + matName +".kt")(ktTexName));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
@@ -1015,7 +1110,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("null") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex));
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
@@ -1037,12 +1133,13 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("mix") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".amount")(GetLuxCoreTexName(lcScene, amount)) <<
 				luxrays::Property("scene.materials." + matName +".material1")(GetLuxCoreMaterialName(
-					lcScene, mat1, prim, "0.0 0.0 0.0", 0.f, 0.f, 0.f, "", 0, colorSpace)) <<
+					scene, lcScene, mat1, prim, "0.0 0.0 0.0", 0.f, 0.f, 0.f, "", 0, colorSpace)) <<
 				luxrays::Property("scene.materials." + matName +".material2")(GetLuxCoreMaterialName(
-					lcScene, mat2, prim, "0.0 0.0 0.0", 0.f, 0.f, 0.f, "", 0, colorSpace)));
+					scene, lcScene, mat2, prim, "0.0 0.0 0.0", 0.f, 0.f, 0.f, "", 0, colorSpace)));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
@@ -1069,7 +1166,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 				luxrays::Property("scene.materials." + matName +".type")("glossy2") <<
 				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 				luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
 				luxrays::Property("scene.materials." + matName +".ks")(ksTexName) <<
 				luxrays::Property("scene.materials." + matName +".ka")(kaTexName) <<
@@ -1112,7 +1210,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 				const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("metal2") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".n")(Nrgb.c[0], Nrgb.c[1], Nrgb.c[2]) <<
 					luxrays::Property("scene.materials." + matName +".k")(Krgb.c[0], Krgb.c[1], Krgb.c[2]) <<
 					luxrays::Property("scene.materials." + matName +".uroughness")(nuTexName) <<
@@ -1136,7 +1235,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 				const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("metal2") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".n")("fresnelapproxn-" + matName) <<
 					luxrays::Property("scene.materials." + matName +".k")("fresnelapproxk-" + matName) <<
 					luxrays::Property("scene.materials." + matName +".uroughness")(nuTexName) <<
@@ -1170,7 +1270,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("roughglass") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".kr")(krTexName) <<
 					luxrays::Property("scene.materials." + matName +".kt")(ktTexName) <<
 					luxrays::Property("scene.materials." + matName +".ioroutside")(1.f) <<
@@ -1201,7 +1302,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("velvet") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
 					luxrays::Property("scene.materials." + matName +".p1")(p1TexName) <<
 					luxrays::Property("scene.materials." + matName +".p2")(p2TexName) <<
@@ -1230,7 +1332,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("cloth") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".preset")(cloth->GetPresetName()) <<
 					luxrays::Property("scene.materials." + matName +".repeat_u")(cloth->GetRepeatU()) <<
 					luxrays::Property("scene.materials." + matName +".repeat_v")(cloth->GetRepeatV()) <<
@@ -1269,7 +1372,8 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 			const luxrays::Properties matProps(
 					luxrays::Property("scene.materials." + matName +".type")("carpaint") <<
 					GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex) <<
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
 					luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
 					luxrays::Property("scene.materials." + matName +".ka")(kaTexName) <<
 					luxrays::Property("scene.materials." + matName +".ks1")(ks1TexName) <<
@@ -1298,7 +1402,7 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, Material *mat,
 	return matName;
 }
 
-static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, const Primitive *prim,
+static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, const Primitive *prim,
 		ColorSystem &colorSpace) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 	
@@ -1403,7 +1507,7 @@ static string GetLuxCoreMaterialName(luxcore::Scene *lcScene, const Primitive *p
 		return "mat_default";
 	}
 
-	return GetLuxCoreMaterialName(lcScene, mat, prim, emissionTexName,
+	return GetLuxCoreMaterialName(scene, lcScene, mat, prim, emissionTexName,
 			emissionGain, emissionPower, emissionEfficency, emissionMapName,
 			lightID, colorSpace);
 }
@@ -1822,7 +1926,7 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 		// InstancePrimitive and MotionPrimitive require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			const string matName = GetLuxCoreMaterialName(lcScene, instance, colorSpace);
+			const string matName = GetLuxCoreMaterialName(scene, lcScene, instance, colorSpace);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -1858,7 +1962,7 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 			}
 		} else if (dynamic_cast<const MotionPrimitive *>(prim)) {
 			const MotionPrimitive *motionPrim = dynamic_cast<const MotionPrimitive *>(prim);
-			const string matName = GetLuxCoreMaterialName(lcScene, motionPrim, colorSpace);
+			const string matName = GetLuxCoreMaterialName(scene, lcScene, motionPrim, colorSpace);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = motionPrim->GetInstanceSources();
 
@@ -1904,7 +2008,7 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 				continue;
 
 			// Add the object
-			const string matName = GetLuxCoreMaterialName(lcScene, prim, colorSpace);
+			const string matName = GetLuxCoreMaterialName(scene, lcScene, prim, colorSpace);
 
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + ToString(prim) + "-" +

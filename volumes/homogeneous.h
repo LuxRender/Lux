@@ -118,6 +118,12 @@ public:
 			*L *= Exp(-Tau(sample.swl, ray));
 		return scatter;
 	}
+
+	const Texture<FresnelGeneral> *GetFresnelTexture() const { return fresnel.get(); }
+	const Texture<SWCSpectrum> *GetSigmaATexture() const { return sigmaA.get(); }
+	const Texture<SWCSpectrum> *GetSigmaSTexture() const { return sigmaS.get(); }
+	const Texture<SWCSpectrum> *GetPhaseTexture() const { return g.get(); }
+
 	// HomogeneousVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
 	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);

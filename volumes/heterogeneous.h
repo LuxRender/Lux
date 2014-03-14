@@ -37,7 +37,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &s,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g_,
 		float ss) :
-		Volume("HomogeneousVolume-"  + boost::lexical_cast<string>(this)),
+		Volume("HeterogeneousVolume-"  + boost::lexical_cast<string>(this)),
 		fresnel(fr), sigmaA(a), sigmaS(s), g(g_),
 		primitive(&material, this, this), material(this, g_),
 		stepSize(ss) { }
@@ -173,6 +173,13 @@ public:
 			*L *= Exp(-Tau(sample.swl, ray));
 		return scatter;
 	}
+
+	const Texture<FresnelGeneral> *GetFresnelTexture() const { return fresnel.get(); }
+	const Texture<SWCSpectrum> *GetSigmaATexture() const { return sigmaA.get(); }
+	const Texture<SWCSpectrum> *GetSigmaSTexture() const { return sigmaS.get(); }
+	const Texture<SWCSpectrum> *GetPhaseTexture() const { return g.get(); }
+	const float GetStepSize() const { return stepSize; }
+
 	// HeterogeneousVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
 	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
