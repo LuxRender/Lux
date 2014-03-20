@@ -37,8 +37,8 @@
 #include <fstream>
 #include <boost/thread/xtime.hpp>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 namespace lux
 {

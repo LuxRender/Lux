@@ -34,8 +34,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // ShinyMetal Method Definitions
 BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

@@ -34,6 +34,7 @@
 #include "dynload.h"
 #include "queryable.h"
 
+using namespace luxrays;
 using namespace lux;
 
 class  UniformAreaBSDF : public BSDF  {

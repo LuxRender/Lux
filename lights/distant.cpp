@@ -30,8 +30,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 class DistantBxDF : public BxDF
 {

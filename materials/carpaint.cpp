@@ -37,8 +37,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 	boost::shared_ptr<Texture<SWCSpectrum> > &ka,

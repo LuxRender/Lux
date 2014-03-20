@@ -23,10 +23,10 @@
 #include "mesh.h"
 #include "luxrays/core/color/color.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
-MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
+MeshBaryTriangle::MeshBaryTriangle(const lux::Mesh *m, u_int n) :
 	mesh(m), v(&(mesh->triVertexIndex[3 * n])), is_Degenerate(false)
 {
 	int *v_ = const_cast<int *>(v);

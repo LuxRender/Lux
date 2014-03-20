@@ -30,8 +30,8 @@
 #include "luxrays/core/color/spectrumwavelengths.h"
 #include <algorithm>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Bilinear patch class
 // created by Shaun David Ramsey and Kristin Potter copyright (c) 2003
@@ -83,7 +83,7 @@ public:
 };
 // end Bilinear patch class
 
-MeshMicroDisplacementTriangle::MeshMicroDisplacementTriangle(const Mesh *m, u_int n) :
+MeshMicroDisplacementTriangle::MeshMicroDisplacementTriangle(const lux::Mesh *m, u_int n) :
 	mesh(m), v(&(mesh->triVertexIndex[3 * n])), is_Degenerate(false)
 {
 	int *v_ = const_cast<int *>(v);

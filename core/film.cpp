@@ -88,6 +88,8 @@ using namespace cimg_library;
 
 using namespace lux;
 using namespace boost::iostreams;
+using luxrays::BlackbodySPD;
+using luxrays::Distribution2D;
 
 
 template<typename T> 

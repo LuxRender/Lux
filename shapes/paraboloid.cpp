@@ -25,8 +25,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform &o2w, bool ro, const string &name, 

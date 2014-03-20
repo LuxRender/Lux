@@ -33,8 +33,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Glossy Method Definitions
 BSDF *GlossyTranslucent::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

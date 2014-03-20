@@ -57,8 +57,8 @@
 #include "lambertian.h"
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 boost::shared_ptr<WeavePattern> DenimPattern(const float repeat_u, const float repeat_v) {
 	boost::shared_ptr<WeavePattern> pattern(new WeavePattern((std::string)"Cotton denmim", 3, 6, 0.01f,4.0f, 0.0f, 0.5f, 5.0f, 1.0f, 3.0f, repeat_u,repeat_v, 0.0f,0.0f,0.0f,0.0f, 0.0f));

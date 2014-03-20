@@ -28,6 +28,7 @@
 #include "luxrays/core/epsilon.h"
 using luxrays::MachineEpsilon;
 
+using namespace luxrays;
 using namespace lux;
 
 // TaBRecKdTreeAccel Method Definitions

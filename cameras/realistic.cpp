@@ -38,8 +38,8 @@
 #include <fstream>
 using std::ifstream;
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 RealisticCamera::RealisticCamera(const MotionSystem &world2cam,
                  const float Screen[4],

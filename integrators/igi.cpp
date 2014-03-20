@@ -34,8 +34,8 @@
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 {

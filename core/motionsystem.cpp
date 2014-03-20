@@ -33,8 +33,8 @@ using std::memset;
 #include <algorithm>
 #include <utility>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 InterpolatedTransform::InterpolatedTransform(float st, float et,
 	const Transform &s, const Transform &e) : hasRotation(false),

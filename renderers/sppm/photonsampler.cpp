@@ -30,6 +30,8 @@
 #include "photonsampler.h"
 
 using namespace lux;
+using luxrays::Distribution1D;
+using luxrays::Distribution2D;
 
 // Photon tracing
 

@@ -31,8 +31,8 @@
 #include "dynload.h"
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // LensComponent Method Definitions
 LensComponent::LensComponent(const Transform &o2w, bool ro, const string &name, 

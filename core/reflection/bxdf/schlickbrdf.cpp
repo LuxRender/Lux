@@ -28,8 +28,8 @@
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
 	const SWCSpectrum &a, float dep, float r, float p, bool mb)

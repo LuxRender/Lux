@@ -27,8 +27,8 @@
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 	const SWCSpectrum &s,

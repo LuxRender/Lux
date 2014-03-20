@@ -31,8 +31,8 @@
 using luxrays::MachineEpsilon;
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // LayeredBSDF Method Definitions
 

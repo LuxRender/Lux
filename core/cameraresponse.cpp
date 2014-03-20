@@ -36,8 +36,8 @@
 #include <sstream>
 #include <algorithm>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 namespace lux {
 

@@ -29,8 +29,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Glass Method Definitions
 BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

@@ -43,8 +43,6 @@
 
 #define RAN_BUFFER_AMOUNT 2048
 
-using namespace luxrays;
-
 namespace lux
 {
 

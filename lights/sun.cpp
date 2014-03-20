@@ -36,8 +36,8 @@ using luxrays::IrregularSPD;
 
 #include "data/sun_spect.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 class  SunBSDF : public BSDF  {
 public:

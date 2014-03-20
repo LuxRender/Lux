@@ -30,8 +30,8 @@
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 namespace lux
 {

@@ -31,8 +31,8 @@
 #include "dynload.h"
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 static float LocalFalloff(const Vector &w, float cosTotalWidth, float cosFalloffStart)
 {

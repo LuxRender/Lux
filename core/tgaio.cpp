@@ -33,8 +33,8 @@ using std::fopen;
 using std::fputc;
 using std::fclose;
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 namespace lux
 {

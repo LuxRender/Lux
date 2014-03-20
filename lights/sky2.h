@@ -55,7 +55,7 @@ public:
 	float skyScale;
 	Vector  sundir;
 	float 	turbidity;
-	RegularSPD *model[10];
+	luxrays::RegularSPD *model[10];
 
 private:
 	// Used by Queryable interface

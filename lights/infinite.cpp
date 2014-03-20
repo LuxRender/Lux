@@ -34,6 +34,7 @@ using luxrays::RGBIllumSPD;
 #include "scene.h"
 #include "dynload.h"
 
+using namespace luxrays;
 using namespace lux;
 
 class  InfiniteBSDF : public BSDF  {

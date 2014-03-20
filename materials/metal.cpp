@@ -41,8 +41,8 @@ using luxrays::IrregularSPD;
 #include <boost/regex.hpp>
 #include <fstream>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 Metal::Metal(const std::string &metalName,
 	boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 

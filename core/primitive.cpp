@@ -26,8 +26,8 @@
 #include "material.h"
 #include "motionsystem.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Primitive Method Definitions
 void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,

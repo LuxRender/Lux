@@ -27,8 +27,8 @@
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 SchlickTranslucentBTDF::SchlickTranslucentBTDF(const SWCSpectrum &d,
 	const SWCSpectrum &t, const SWCSpectrum &s, const SWCSpectrum &s2,

@@ -33,8 +33,8 @@
 
 #include <boost/assert.hpp>
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 //------------------------------------------------------------------------------
 // Light Rendering Hints

@@ -25,8 +25,8 @@
 #include "dynload.h"
 #include "error.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 void FalseColorsOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
 		//ColorSystem cs(0.63, 0.34, 0.31, 0.595, 0.155, 0.07, 0.314275, 0.329411, 1);

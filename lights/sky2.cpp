@@ -85,8 +85,8 @@ using luxrays::RegularSPD;
 #include "data/ArHosekSkyModelData.h"
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // internal functions
 

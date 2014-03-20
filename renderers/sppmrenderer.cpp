@@ -43,6 +43,7 @@
 #include "renderers/statistics/sppmstatistics.h"
 #include "samplers/random.h"
 
+using namespace luxrays;
 using namespace lux;
 
 //------------------------------------------------------------------------------

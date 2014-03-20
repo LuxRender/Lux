@@ -22,10 +22,10 @@
 
 #include "mesh.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
-MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
+MeshWaldTriangle::MeshWaldTriangle(const lux::Mesh *m, u_int n)
 	: MeshBaryTriangle(m, n)
 {
 	// Reorder vertices so that edges lengths will be as close as possible

@@ -36,8 +36,8 @@
 using std::bind2nd;
 using std::ptr_fun;
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // BVHAccel Method Definitions
 BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus) :

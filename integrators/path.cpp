@@ -34,6 +34,7 @@
 
 #include "luxrays/core/geometry/raybuffer.h"
 
+using namespace luxrays;
 using namespace lux;
 
 static const u_int passThroughLimit = 10000;

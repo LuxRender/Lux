@@ -43,7 +43,7 @@ public:
 		boost::shared_array<float> samplingMap;		
 		u_int noiseAwareMapVersion;
 		u_int userSamplingMapVersion;
-		boost::shared_ptr<Distribution2D> samplingDistribution2D;
+		boost::shared_ptr<luxrays::Distribution2D> samplingDistribution2D;
 
 	};
 	RandomSampler(int xstart, int xend, int ystart, int yend,

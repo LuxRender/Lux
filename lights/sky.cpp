@@ -38,8 +38,8 @@ using luxrays::RegularSPD;
 
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 class  SkyBSDF : public BSDF  {
 public:

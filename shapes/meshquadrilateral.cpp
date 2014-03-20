@@ -23,8 +23,8 @@
 #include "mesh.h"
 #include "geometry/matrix3x3.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // checks if quad is degenerate or if any points coincide
 bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
@@ -187,7 +187,7 @@ void MeshQuadrilateral::ComputeV11BarycentricCoords(const Vector &e01,
 }
 
 //------------------------------------------------------------------------------
-MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
+MeshQuadrilateral::MeshQuadrilateral(const lux::Mesh *m, u_int n)
 	: mesh(m), idx(&(mesh->quadVertexIndex[4 * n]))
 {
 	// LordCrc - check for problematic quads

@@ -171,7 +171,7 @@ private:
 		SPPMRenderer *renderer;
 
 		RandomGenerator *threadRng;
-		Distribution1D *lightCDF;
+		luxrays::Distribution1D *lightCDF;
 		PhotonSampler* sampler;
 
 		Sample sample, eyeSample;

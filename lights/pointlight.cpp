@@ -30,8 +30,8 @@
 #include "dynload.h"
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 class  UniformBSDF : public BSDF  {
 public:

@@ -65,13 +65,13 @@ public:
 
 	virtual void TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF,
+		luxrays::Distribution1D *lightCDF,
 		scheduling::Range *range
 		);
 
 	void TracePhoton(
 		Sample *sample,
-		Distribution1D *lightCDF
+		luxrays::Distribution1D *lightCDF
 		);
 
 protected:
@@ -372,7 +372,7 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 
 	virtual void TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF,
+		luxrays::Distribution1D *lightCDF,
 		scheduling::Range *range
 		);
 

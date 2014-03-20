@@ -31,8 +31,8 @@
 #include "dynload.h"
 #include "error.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 Metal2::Metal2(boost::shared_ptr<Texture<FresnelGeneral> > &fr, 
 	boost::shared_ptr<Texture<float> > &u,

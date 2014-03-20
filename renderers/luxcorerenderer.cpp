@@ -115,6 +115,7 @@
 #include "film/fleximage.h"
 #include "sphericalfunction.h"
 
+using namespace luxrays;
 using namespace lux;
 
 template <class T> static string ToClassName(T *ptr) {

@@ -142,6 +142,23 @@ class Timer;
 
 namespace lux
 {
+  using luxrays::MemoryArena;
+  using luxrays::AllocAligned;
+  using luxrays::FreeAligned;
+  using luxrays::BlockedArray;
+  using luxrays::Float2UInt;
+  using luxrays::Floor2Int;
+  using luxrays::Floor2UInt;
+  using luxrays::Ceil2Int;
+  using luxrays::Ceil2UInt;
+  using luxrays::Round2Int;
+  using luxrays::Round2UInt;
+  using luxrays::Clamp;
+  using luxrays::Lerp;
+  using luxrays::Log2;
+  using luxrays::Radians;
+  using luxrays::IsPowerOf2;
+  using luxrays::RoundUpPow2;
   class ParamSet;
   template <class T> struct ParamSetItem;
   using luxrays::BBox;
@@ -171,7 +188,7 @@ namespace lux
   using luxrays::XYZColor;
   using luxrays::ColorSystem;
   using luxrays::ColorAdaptator;
-  using luxrays::SPD;
+  using luxrays::SPD;  
   class Camera;
   class CameraResponse;
   class ProjectiveCamera;

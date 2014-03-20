@@ -25,8 +25,8 @@
 #include "paramset.h"
 #include "dynload.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Disk Method Definitions
 Disk::Disk(const Transform &o2w, bool ro, const string &name, 

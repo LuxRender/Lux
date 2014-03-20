@@ -31,6 +31,7 @@
 
 #include "luxrays/utils/mcdistribution.h"
 
+using namespace luxrays;
 using namespace lux;
 
 //FIXME - do proper sampling

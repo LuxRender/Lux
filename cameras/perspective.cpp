@@ -35,8 +35,8 @@
 using luxrays::MachineEpsilon;
 #include "luxrays/utils/mc.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 class  PerspectiveBSDF : public BSDF {
 public:

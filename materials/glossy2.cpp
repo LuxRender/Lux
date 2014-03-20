@@ -39,8 +39,8 @@
 #include "schlickdistribution.h"
 #include "microfacet.h"
 
-using namespace lux;
 using namespace luxrays;
+using namespace lux;
 
 // Glossy Method Definitions
 BSDF *GlossyCombined::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

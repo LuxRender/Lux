@@ -27,8 +27,6 @@
 #include "lux.h"
 #include "primitive.h"
 
-using namespace luxrays;
-
 namespace lux
 {
 
