@@ -38,7 +38,6 @@
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
-#include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -262,7 +261,7 @@ static bool receiveFile(const std::string &filename, const std::string &filehash
 	string slen;
 	getline(stream, slen);
 
-	boost::uint64_t len = boost::lexical_cast<boost::uint64_t>(slen);
+	uint64_t len = boost::lexical_cast<uint64_t>(slen);
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Receiving file: '" << fname << "' as '" << filename << "', size: " << (len / 1000) << " Kbytes";
 
@@ -275,11 +274,11 @@ static bool receiveFile(const std::string &filename, const std::string &filehash
 
 		tigerhash h;
 
-		boost::uint64_t source_len = len;
+		uint64_t source_len = len;
 
 		vector<char> buffer(1 * 1024 * 1024, 0);
 		while (len > 0 && !stream.bad()) {
-			const std::streamsize rs = static_cast<std::streamsize>(min(static_cast<boost::uint64_t>(buffer.size()), len));
+			const std::streamsize rs = static_cast<std::streamsize>(min(static_cast<uint64_t>(buffer.size()), len));
 
 			stream.read(&buffer[0], rs);
 			h.update(&buffer[0], rs);
@@ -292,7 +291,7 @@ static bool receiveFile(const std::string &filename, const std::string &filehash
 
 		string hash = digest_string(h.end_message());
 		
-		boost::uint64_t written = source_len - len;
+		uint64_t written = source_len - len;
 
 		if (out.fail() || written != source_len || hash != filehash) {
 			bool output_error = out.fail();

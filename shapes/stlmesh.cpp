@@ -12,10 +12,6 @@ using std::fopen;
 using std::fclose;
 using std::fread;
 using std::ftell;
-#include <boost/cstdint.hpp>
-using boost::uint8_t;
-using boost::uint16_t;
-using boost::uint32_t;
 
 #define MAX_STL_FILE_FACES	(16*1024*1024) // 16Mb
 

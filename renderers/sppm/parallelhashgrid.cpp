@@ -40,14 +40,14 @@ ParallelHashGrid::~ParallelHashGrid() {
 
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
-	hv = atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(grid + hv), i, ~0u);
+	hv = atomic_cas32(reinterpret_cast<volatile uint32_t*>(grid + hv), i, ~0u);
 
 	if(hv == ~0u)
 		return;
 
 	do
 	{
-		hv = atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(jump_list + hv), i, ~0u);
+		hv = atomic_cas32(reinterpret_cast<volatile uint32_t*>(jump_list + hv), i, ~0u);
 	} while(hv != ~0u);
 }
 

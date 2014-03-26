@@ -27,7 +27,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <boost/cstdint.hpp>
+#include <cstdint>
 #include <boost/array.hpp>
 #include "error.h"
 
@@ -37,23 +37,23 @@ namespace lux {
 
 class tigerhash {
 public:
-	typedef boost::array<boost::uint8_t, 3*8> digest_type;
+	typedef boost::array<uint8_t, 3*8> digest_type;
 
 	tigerhash();
 	tigerhash(tigerhash &other);
 
 	void restart();
-	void update(const char* data, boost::uint64_t length);
+	void update(const char* data, uint64_t length);
 	digest_type end_message() const;
 	
 private:
-	void compress(const boost::uint8_t *str, boost::uint64_t state[3]) const;
+	void compress(const uint8_t *str, uint64_t state[3]) const;
 
-	boost::uint64_t count;
-	boost::uint8_t buffer[64];
-	boost::uint64_t res[3];
+	uint64_t count;
+	uint8_t buffer[64];
+	uint64_t res[3];
 
-	static boost::uint64_t table[4*256];
+	static uint64_t table[4*256];
 };
 
 std::string digest_string(const tigerhash::digest_type &d);

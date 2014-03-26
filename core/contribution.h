@@ -30,10 +30,7 @@
 
 #include <boost/thread/mutex.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/noncopyable.hpp>
-
-using boost::uint16_t;
 
 namespace lux
 {

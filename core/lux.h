@@ -80,16 +80,6 @@ using std::sort;
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
 
-#include <boost/cstdint.hpp>
-using boost::int8_t;
-using boost::int16_t;
-using boost::int32_t;
-using boost::int64_t;
-using boost::uint8_t;
-using boost::uint16_t;
-using boost::uint32_t;
-using boost::uint64_t;
-
 inline float atanhf(float x) {
 	// if outside of domain, return NaN
 	// not 100% correct but should be good for now

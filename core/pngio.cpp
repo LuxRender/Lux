@@ -27,7 +27,6 @@
 #include "osfunc.h"
 #include <limits>
 #include <string>
-#include <boost/cstdint.hpp>
 #ifdef LUX_NO_LIBPNG
 #include <FreeImage.h>
 #else
@@ -35,9 +34,6 @@
 #endif
 
 using namespace luxrays;
-
-using boost::uint8_t;
-using boost::uint16_t;
 
 #ifdef LUX_NO_LIBPNG
 template <typename T>

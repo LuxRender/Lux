@@ -28,8 +28,6 @@
 #include "primitive.h"
 
 #include <xmmintrin.h>
-#include <boost/cstdint.hpp>
-using boost::int32_t;
 
 namespace lux
 {
@@ -451,7 +449,7 @@ protected:
 	// origin.
 	// 4 bits per index, stored in 32bit int. 4 means no intersection.
 	// 16 visit * 8 idx * 4 bbox = 128 * ints = 512bytes
-	static const boost::int16_t pathTable[128];
+	static const int16_t pathTable[128];
 
 	static inline u_int QuadCount(const u_int nPrims) {
 		// Next multiple of 4, divided by 4

@@ -23,10 +23,7 @@
 #ifndef LUX_OSFUNC_H
 #define LUX_OSFUNC_H
 
-#include <boost/cstdint.hpp>
-#include <boost/version.hpp>
-using boost::int32_t;
-using boost::uint32_t;
+#include <cstdint>
 #include <istream>
 #include <ostream>
 
@@ -104,7 +101,7 @@ inline double osWallClockTime() {
 inline void osAtomicAdd(float *val, const float delta) {
 	union bits {
 		float f;
-		boost::uint32_t i;
+		uint32_t i;
 	};
 
 	bits oldVal, newVal;
@@ -116,12 +113,12 @@ inline void osAtomicAdd(float *val, const float delta) {
 
 		oldVal.f = *val;
 		newVal.f = oldVal.f + delta;
-	} while (atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal.i, oldVal.i) != oldVal.i);
+	} while (atomic_cas32(reinterpret_cast<uint32_t*>(val), newVal.i, oldVal.i) != oldVal.i);
 }
 
 inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #if defined(WIN32)
-	boost::uint32_t oldVal, newVal;
+	uint32_t oldVal, newVal;
 	do
 	{
 #if (defined(__i386__) || defined(__amd64__))
@@ -129,9 +126,9 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #endif
 		oldVal = *val;
 		newVal = oldVal + delta;
-	} while (atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal, oldVal) != oldVal);
+	} while (atomic_cas32(reinterpret_cast<uint32_t*>(val), newVal, oldVal) != oldVal);
 #else
-	atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
+	atomic_add32(((uint32_t *)val), (uint32_t)delta);
 #endif
 }
 
@@ -140,7 +137,7 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
  * @return Previous value, before increment
  */
 inline unsigned int osAtomicInc(unsigned int *val) {
-	return atomic_inc32(reinterpret_cast<boost::uint32_t*>(val));
+	return atomic_inc32(reinterpret_cast<uint32_t*>(val));
 }
 
 /**
@@ -148,14 +145,14 @@ inline unsigned int osAtomicInc(unsigned int *val) {
  * @return Value read
  */
 inline unsigned int osAtomicRead(unsigned int *val) {
-	return atomic_read32(reinterpret_cast<boost::uint32_t*>(val));
+	return atomic_read32(reinterpret_cast<uint32_t*>(val));
 }
 
 /**
  * Atomically writes a 32bit variable
  */
 inline void osAtomicWrite(unsigned int *val, unsigned int newVal) {
-	atomic_write32(reinterpret_cast<boost::uint32_t*>(val), static_cast<boost::uint32_t>(newVal));
+	atomic_write32(reinterpret_cast<uint32_t*>(val), static_cast<uint32_t>(newVal));
 }
 
 // Floating point exception debuging

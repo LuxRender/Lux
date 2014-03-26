@@ -29,16 +29,15 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
-#include <boost/cstdint.hpp>
 #include "osfunc.h"
 
 using namespace lux;
 
 using std::memmove;
 
-typedef boost::uint64_t word64;
-typedef boost::uint32_t word32;
-typedef boost::uint8_t byte;
+typedef uint64_t word64;
+typedef uint32_t word32;
+typedef uint8_t byte;
 
 
 // The number of passes of the hash function.
@@ -91,8 +90,8 @@ static void key_schedule(word64 &x0, word64 &x1, word64 &x2, word64 &x3, word64 
 }
 
 /* Encapsulates the compress function. */
-void tigerhash::compress(const boost::uint8_t *block, boost::uint64_t state[3]) const {
-	const boost::uint64_t *str = reinterpret_cast<const boost::uint64_t*>(block);
+void tigerhash::compress(const uint8_t *block, uint64_t state[3]) const {
+	const uint64_t *str = reinterpret_cast<const uint64_t*>(block);
 
 	word64 a, b, c; 
 	word64 x0, x1, x2, x3, x4, x5, x6, x7;
@@ -188,7 +187,7 @@ void tigerhash::restart() {
 	res[2] = 0xF096A5B4C3B2E187ULL;
 }
 
-void tigerhash::update(const char* data, boost::uint64_t length) {
+void tigerhash::update(const char* data, uint64_t length) {
 	byte temp[64]; // for big endian mode
 	word64 i = length;
 
@@ -219,7 +218,7 @@ void tigerhash::update(const char* data, boost::uint64_t length) {
 				temp[k^7] = data[k];
 			compress(temp, res);
 		} else {
-			compress(reinterpret_cast<const boost::uint8_t*>(data), res);
+			compress(reinterpret_cast<const uint8_t*>(data), res);
 		}
 		data += 64;
     }
@@ -258,7 +257,7 @@ std::ostream &operator<<(std::ostream &os, const tigerhash::digest_type &d) {
 
 
 /* sboxes.c: Tiger S boxes */
-boost::uint64_t tigerhash::table[4*256] = {
+uint64_t tigerhash::table[4*256] = {
     0x02AAB17CF7E90C5EULL   /*    0 */,    0xAC424B03E243A8ECULL   /*    1 */,
     0x72CD5BE30DD5FCD3ULL   /*    2 */,    0x6D019B93F6F97F3AULL   /*    3 */,
     0xCD9978FFD21F9193ULL   /*    4 */,    0x7573A1C9708029E2ULL   /*    5 */,
