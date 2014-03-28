@@ -23,7 +23,11 @@
 #ifndef LUX_OSFUNC_H
 #define LUX_OSFUNC_H
 
+#ifdef __APPLE__
+#include <tr1/cstdint>
+#else
 #include <cstdint>
+#endif
 #include <istream>
 #include <ostream>
 

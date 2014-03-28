@@ -27,7 +27,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#ifdef __APPLE__
+#include <tr1/cstdint>
+#else
 #include <cstdint>
+#endif
 #include <boost/array.hpp>
 #include "error.h"
 
