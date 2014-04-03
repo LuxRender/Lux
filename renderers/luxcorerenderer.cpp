@@ -781,7 +781,7 @@ static string GetLuxCoreVolumeName(Scene *scene, luxcore::Scene *lcScene, const 
 
 	const string volName = vol->GetName();
 	// Check if the texture has already been defined
-	if (!lcScene->IsTextureDefined(volName)) {
+	if (!lcScene->IsMaterialDefined(volName)) {
 		luxrays::Properties volProps;
 
 		const bool multiscattering = (dynamic_cast<const MultiScattering *>(scene->volumeIntegrator) != NULL);
