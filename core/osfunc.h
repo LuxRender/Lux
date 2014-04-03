@@ -23,11 +23,9 @@
 #ifndef LUX_OSFUNC_H
 #define LUX_OSFUNC_H
 
-#ifdef __APPLE__
-#include <tr1/cstdint>
-#else
-#include <cstdint>
-#endif
+#include <boost/cstdint.hpp>
+using boost::int32_t;
+using boost::uint32_t;
 #include <istream>
 #include <ostream>
 
