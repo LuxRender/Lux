@@ -23,7 +23,9 @@
 #include <iostream>
 #include <exception>
 #include <fstream>
+#if !defined(WIN32)
 #include <unistd.h>
+#endif
 
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
