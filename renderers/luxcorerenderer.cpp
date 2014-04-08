@@ -2236,6 +2236,8 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL");
 	else if (filterType == "mitchell_ss")
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL_SS");
+	else if (filterType == "blackmanharris")
+		cfgProps << luxrays::Property("film.filter.type")("BLACKMANHARRIS");
 	else {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer doesn't support the filter type " << filterType <<
 				", using MITCHELL filter instead";
