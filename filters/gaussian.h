@@ -44,6 +44,8 @@ public:
 	}
 	virtual ~GaussianFilter() { }
 	virtual float Evaluate(float x, float y) const;
+
+	float GetAlpha() const { return alpha; }
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 private:

@@ -112,7 +112,13 @@
 #include "volumes/clearvolume.h"
 #include "volumes/homogeneous.h"
 #include "volumes/heterogeneous.h"
+
 #include "film/fleximage.h"
+#include "filters/box.h"
+#include "filters/gaussian.h"
+#include "filters/mitchell.h"
+#include "filters/blackmanharris.h"
+
 #include "sphericalfunction.h"
 
 using namespace luxrays;
@@ -2230,19 +2236,30 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 	const string filterType = (*filter)["type"].StringValue();
 	if (filterType == "box")
 		cfgProps << luxrays::Property("film.filter.type")("BOX");
-	else if (filterType == "gaussian")
+	else if (filterType == "gaussian") {
+		const GaussianFilter *gf = (const GaussianFilter *)filter;
 		cfgProps << luxrays::Property("film.filter.type")("GAUSSIAN");
-	else if (filterType == "mitchell")
+		cfgProps << luxrays::Property("film.filter.gaussian.alpha")(gf->GetAlpha());
+	} else if (filterType == "mitchell") {
+		const MitchellFilter *gf = (const MitchellFilter *)filter;
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL");
-	else if (filterType == "mitchell_ss")
+		cfgProps << luxrays::Property("film.filter.mitchell.b")(gf->GetB());
+		cfgProps << luxrays::Property("film.filter.mitchell.c")(gf->GetC());
+	} else if (filterType == "mitchell_ss") {
+		const MitchellFilter *gf = (const MitchellFilter *)filter;
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL_SS");
-	else if (filterType == "blackmanharris")
+		cfgProps << luxrays::Property("film.filter.mitchellss.b")(gf->GetB());
+		cfgProps << luxrays::Property("film.filter.mitchellss.c")(gf->GetC());
+	} else if (filterType == "blackmanharris")
 		cfgProps << luxrays::Property("film.filter.type")("BLACKMANHARRIS");
 	else {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer doesn't support the filter type " << filterType <<
 				", using MITCHELL filter instead";
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL");
 	}
+
+	cfgProps << luxrays::Property("film.filter.xwidth")(filter->xWidth * .5f);
+	cfgProps << luxrays::Property("film.filter.ywidth")(filter->yWidth * .5f);
 
 	//--------------------------------------------------------------------------
 

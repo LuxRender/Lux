@@ -46,6 +46,9 @@ public:
 	virtual ~MitchellFilter() { }
 	virtual float Evaluate(float x, float y) const;
 	
+	float GetB() const { return B; }
+	float GetC() const { return C; }
+
 	static Filter *CreateFilter(const ParamSet &ps);
 private:
 	float Mitchell1D(float x) const {
