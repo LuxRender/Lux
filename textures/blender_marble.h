@@ -39,7 +39,7 @@ public:
 		tex.stype = GetMarbleType(tp.FindOneString("type", "soft"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));
-		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+		tex.noisebasis = (blender::BlenderNoiseBasis) GetNoiseBasis(tp.FindOneString("noisebasis",
 			"blender_original"));
 		tex.noisebasis2 = GetNoiseShape(tp.FindOneString("noisebasis2",
 			"sin"));

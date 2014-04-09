@@ -36,7 +36,7 @@
 
 // blender_texlib.cpp*
 #include "lux.h"
-#include "blender_noiselib.h"
+#include "slg/sdl/blender_noiselib.h"
 
 namespace blender
 {
@@ -130,6 +130,7 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_HTERRAIN		4
 
 /* newnoise: noisebasis 1 & 2 */
+/*
 #define TEX_BLENDER			0
 #define TEX_STDPERLIN		1
 #define TEX_NEWPERLIN		2
@@ -140,8 +141,9 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_VORONOI_F2_F1	7
 #define TEX_VORONOI_CRACKLE		8
 #define TEX_CELLNOISE		14
-
+*/
 /* newnoise: Voronoi distance metrics, vn_distm */
+/*
 #define TEX_DISTANCE		0
 #define TEX_DISTANCE_SQUARED		1
 #define TEX_MANHATTAN		2
@@ -149,7 +151,7 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_MINKOVSKY_HALF		4
 #define TEX_MINKOVSKY_FOUR		5
 #define TEX_MINKOVSKY		6
-
+*/
 /* imaflag */
 #define TEX_INTERPOL	1
 #define TEX_USEALPHA	2

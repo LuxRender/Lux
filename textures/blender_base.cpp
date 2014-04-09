@@ -136,14 +136,14 @@ short BlenderTexture3D::GetStucciType(const string &name)
 }
 
 static const mapstsh::value_type voronoiTypeInit[8] = {
-	mapstsh::value_type("", TEX_DISTANCE),
-	mapstsh::value_type("actual_distance", TEX_DISTANCE),
-	mapstsh::value_type("distance_squared", TEX_DISTANCE_SQUARED),
-	mapstsh::value_type("manhattan", TEX_MANHATTAN),
-	mapstsh::value_type("chebychev", TEX_CHEBYCHEV),
-	mapstsh::value_type("minkovsky_half", TEX_MINKOVSKY_HALF),
-	mapstsh::value_type("minkovsky_four", TEX_MINKOVSKY_FOUR),
-	mapstsh::value_type("minkovsky", TEX_MINKOVSKY)
+	mapstsh::value_type("", ACTUAL_DISTANCE),
+	mapstsh::value_type("actual_distance", ACTUAL_DISTANCE),
+	mapstsh::value_type("distance_squared", DISTANCE_SQUARED),
+	mapstsh::value_type("manhattan", MANHATTAN),
+	mapstsh::value_type("chebychev", CHEBYCHEV),
+	mapstsh::value_type("minkovsky_half", MINKOVSKY_HALF),
+	mapstsh::value_type("minkovsky_four", MINKOVSKY_FOUR),
+	mapstsh::value_type("minkovsky", MINKOWSKI)
 };
 static const mapstsh voronoiType(voronoiTypeInit, voronoiTypeInit + 8);
 short BlenderTexture3D::GetVoronoiType(const string &name)
@@ -176,17 +176,17 @@ short BlenderTexture3D::GetNoiseType(const string &name)
 }
 
 static const mapstsh::value_type noiseBasisInit[11] = {
-	mapstsh::value_type("", TEX_BLENDER),
-	mapstsh::value_type("blender_original", TEX_BLENDER),
-	mapstsh::value_type("original_perlin", TEX_STDPERLIN),
-	mapstsh::value_type("improved_perlin", TEX_NEWPERLIN),
-	mapstsh::value_type("voronoi_f1", TEX_VORONOI_F1),
-	mapstsh::value_type("voronoi_f2", TEX_VORONOI_F2),
-	mapstsh::value_type("voronoi_f3", TEX_VORONOI_F3),
-	mapstsh::value_type("voronoi_f4", TEX_VORONOI_F4),
-	mapstsh::value_type("voronoi_f2_f1", TEX_VORONOI_F2_F1),
-	mapstsh::value_type("voronoi_crackle", TEX_VORONOI_CRACKLE),
-	mapstsh::value_type("cell_noise", TEX_CELLNOISE)
+	mapstsh::value_type("", BLENDER_ORIGINAL),
+	mapstsh::value_type("blender_original", BLENDER_ORIGINAL),
+	mapstsh::value_type("original_perlin", ORIGINAL_PERLIN),
+	mapstsh::value_type("improved_perlin", IMPROVED_PERLIN),
+	mapstsh::value_type("voronoi_f1", VORONOI_F1),
+	mapstsh::value_type("voronoi_f2", VORONOI_F2),
+	mapstsh::value_type("voronoi_f3", VORONOI_F3),
+	mapstsh::value_type("voronoi_f4", VORONOI_F4),
+	mapstsh::value_type("voronoi_f2_f1", VORONOI_F2_F1),
+	mapstsh::value_type("voronoi_crackle", VORONOI_CRACKLE),
+	mapstsh::value_type("cell_noise", CELLNOISE)
 };
 static const mapstsh noiseBasis(noiseBasisInit, noiseBasisInit + 11);
 short BlenderTexture3D::GetNoiseBasis(const string &name)
