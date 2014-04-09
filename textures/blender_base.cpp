@@ -186,7 +186,7 @@ static const mapstsh::value_type noiseBasisInit[11] = {
 	mapstsh::value_type("voronoi_f4", VORONOI_F4),
 	mapstsh::value_type("voronoi_f2_f1", VORONOI_F2_F1),
 	mapstsh::value_type("voronoi_crackle", VORONOI_CRACKLE),
-	mapstsh::value_type("cell_noise", CELLNOISE)
+	mapstsh::value_type("cell_noise", CELL_NOISE)
 };
 static const mapstsh noiseBasis(noiseBasisInit, noiseBasisInit + 11);
 short BlenderTexture3D::GetNoiseBasis(const string &name)

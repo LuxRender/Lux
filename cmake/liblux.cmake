@@ -353,8 +353,7 @@ SET(lux_blender_textures_src
 	textures/blender_magic.cpp
 	textures/blender_marble.cpp
 	textures/blender_musgrave.cpp
-	textures/blender_noise.cpp
-	textures/blender_noiselib.cpp
+	textures/blender_noise.cpp	
 	textures/blender_stucci.cpp
 	textures/blender_texlib.cpp
 	textures/blender_voronoi.cpp
@@ -783,7 +782,6 @@ SET(lux_textures_blender_hdr
 	textures/blender_marble.h
 	textures/blender_musgrave.h
 	textures/blender_noise.h
-	textures/blender_noiselib.h
 	textures/blender_stucci.h
 	textures/blender_texlib.h
 	textures/blender_voronoi.h
