@@ -141,8 +141,8 @@ static const mapstsh::value_type voronoiTypeInit[8] = {
 	mapstsh::value_type("distance_squared", DISTANCE_SQUARED),
 	mapstsh::value_type("manhattan", MANHATTAN),
 	mapstsh::value_type("chebychev", CHEBYCHEV),
-	mapstsh::value_type("minkovsky_half", MINKOVSKY_HALF),
-	mapstsh::value_type("minkovsky_four", MINKOVSKY_FOUR),
+	mapstsh::value_type("minkovsky_half", MINKOWSKI_HALF),
+	mapstsh::value_type("minkovsky_four", MINKOWSKI_FOUR),
 	mapstsh::value_type("minkovsky", MINKOWSKI)
 };
 static const mapstsh voronoiType(voronoiTypeInit, voronoiTypeInit + 8);
