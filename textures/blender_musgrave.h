@@ -37,7 +37,7 @@ public:
 		BlenderTexture3D("BlenderMusgraveTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_MUSGRAVE) {
 		tex.stype = GetMusgraveType(tp.FindOneString("type",
 			"multifractal"));
-		tex.noisebasis = (blender::BlenderNoiseBasis) GetNoiseBasis(tp.FindOneString("noisebasis",
+		tex.noisebasis = (slg::blender::BlenderNoiseBasis) GetNoiseBasis(tp.FindOneString("noisebasis",
 			"blender_original"));
 		tex.mg_H = tp.FindOneFloat("h", 1.f);
 		tex.mg_lacunarity = tp.FindOneFloat("lacu", 2.f);

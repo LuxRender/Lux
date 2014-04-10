@@ -78,7 +78,7 @@ static float sampleTEAfloat(uint32_t v0, uint32_t v1, u_int rounds = 4)
 
 static float perlinNoise(float x)
 {
-	return blender::newPerlin(x, 0.f, 0.f);
+	return slg::blender::newPerlin(x, 0.f, 0.f);
 }
 
 // von Mises Distribution

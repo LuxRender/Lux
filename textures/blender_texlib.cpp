@@ -35,6 +35,8 @@
 
 #include "blender_texlib.h"
 
+using namespace slg::blender;
+
 namespace blender {
 /*
 typedef unsigned long long r_uint64;

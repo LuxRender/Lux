@@ -25,7 +25,7 @@
 #include <sstream>
 
 using namespace luxrays;
-using namespace blender;
+using namespace slg::blender;
 using std::stringstream;
 
 namespace lux {
