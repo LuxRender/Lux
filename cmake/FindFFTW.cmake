@@ -19,7 +19,7 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 #
-# Try to find the FreeImage library and include path.
+# Try to find the FFTW library and include path.
 # Once done this will define
 #
 # FFTW_FOUND
@@ -92,6 +92,9 @@ ELSEIF (FFTW_LIBRARY_REL)
 ELSEIF (FFTW_LIBRARY_DBG)
 	SET(FFTW_LIBRARIES ${FFTW_LIBRARY_DBG})
 ENDIF (FFTW_LIBRARY_REL AND FFTW_LIBRARY_DBG)
+
+MESSAGE(STATUS "FFTW_LIBRARY_REL: ${FFTW_LIBRARY_REL}")
+MESSAGE(STATUS "FFTW_LIBRARY_DBG: ${FFTW_LIBRARY_DBG}")
 
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(FFTW  DEFAULT_MSG  FFTW_LIBRARIES FFTW_INCLUDE_DIR)
