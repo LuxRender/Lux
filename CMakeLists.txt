@@ -217,12 +217,54 @@ ELSEIF(MSVC)
 	ENDIF(_carch_x64)
 ENDIF(NOT APPLE AND NOT WIN32)
 
+# Use relative paths
+# This is mostly to reduce path size for command-line limits on windows
+if(WIN32)
+  # This seems to break Xcode projects so definitely don't enable on Apple builds
+  set(CMAKE_USE_RELATIVE_PATHS true)
+  set(CMAKE_SUPPRESS_REGENERATION true)
+endif(WIN32)
+
 #
 # Overwrite defaults with Custom Settings
 #
 IF(LUX_CUSTOM_CONFIG)
 	MESSAGE(STATUS "Using custom build config: ${LUX_CUSTOM_CONFIG}")
 	INCLUDE(${LUX_CUSTOM_CONFIG})
+ELSE(LUX_CUSTOM_CONFIG)
+  IF (WIN32)
+    IF(MSVC)
+      # Disable Boost automatic linking
+      ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
+
+      MESSAGE(STATUS "Using default WIN32 Configuration settings")
+      IF(DEFINED ENV{LUX_WINDOWS_BUILD_ROOT} AND DEFINED ENV{LIB_DIR})
+        MESSAGE(STATUS "Lux build environment variables found")
+        MESSAGE(STATUS "  LUX_WINDOWS_BUILD_ROOT = $ENV{LUX_WINDOWS_BUILD_ROOT}")
+        MESSAGE(STATUS "  INCLUDE_DIR = $ENV{INCLUDE_DIR}")
+        MESSAGE(STATUS "  LIB_DIR = $ENV{LIB_DIR}")
+
+        SET(BISON_EXECUTABLE          "$ENV{LUX_WINDOWS_BUILD_ROOT}/support/bin/win_bison.exe")
+        SET(FLEX_EXECUTABLE           "$ENV{LUX_WINDOWS_BUILD_ROOT}/support/bin/win_flex.exe")
+        SET(OPENIMAGEIO_INCLUDE_DIR   "$ENV{INCLUDE_DIR}/OpenImageIO")
+        SET(OPENEXR_ROOT              "$ENV{INCLUDE_DIR}/OpenEXR")
+        #SET(OPENCL_SEARCH_PATH       "$ENV{LUX_WINDOWS_BUILD_ROOT}/include")
+        SET(BOOST_SEARCH_PATH         "$ENV{INCLUDE_DIR}/Boost")
+        SET(Boost_USE_STATIC_LIBS     ON)
+        SET(BOOST_LIBRARYDIR          "$ENV{LIB_DIR}")
+        SET(QT_HEADERS_DIR            "$ENV{INCLUDE_DIR}/Qt/include")
+        SET(QT_QTCORE_INCLUDE_DIR     "$ENV{INCLUDE_DIR}/Qt/include/QtCore")
+        SET(QT_QTCORE_LIBRARY_RELEASE "$ENV{LIB_DIR}/QtCore4.lib") 
+        SET(QT_QTGUI_INCLUDE_DIR      "$ENV{INCLUDE_DIR}/Qt/include/QtGui")
+        SET(QT_QMAKE_EXECUTABLE       "$ENV{LIB_DIR}/qmake.exe")
+        SET(QT_BINARY_DIR             "$ENV{LIB_DIR}")
+
+        ADD_DEFINITIONS(-DFREEIMAGE_LIB)
+        ADD_DEFINITIONS(-DFREEGLUT_STATIC)
+        ADD_DEFINITIONS(-DGLEW_STATIC)
+      ENDIF()
+    ENDIF(MSVC)
+  ENDIF(WIN32)
 ENDIF(LUX_CUSTOM_CONFIG)
 
 #############################################################################
@@ -267,7 +309,7 @@ ELSEIF(MSVC)
 	MESSAGE(STATUS "MSVC")
 
 	SET(GUI_TYPE WIN32)
-
+	
 	# Change warning to something saner
 	#Force to always compile with W3
 	IF(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -275,6 +317,19 @@ ELSEIF(MSVC)
 	ELSE()
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
 	ENDIF()
+	
+	# Minimizes Windows header files
+	ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN)
+	# Do not define MIN and MAX macros
+	ADD_DEFINITIONS(-DNOMINMAX)
+	# Do not warn about standard but insecure functions
+	ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+	# Enable Unicode
+	ADD_DEFINITIONS(-D_UNICODE)
+	# Enable SSE2/SSE/MMX
+	ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
+	
+	SET(FLEX_FLAGS "--wincompat")
 
 	IF(MSVC90)
 		MESSAGE(STATUS "Version 9")
@@ -314,7 +369,9 @@ ELSEIF(MSVC)
 		# See http://public.kitware.com/Bug/view.php?id=6794
 		# /GL will be used to build the code but the selection is not displayed in the menu
 
-		set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob2 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
+		#set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob2 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
+		# /Ob2 is bugged in VS2013 right now, so have to disable it :(
+		set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob0 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
 		set(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
 		
 		set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   ${MSVC_RELEASE_COMPILER_FLAGS}")
@@ -328,11 +385,6 @@ ELSEIF(MSVC)
 		#set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS}")
 		
 	ENDIF(MSVC12)
-
-	# Definitions
-	ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
-	ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
-	ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)
 	
 ELSE(APPLE)
 	# Dade - default compiler options

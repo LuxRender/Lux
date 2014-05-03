@@ -34,7 +34,7 @@ IF (NOT BISON_NOT_AVAILABLE AND NOT FLEX_NOT_AVAILABLE)
 	#SOURCE_GROUP("Parser Files" FILES core/luxparse.y)
 
 	# Create custom command for flex/lex
-	FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp)
+	FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp COMPILE_FLAGS "${FLEX_FLAGS}")
 	SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 	#SOURCE_GROUP("Parser Files" FILES core/luxlex.l)
 	SET(lux_parser_src
@@ -865,10 +865,11 @@ SET(lux_lib_hdr
 
 #############################################################################
 
-INCLUDE_DIRECTORIES(SYSTEM
+INCLUDE_DIRECTORIES(BEFORE SYSTEM
 	${CMAKE_SOURCE_DIR}/core/external
 	)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
+INCLUDE_DIRECTORIES(BEFORE
+	${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/queryable
 	${CMAKE_SOURCE_DIR}/core/reflection
 	${CMAKE_SOURCE_DIR}/core/reflection/bsdf
