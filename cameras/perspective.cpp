@@ -413,6 +413,9 @@ Camera* PerspectiveCamera::CreateCamera(const MotionSystem &world2cam,
 	int shape = params.FindOneInt("blades", 0);
 	int power = params.FindOneInt("power", 3);
 
+	if (params.FindFloat("clippingplane", &swi))
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Perspective camera clipping plane attribute is supported only by LuxCore";
+
 	return new PerspectiveCamera(world2cam, screen,
 		hither, yon, shutteropen, shutterclose, shutterdist, lensradius,
 		focaldistance, autofocus, fov, distribution, shape, power,
