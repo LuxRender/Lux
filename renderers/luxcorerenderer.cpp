@@ -669,7 +669,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 					}
 					std::string noisetype= "soft_noise";
 					if(wood->GetNoiseT()) noisetype = "hard_noise";
-					texProps << luxrays::Property("scene.textures." + texName + ".type")("wood") <<
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_wood") <<
 					luxrays::Property("scene.textures." + texName + ".woodtype")(woodtype) <<
 					luxrays::Property("scene.textures." + texName + ".noisebasis2")(noisebasis2) <<
 					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
