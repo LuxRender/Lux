@@ -74,7 +74,7 @@
          </spacer>
         </item>
         <item row="0" column="5">
-         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0">
+         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -125,6 +125,7 @@
             <property name="minimumSize">
              <size>
               <width>75</width>
+              <height>0</height>
              </size>
             </property>
             <property name="toolTip">
@@ -155,9 +156,10 @@
             <property name="sizeType">
              <enum>QSizePolicy::Fixed</enum>
             </property>
-            <property name="sizeHint">
+            <property name="sizeHint" stdset="0">
              <size>
               <width>7</width>
+              <height>0</height>
              </size>
             </property>
            </spacer>
@@ -203,6 +205,7 @@
             <property name="minimumSize">
              <size>
               <width>75</width>
+              <height>0</height>
              </size>
             </property>
             <property name="toolTip">
@@ -657,7 +660,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>362</width>
-                  <height>362</height>
+                  <height>363</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -739,8 +742,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>396</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -797,8 +800,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>356</width>
-                  <height>363</height>
+                  <width>339</width>
+                  <height>324</height>
                  </rect>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_2">
@@ -1023,8 +1026,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>396</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -1902,7 +1905,7 @@
      <normaloff>:/icons/stopicon.png</normaloff>:/icons/stopicon.png</iconset>
    </property>
    <property name="text">
-    <string>End rendering</string>
+    <string>End Rendering</string>
    </property>
   </action>
   <action name="action_viewToolbar">
@@ -1959,7 +1962,7 @@
   </action>
   <action name="action_copyLog">
    <property name="text">
-    <string>Copy log</string>
+    <string>Copy Log</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+C</string>
@@ -1967,7 +1970,7 @@
   </action>
   <action name="action_clearLog">
    <property name="text">
-    <string>Clear log</string>
+    <string>Clear Log</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+W</string>
@@ -1978,7 +1981,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Overlay statistics</string>
+    <string>Overlay Statistics</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+O</string>
@@ -1989,7 +1992,7 @@
   </action>
   <action name="action_fullScreen">
    <property name="text">
-    <string>Full screen</string>
+    <string>Full Screen</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+F</string>
@@ -2029,7 +2032,7 @@
   </action>
   <action name="action_documentation">
    <property name="text">
-    <string>Online documentation</string>
+    <string>Online Documentation</string>
    </property>
   </action>
   <action name="action_forums">
@@ -2047,7 +2050,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Normal screen</string>
+    <string>Normal Screen</string>
+   </property>
+   <property name="iconText">
+    <string>Normal Screen</string>
    </property>
    <property name="toolTip">
     <string>Normal screen</string>
@@ -2144,7 +2150,7 @@
   </action>
   <action name="action_bugtracker">
    <property name="text">
-    <string>Bug tracker</string>
+    <string>Bug Tracker</string>
    </property>
   </action>
   <action name="action_Save_Panel_Settings">
