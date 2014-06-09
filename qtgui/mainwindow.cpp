@@ -208,7 +208,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 
 #if defined(__APPLE__)
 	ui->menubar->setNativeMenuBar(true);
-    setUnifiedTitleAndToolBarOnMac(true);
 #endif
 
 	createActions();
