@@ -1040,8 +1040,6 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
-
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer doesn't support Glass2 material, trying an emulation with Glass1.";
 		}
 	} else
 	//------------------------------------------------------------------
