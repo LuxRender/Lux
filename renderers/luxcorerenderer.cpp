@@ -2652,6 +2652,8 @@ void LuxCoreRenderer::Render(Scene *s) {
 			}
 			previousFilmSampleCount = 0.0;
 
+			const bool isBiasPath = (session->GetRenderConfig().GetProperty("renderengine.type").Get<string>() == "BIASPATHCPU") ||
+				(session->GetRenderConfig().GetProperty("renderengine.type").Get<string>() == "BIASPATHOCL");
 			for (;;) {
 				if (state == PAUSE) {
 					session->BeginSceneEdit();
@@ -2676,8 +2678,10 @@ void LuxCoreRenderer::Render(Scene *s) {
 				const double now = luxrays::WallClockTime();
 				const double elapsedTime = now - startTime;
 				const u_int pass = stats.Get("stats.renderengine.pass").Get<u_int>();
+
 				// Convergence test has been updated inside UpdateStats()
-				const float convergence = stats.Get("stats.renderengine.convergence").Get<float>();
+				float convergence = stats.Get("stats.renderengine.convergence").Get<float>();
+
 				if (((film->enoughSamplesPerPixel)) ||
 						((haltTime > 0) && (elapsedTime >= haltTime)) ||
 						((haltSpp > 0) && (pass >= haltSpp)) ||
@@ -2704,6 +2708,22 @@ void LuxCoreRenderer::Render(Scene *s) {
 					break;
 				}
 
+				// BIASPATH has also the support for another kind of convergence test
+				string convInfo;
+				if (isBiasPath) {
+					const u_int converged = stats.Get("stats.biaspath.tiles.converged.count").Get<u_int>();
+					const u_int notconverged = stats.Get("stats.biaspath.tiles.notconverged.count").Get<u_int>();
+					const u_int pending = stats.Get("stats.biaspath.tiles.pending.count").Get<u_int>();
+					convInfo = boost::str(boost::format("Convergence %d/%d") % converged % (converged + notconverged + pending));
+					
+					if (notconverged == 0 && pending == 0) {
+						// Rendering done, time to stop
+						Terminate();
+						break;
+					}
+				} else
+					convInfo = boost::str(boost::format("Convergence %f%%") % (100.f * convergence));
+
 				// Update statistics
 				lcStats->averageSampleSec = stats.Get("stats.renderengine.total.samplesec").Get<double>();
 				for (u_int i = 0; i < luxrays::Min<u_int>(lcStats->deviceCount, lcStats->deviceMaxMemory.size()); ++i) {
@@ -2714,8 +2734,8 @@ void LuxCoreRenderer::Render(Scene *s) {
 
 				// Print some information about the rendering progress
 				LC_LOG(boost::str(boost::format(
-						"[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]") %
-						int(elapsedTime) % int(haltTime) % pass % haltSpp % (100.f * convergence) %
+						"[Elapsed time: %3d/%dsec][Samples %4d/%d][%d][Avg. samples/sec % 3.2fM on %.1fK tris]") %
+						int(elapsedTime) % int(haltTime) % pass % haltSpp % convInfo %
 						(lcStats->averageSampleSec / 1000000.0) %
 						(stats.Get("stats.dataset.trianglecount").Get<u_longlong>() / 1000.0)));
 
