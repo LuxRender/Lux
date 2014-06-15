@@ -2340,15 +2340,18 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 	ScopedPoolLock poolLock(film->contribPool);
 
 	// Lock LuxCore film
-//	boost::unique_lock<boost::mutex> lock(session->filmMutex);
+	//boost::unique_lock<boost::mutex> lock(session->filmMutex);
+
+	const float *channel_ALPHA = (lcFilm.GetChannelCount(luxcore::Film::CHANNEL_ALPHA) > 0) ?
+		lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_ALPHA) : NULL;
+	const float *channel_DEPTH = (lcFilm.GetChannelCount(luxcore::Film::CHANNEL_DEPTH) > 0) ?
+		lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_DEPTH) : NULL;
 
 	if (previousFilm_RADIANCE_PER_PIXEL_NORMALIZEDs.size() > 0) {
 		// Copy the information from PER_PIXEL_NORMALIZED buffer
 
 		for (u_int i = 0; i < previousFilm_RADIANCE_PER_PIXEL_NORMALIZEDs.size(); ++i) {
 			const float *channel_RADIANCE_PER_PIXEL_NORMALIZED = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_RADIANCE_PER_PIXEL_NORMALIZED, i);
-			const float *channel_ALPHA = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_ALPHA);
-			const float *channel_DEPTH = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_DEPTH);
 
 			for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 				for (u_int pixelX = 0; pixelX < width; ++pixelX) {
@@ -2367,12 +2370,14 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 					if (deltaWeight > 0.f) {
 						deltaRadiance /= deltaWeight;
 
-						const float newAlpha = previousFilm_ALPHA ?
-							channel_ALPHA[(pixelX + pixelY * width) * 2] : 1.f;
-						// I have to clamp alpha values because then can be outside the [0.0, 1.0]
-						// range (i.e. some pixel filter can have negative weights and lead
-						// to negative values)
-						const float deltaAlpha = max(newAlpha - previousFilm_ALPHA[(pixelX + pixelY * width) * 2], 0.f) / deltaWeight;
+						float deltaAlpha = 1.f;
+						if (previousFilm_ALPHA) {
+							const float newAlpha = channel_ALPHA[(pixelX + pixelY * width) * 2];
+							// I have to clamp alpha values because then can be outside the [0.0, 1.0]
+							// range (i.e. some pixel filter can have negative weights and lead
+							// to negative values)
+							deltaAlpha = max(newAlpha - previousFilm_ALPHA[(pixelX + pixelY * width) * 2], 0.f) / deltaWeight;
+						}
 
 						const float newDepth = previousFilm_DEPTH ?
 							channel_DEPTH[pixelX + pixelY * width] : 0.f;
@@ -2393,10 +2398,8 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 	if (previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs.size() > 0) {
 		// Copy the information from PER_SCREEN_NORMALIZED buffer
 
-		for (u_int i = 0; i <previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs.size(); ++i) {
+		for (u_int i = 0; i < previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs.size(); ++i) {
 			const float *channel_RADIANCE_PER_SCREEN_NORMALIZED = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_RADIANCE_PER_SCREEN_NORMALIZED, i);
-			const float *channel_ALPHA = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_ALPHA);
-			const float *channel_DEPTH = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_DEPTH);
 
 			for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 				for (u_int pixelX = 0; pixelX < width; ++pixelX) {
@@ -2416,12 +2419,15 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 						// This is required to cancel the "* weight" inside AddSampleNoFiltering()
 						deltaRadiance /= deltaWeight;
 
-						const float newAlpha = previousFilm_ALPHA ?
-							channel_ALPHA[(pixelX + pixelY * width) * 2] : 1.f;
-						// I have to clamp alpha values because then can be outside the [0.0, 1.0]
-						// range (i.e. some pixel filter can have negative weights and lead
-						// to negative values)
-						const float deltaAlpha = max(newAlpha - previousFilm_ALPHA[(pixelX + pixelY * width) * 2], 0.f) / deltaWeight;
+						float deltaAlpha = 1.f;
+						if (previousFilm_ALPHA) {
+							const float newAlpha = previousFilm_ALPHA ?
+								channel_ALPHA[(pixelX + pixelY * width) * 2] : 1.f;
+							// I have to clamp alpha values because then can be outside the [0.0, 1.0]
+							// range (i.e. some pixel filter can have negative weights and lead
+							// to negative values)
+							deltaAlpha = max(newAlpha - previousFilm_ALPHA[(pixelX + pixelY * width) * 2], 0.f) / deltaWeight;
+						}
 
 						const float newDepth = previousFilm_DEPTH ?
 							channel_DEPTH[pixelX + pixelY * width] : 0.f;
@@ -2447,7 +2453,7 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 	if (previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs.size() > 0) {
 		for (u_int i = 0; i < previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs.size(); ++i) {
 			const float *channel_RADIANCE_PER_SCREEN_NORMALIZED = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_RADIANCE_PER_SCREEN_NORMALIZED, i);
-			std::copy(channel_RADIANCE_PER_SCREEN_NORMALIZED, channel_RADIANCE_PER_SCREEN_NORMALIZED + width * height * 4,
+			std::copy(channel_RADIANCE_PER_SCREEN_NORMALIZED, channel_RADIANCE_PER_SCREEN_NORMALIZED + width * height * 3,
 					previousFilm_RADIANCE_PER_SCREEN_NORMALIZEDs[i]);
 		}
 	}
@@ -2460,22 +2466,53 @@ void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
 		}
 	}
 
-	if (previousFilm_ALPHA) {
-		const float *channel_ALPHA = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_ALPHA);
+	if (previousFilm_ALPHA)
 		std::copy(channel_ALPHA, channel_ALPHA + width * height * 2,
 					previousFilm_ALPHA);
-	}
 
-	if (previousFilm_DEPTH) {
-		const float *channel_DEPTH = lcFilm.GetChannel<float>(luxcore::Film::CHANNEL_DEPTH);		
+	if (previousFilm_DEPTH)
 		std::copy(channel_DEPTH, channel_DEPTH + width * height,
 					previousFilm_DEPTH);
-	}
-
 }
+
+/*#include <malloc.h>
+
+// Variables to save original hooks
+static void *(*OldMallocHook)(size_t, const void *);
+
+static void *DebugMallocHook(size_t size, const void *caller) {
+	static boost::mutex mtx;
+
+	boost::mutex::scoped_lock lock(mtx);
+
+	// Restore all old hooks
+	__malloc_hook = OldMallocHook;
+
+	// Call recursively
+	void *result = malloc(size);
+
+	// Mangle memory block
+	for (size_t i = 0 ; i < size / 4; ++i)
+		((u_int *)result)[i] = i * 101 + 101;
+	
+	// Save underlying hooks
+	OldMallocHook = __malloc_hook;
+
+	// Restore our own hooks
+	__malloc_hook = DebugMallocHook;
+
+	return result;
+}
+
+static void MallocInitHook() {
+	OldMallocHook = __malloc_hook;
+	__malloc_hook = DebugMallocHook;
+}*/
 
 void LuxCoreRenderer::Render(Scene *s) {
 	try {
+		//MallocInitHook();
+
 		std::auto_ptr<luxcore::Scene> lcScene;
 		luxrays::Properties lcConfigProps;
 
