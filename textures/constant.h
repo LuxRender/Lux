@@ -54,6 +54,9 @@ public:
 		*minValue = value;
 		*maxValue = value;
 	}
+	
+	float GetValue() const { return value; }
+
 private:
 	float value;
 };
@@ -86,6 +89,7 @@ public:
 	}
 
 	SPD *GetRGBSPD() { return RGBSPD; }
+	const RGBColor &GetRGB() const { return color; }
 
 private:
 	// Used by Query interface

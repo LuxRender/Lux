@@ -940,14 +940,24 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 
 		// Check if the material has already been defined
 		if (!lcScene->IsMaterialDefined(matName)) {
-			const string texName = GetLuxCoreTexName(lcScene, matte->GetTexture());
+			const string kdTexName = GetLuxCoreTexName(lcScene, matte->GetKdTexture());
 
-			const luxrays::Properties matProps(
-				luxrays::Property("scene.materials." + matName +".type")("matte") <<
-				 GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
-					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
-					interiorVol, exteriorVol) <<
-				luxrays::Property("scene.materials." + matName +".kd")(texName));
+			luxrays::Properties matProps;
+			// Check if I have to use matte or roughmatte material
+			const ConstantFloatTexture *sigmaTex = dynamic_cast<const ConstantFloatTexture *>(matte->GetSigmaTexture());
+			if (sigmaTex && (sigmaTex->GetValue() == 0.f)) {
+				// Use matte material
+				matProps <<
+						luxrays::Property("scene.materials." + matName +".type")("matte") <<
+						luxrays::Property("scene.materials." + matName +".kd")(kdTexName);
+			} else {
+				// Use roughmatte material
+				matProps <<
+						luxrays::Property("scene.materials." + matName +".type")("roughmatte") <<
+						luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
+						luxrays::Property("scene.materials." + matName +".sigma")(GetLuxCoreTexName(lcScene, matte->GetSigmaTexture()));
+			}
+			
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}

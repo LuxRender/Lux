@@ -40,7 +40,8 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
-	Texture<SWCSpectrum> *GetTexture() { return Kd.get(); }
+	Texture<SWCSpectrum> *GetKdTexture() { return Kd.get(); }
+	Texture<float> *GetSigmaTexture() { return sigma.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
