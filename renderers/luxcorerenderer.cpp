@@ -948,16 +948,19 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 			if (sigmaTex && (sigmaTex->GetValue() == 0.f)) {
 				// Use matte material
 				matProps <<
-						luxrays::Property("scene.materials." + matName +".type")("matte") <<
-						luxrays::Property("scene.materials." + matName +".kd")(kdTexName);
+						luxrays::Property("scene.materials." + matName +".type")("matte");
 			} else {
 				// Use roughmatte material
 				matProps <<
 						luxrays::Property("scene.materials." + matName +".type")("roughmatte") <<
-						luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
 						luxrays::Property("scene.materials." + matName +".sigma")(GetLuxCoreTexName(lcScene, matte->GetSigmaTexture()));
 			}
 			
+			matProps << GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
+					luxrays::Property("scene.materials." + matName +".kd")(kdTexName);
+
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
@@ -1101,13 +1104,25 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 			const string krTexName = GetLuxCoreTexName(lcScene, matteTranslucent->GetKrTexture());
 			const string ktTexName = GetLuxCoreTexName(lcScene, matteTranslucent->GetKtTexture());
 
-			const luxrays::Properties matProps(
-				luxrays::Property("scene.materials." + matName +".type")("mattetranslucent") <<
-				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+			luxrays::Properties matProps;
+			// Check if I have to use mattetranslucent or roughmattetranslucent material
+			const ConstantFloatTexture *sigmaTex = dynamic_cast<const ConstantFloatTexture *>(matteTranslucent->GetSigmaTexture());
+			if (sigmaTex && (sigmaTex->GetValue() == 0.f)) {
+				// Use mattetranslucent material
+				matProps <<
+						luxrays::Property("scene.materials." + matName +".type")("mattetranslucent");
+			} else {
+				// Use roughmattetranslucent material
+				matProps <<
+						luxrays::Property("scene.materials." + matName +".type")("roughmattetranslucent") <<
+						luxrays::Property("scene.materials." + matName +".sigma")(GetLuxCoreTexName(lcScene, matteTranslucent->GetSigmaTexture()));
+			}
+
+			matProps << GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
 					emissionEfficency, emissionMapName, lightID, bumpTex, normalTex,
 					interiorVol, exteriorVol) <<
-				luxrays::Property("scene.materials." + matName +".kr")(krTexName) <<
-				luxrays::Property("scene.materials." + matName +".kt")(ktTexName));
+					luxrays::Property("scene.materials." + matName +".kr")(krTexName) <<
+					luxrays::Property("scene.materials." + matName +".kt")(ktTexName);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}

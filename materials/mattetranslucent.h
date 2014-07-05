@@ -44,6 +44,7 @@ public:
 
 	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
 	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
+	Texture<float> *GetSigmaTexture() { return sigma.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
