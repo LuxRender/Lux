@@ -396,6 +396,8 @@ void RenderView::wheelEvent(QWheelEvent* event)
 
 	resetTransform();
 	scale(zoomfactor / 100.f, zoomfactor / 100.f);
+    
+    choosePixmapAntialiasing();
 
 	emit viewChanged ();
 }
@@ -461,6 +463,8 @@ void RenderView::mousePressEvent(QMouseEvent *event)
 					zoomfactor = 100.0f/(origw);
 				setHorizontalScrollBarPolicy( Qt::ScrollBarAsNeeded );
 				setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
+                
+                choosePixmapAntialiasing();
 				
 				emit viewChanged ();
 				break;
@@ -514,4 +518,13 @@ void RenderView::mouseMoveEvent (QMouseEvent *event)
 	}
 
 	QGraphicsView::mouseMoveEvent(event);
+}
+
+void RenderView::choosePixmapAntialiasing() {
+    //AA should be enabled when the image is too large for the graphicsview
+    //and disabled when the user zooms in more than 100%
+    if(zoomfactor < 100.f)
+        luxfb->setTransformationMode(Qt::SmoothTransformation);
+    else
+        luxfb->setTransformationMode(Qt::FastTransformation);
 }

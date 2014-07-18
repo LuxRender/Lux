@@ -103,6 +103,8 @@ private:
 	void mouseReleaseEvent (QMouseEvent *event);
 	void mouseMoveEvent (QMouseEvent *event);
 	void resizeEvent(QResizeEvent *event);
+    
+    void choosePixmapAntialiasing();
 
 signals:
 	void viewChanged ();
