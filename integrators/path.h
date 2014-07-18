@@ -170,6 +170,8 @@ public:
 	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state,
 		luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
+	const SurfaceIntegratorRenderingHints *GetRenderingHints() const { return &hints; }
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 	friend class PathState;

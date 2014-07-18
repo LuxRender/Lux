@@ -299,6 +299,8 @@ public:
 	u_int GetSamplingLimit(const Scene &scene) const {
 		return lsStrategy->GetSamplingLimit(scene);
 	}
+	
+	const LightsSamplingStrategy *GetLightsSamplingStrategy() const { return lsStrategy; };
 
 	void InitStrategies(const Scene &scene);
 	void RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth);
