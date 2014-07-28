@@ -25,8 +25,9 @@
 // camera.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "motionsystem.h"
 #include "queryable.h"
+
+#include "luxrays/core/geometry/motionsystem.h"
 #include "luxrays/utils/memory.h"
 
 namespace lux

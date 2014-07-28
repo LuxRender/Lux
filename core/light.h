@@ -25,11 +25,13 @@
 // light.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "motionsystem.h"
-#include "luxrays/core/color/swcspectrum.h"
 #include "error.h"
 #include "renderinghints.h"
 #include "queryable.h"
+
+#include "luxrays/core/geometry/motionsystem.h"
+#include "luxrays/core/color/swcspectrum.h"
+
 // Light Declarations
 
 namespace lux

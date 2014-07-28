@@ -24,11 +24,12 @@
 #define LUX_PRIMITIVE_H
 // primitive.h*
 #include "lux.h"
-#include "motionsystem.h"
+#include "geometry/transform.h"
 #include "geometry/raydifferential.h"
 #include "error.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/geometry/motionsystem.h"
 #include "luxrays/core/exttrianglemesh.h"
 
 namespace lux

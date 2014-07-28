@@ -72,7 +72,6 @@ SET(lux_core_src
 	core/imagereader.cpp
 	core/light.cpp
 	core/material.cpp
-	core/motionsystem.cpp
 	core/osfunc.cpp
 	core/paramset.cpp
 	core/photonmap.cpp
@@ -97,7 +96,6 @@ SET(lux_core_src
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})
 
 SET(lux_core_geometry_src
-	core/geometry/quaternion.cpp
 	core/geometry/raydifferential.cpp
 	)
 SOURCE_GROUP("Source Files\\Core\\Geometry" FILES ${lux_core_geometry_src})
@@ -498,7 +496,6 @@ SET(lux_core_hdr
 	core/lux.h
 	core/material.h
 	core/mipmap.h
-	core/motionsystem.h
 	core/octree.h
 	core/osfunc.h
 	core/paramset.h
@@ -533,7 +530,6 @@ SET(lux_core_external_hdr
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
 	core/geometry/matrix2x2.h
-	core/geometry/quaternion.h
 	core/geometry/raydifferential.h
 	core/geometry/transform.h
 	)

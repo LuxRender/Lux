@@ -30,7 +30,8 @@
 #include "singlebsdf.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "motionsystem.h"
+
+#include "luxrays/core/geometry/motionsystem.h"
 #include "luxrays/utils/mc.h"
 
 using namespace lux;

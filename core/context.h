@@ -29,7 +29,8 @@
 #include "paramset.h"
 #include "queryableregistry.h"
 #include "renderer.h"
-#include "motionsystem.h"
+
+#include "luxrays/core/geometry/motionsystem.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>

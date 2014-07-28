@@ -24,7 +24,8 @@
 #include "primitive.h"
 #include "light.h"
 #include "material.h"
-#include "motionsystem.h"
+
+#include "luxrays/core/geometry/motionsystem.h"
 
 using namespace luxrays;
 using namespace lux;

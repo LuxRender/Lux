@@ -49,6 +49,7 @@ using std::sort;
 #include "luxrays/luxrays.h"
 #include "luxrays/core/epsilon.h"
 #include "luxrays/core/geometry/transform.h"
+#include "luxrays/core/geometry/motionsystem.h"
 #include "luxrays/core/color/swcspectrum.h"
 #include "luxrays/core/utils.h"
 #include "luxrays/utils/memory.h"
@@ -235,8 +236,8 @@ namespace lux
   class ContributionPool;
   class ContributionSystem;
   class InterpolatedTransform;
-  class MotionSystem;
-  class MotionTransform;
+  using luxrays::MotionSystem;
+  using luxrays::MotionTransform;
   class SampleableSphericalFunction;
 
   class Context;
