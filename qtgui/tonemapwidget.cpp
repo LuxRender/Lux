@@ -428,7 +428,7 @@ void ToneMapWidget::prescaleChanged (double value)
 
 void ToneMapWidget::postscaleChanged (int value)
 {
-	postscaleChanged ((double)value / ( FLOAT_SLIDER_RES / TM_REINHARD_PRESCALE_RANGE ));
+	postscaleChanged ((double)value / ( FLOAT_SLIDER_RES / TM_REINHARD_POSTSCALE_RANGE ));
 }
 
 void ToneMapWidget::postscaleChanged (double value)
