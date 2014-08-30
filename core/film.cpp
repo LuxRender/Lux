@@ -2538,7 +2538,7 @@ bool Film::WriteFilmDataToStream(
 	}
 
 	flush(fs);
-	int size = os.tellp() - osStartPosition;
+	std::streamoff size = os.tellp() - osStartPosition;
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Transmitted film with " << totNumberOfSamples << " samples";
 	LOG(LUX_INFO, LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
