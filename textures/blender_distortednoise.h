@@ -48,6 +48,15 @@ public:
 		const ParamSet &tp) {
 		return new BlenderDistortedNoiseTexture3D(tex2world, tp);
 	}
+
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const short GetNoiseB() const { return tex.noisebasis; }
+	const short GetNoiseB2() const { return tex.noisebasis2; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const float GetDistAmount() const { return tex.dist_amount; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 };
 
 } // namespace lux

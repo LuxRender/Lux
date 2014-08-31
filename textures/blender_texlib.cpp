@@ -167,16 +167,16 @@ static float wood_int(const Tex *tex, float x, float y, float z) {
     waveform[1] = tex_saw;
     waveform[2] = tex_tri;
 
-    if ((wf > TEX_TRI) || (wf < TEX_SIN)) wf = 0; /* check to be sure noisebasis2 is initialized ahead of time */
+    if ((wf > slg::blender::TEX_TRI) || (wf < slg::blender::TEX_SIN)) wf = 0; /* check to be sure noisebasis2 is initialized ahead of time */
 
-    if (wt == TEX_BAND) {
+    if (wt == slg::blender::BANDS) {
         wi = waveform[wf]((x + y + z)*10.0);
-    } else if (wt == TEX_RING) {
+    } else if (wt == slg::blender::RINGS) {
         wi = waveform[wf](sqrt(x * x + y * y + z * z)*20.0);
-    } else if (wt == TEX_BANDNOISE) {
+    } else if (wt == slg::blender::BANDNOISE) {
         wi = tex->turbul * BLI_gNoise(tex->noisesize, x, y, z, (tex->noisetype != TEX_NOISESOFT), (BlenderNoiseBasis)tex->noisebasis);
         wi = waveform[wf]((x + y + z)*10.0 + wi);
-    } else if (wt == TEX_RINGNOISE) {
+    } else if (wt == slg::blender::RINGNOISE) {
         wi = tex->turbul * BLI_gNoise(tex->noisesize, x, y, z, (tex->noisetype != TEX_NOISESOFT), (BlenderNoiseBasis)tex->noisebasis);
         wi = waveform[wf](sqrt(x * x + y * y + z * z)*20.0 + wi);
     }
@@ -205,18 +205,18 @@ static float marble_int(const Tex *tex, float x, float y, float z) {
     waveform[1] = tex_saw;
     waveform[2] = tex_tri;
 
-    if ((wf > TEX_TRI) || (wf < TEX_SIN)) wf = 0; /* check to be sure noisebasis2 isn't initialized ahead of time */
+    if ((wf > slg::blender::TEX_TRI) || (wf < slg::blender::TEX_SIN)) wf = 0; /* check to be sure noisebasis2 isn't initialized ahead of time */
 
     n = 5.0 * (x + y + z);
 
     mi = n + tex->turbul * BLI_gTurbulence(tex->noisesize, x, y, z, tex->noisedepth, (tex->noisetype != TEX_NOISESOFT), (BlenderNoiseBasis)tex->noisebasis);
 
-    if (mt >= TEX_SOFT) { /* TEX_SOFT always true */
+    if (mt >= slg::blender::TEX_SOFT) { /* TEX_SOFT always true */
         mi = waveform[wf](mi);
         if (mt == TEX_SHARP) {
             mi = sqrt(mi);
         }
-        else if (mt == TEX_SHARPER) {
+        else if (mt == slg::blender::TEX_SHARPER) {
             mi = sqrt(sqrt(mi));
         }
     }
@@ -327,7 +327,7 @@ static int stucci(const Tex *tex, const float *texvec, TexResult *texres) {
 
     texres->tin = nor[2];
 
-    if (tex->stype == TEX_WALLOUT)
+    if (tex->stype == slg::blender::TEX_WALL_OUT)
         texres->tin = 1.0f - texres->tin;
 
     if (texres->tin < 0.0f)
@@ -344,7 +344,7 @@ static float mg_mFractalOrfBmTex(const Tex *tex, const float *texvec, TexResult 
     int rv = TEX_INT;
     float (*mgravefunc)(float, float, float, float, float, float, BlenderNoiseBasis);
 
-    if (tex->stype == TEX_MFRACTAL)
+    if (tex->stype == slg::blender::TEX_MULTIFRACTAL)
         mgravefunc = mg_MultiFractal;
     else
         mgravefunc = mg_fBm;
@@ -360,7 +360,7 @@ static float mg_ridgedOrHybridMFTex(const Tex *tex, const float *texvec, TexResu
     int rv = TEX_INT;
     float (*mgravefunc)(float, float, float, float, float, float, float, float, BlenderNoiseBasis);
 
-    if (tex->stype == TEX_RIDGEDMF)
+    if (tex->stype == slg::blender::TEX_RIDGED_MULTIFRACTAL)
         mgravefunc = mg_RidgedMultiFractal;
     else
         mgravefunc = mg_HybridMultiFractal;
@@ -523,15 +523,15 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres) {
             VecMulf(tmpvec, 1.0 / tex->noisesize);
 
             switch (tex->stype) {
-                case TEX_MFRACTAL:
-                case TEX_FBM:
+                case slg::blender::TEX_MULTIFRACTAL:
+                case slg::blender::TEX_FBM:
                     retval = mg_mFractalOrfBmTex(tex, tmpvec, texres);
                     break;
-                case TEX_RIDGEDMF:
-                case TEX_HYBRIDMF:
+                case slg::blender::TEX_RIDGED_MULTIFRACTAL:
+                case slg::blender::TEX_HYBRID_MULTIFRACTAL:
                     retval = mg_ridgedOrHybridMFTex(tex, tmpvec, texres);
                     break;
-                case TEX_HTERRAIN:
+                case slg::blender::TEX_HETERO_TERRAIN:
                     retval = mg_HTerrainTex(tex, tmpvec, texres);
                     break;
             }

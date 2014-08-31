@@ -52,6 +52,18 @@ public:
 		const ParamSet &tp) {
 		return new BlenderMusgraveTexture3D(tex2world, tp);
 	}
+
+	const short GetType() const { return tex.stype; }
+	const short GetNoiseB() const { return tex.noisebasis; }
+	const float GetLacunarity() const { return tex.mg_lacunarity; }
+	const float GetDimension() const { return tex.mg_H; }
+	const float GetOctaves() const { return tex.mg_octaves; }
+	const float GetOffset() const { return tex.mg_offset; }
+	const float GetGain() const { return tex.mg_gain; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

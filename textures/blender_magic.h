@@ -41,6 +41,12 @@ public:
 		const ParamSet &tp) {
 		return new BlenderMagicTexture3D(tex2world, tp);
 	}
+
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const float GetTurbulence() const { return tex.turbul; }
+	const float GetNoiseDepth() const { return tex.noisedepth; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

@@ -51,6 +51,19 @@ public:
 		const ParamSet &tp) {
 		return new BlenderVoronoiTexture3D(tex2world, tp);
 	}
+
+	const short GetDistanceMetric() const { return tex.vn_distm; }
+	const float GetWeight1() const { return tex.vn_w1; }
+	const float GetWeight2() const { return tex.vn_w2; }
+	const float GetWeight3() const { return tex.vn_w3; }
+	const float GetWeight4() const { return tex.vn_w4; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const float GetExponent() const { return tex.vn_mexp; }
+
+
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

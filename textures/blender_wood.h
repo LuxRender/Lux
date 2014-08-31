@@ -54,7 +54,8 @@ public:
 
 	const float GetBright() const { return tex.bright; }
 	const float GetContrast() const { return tex.contrast; }
-	const float GetNoiseT() const { return tex.noisetype; }
+	const short GetNoiseT() const { return tex.noisetype; }
+	const short GetNoiseB() const { return tex.noisebasis; }
 	const float GetNoiseSize() const { return tex.noisesize; }
 	const float GetTurbulence() const { return tex.turbul; }
 	const short GetType() const { return tex.stype; }

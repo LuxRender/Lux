@@ -71,14 +71,14 @@ static short GetValue(const mapstsh &m, const string &type, const string &name)
 }
 
 static const mapstsh::value_type blendTypeInit[8] = {
-	mapstsh::value_type("", TEX_LIN),
-	mapstsh::value_type("lin", TEX_LIN),
-	mapstsh::value_type("quad", TEX_QUAD),
-	mapstsh::value_type("ease", TEX_EASE),
-	mapstsh::value_type("diag", TEX_DIAG),
-	mapstsh::value_type("sphere", TEX_SPHERE),
-	mapstsh::value_type("halo", TEX_HALO),
-	mapstsh::value_type("radial", TEX_RAD)
+	mapstsh::value_type("", slg::blender::TEX_LIN),
+	mapstsh::value_type("lin", slg::blender::TEX_LIN),
+	mapstsh::value_type("quad", slg::blender::TEX_QUAD),
+	mapstsh::value_type("ease", slg::blender::TEX_EASE),
+	mapstsh::value_type("diag", slg::blender::TEX_DIAG),
+	mapstsh::value_type("sphere", slg::blender::TEX_SPHERE),
+	mapstsh::value_type("halo", slg::blender::TEX_HALO),
+	mapstsh::value_type("radial", slg::blender::TEX_RAD)
 };
 static const mapstsh blendType(blendTypeInit, blendTypeInit + 8);
 short BlenderTexture3D::GetBlendType(const string &name)
@@ -98,10 +98,10 @@ short BlenderTexture3D::GetCloudType(const string &name)
 }
 
 static const mapstsh::value_type marbleTypeInit[4] = {
-	mapstsh::value_type("", TEX_SOFT),
-	mapstsh::value_type("soft", TEX_SOFT),
-	mapstsh::value_type("sharp", TEX_SHARP),
-	mapstsh::value_type("sharper", TEX_SHARPER)
+	mapstsh::value_type("", slg::blender::TEX_SOFT),
+	mapstsh::value_type("soft", slg::blender::TEX_SOFT),
+	mapstsh::value_type("sharp", slg::blender::TEX_SHARP),
+	mapstsh::value_type("sharper", slg::blender::TEX_SHARPER)
 };
 static const mapstsh marbleType(marbleTypeInit, marbleTypeInit + 4);
 short BlenderTexture3D::GetMarbleType(const string &name)
@@ -110,12 +110,12 @@ short BlenderTexture3D::GetMarbleType(const string &name)
 }
 
 static const mapstsh::value_type musgraveTypeInit[6] = {
-	mapstsh::value_type("", TEX_MFRACTAL),
-	mapstsh::value_type("multifractal", TEX_MFRACTAL),
-	mapstsh::value_type("ridged_multifractal", TEX_RIDGEDMF),
-	mapstsh::value_type("hybrid_multifractal", TEX_HYBRIDMF),
-	mapstsh::value_type("hetero_terrain", TEX_HTERRAIN),
-	mapstsh::value_type("fbm", TEX_FBM)
+	mapstsh::value_type("", slg::blender::TEX_MULTIFRACTAL),
+	mapstsh::value_type("multifractal", slg::blender::TEX_MULTIFRACTAL),
+	mapstsh::value_type("ridged_multifractal", slg::blender::TEX_RIDGED_MULTIFRACTAL),
+	mapstsh::value_type("hybrid_multifractal", slg::blender::TEX_HYBRID_MULTIFRACTAL),
+	mapstsh::value_type("hetero_terrain", slg::blender::TEX_HETERO_TERRAIN),
+	mapstsh::value_type("fbm", slg::blender::TEX_FBM)
 };
 static const mapstsh musgraveType(musgraveTypeInit, musgraveTypeInit + 6);
 short BlenderTexture3D::GetMusgraveType(const string &name)
@@ -124,10 +124,10 @@ short BlenderTexture3D::GetMusgraveType(const string &name)
 }
 
 static const mapstsh::value_type stucciTypeInit[4] = {
-	mapstsh::value_type("", TEX_PLASTIC),
-	mapstsh::value_type("plastic", TEX_PLASTIC),
-	mapstsh::value_type("wall_in", TEX_WALLIN),
-	mapstsh::value_type("wall_out", TEX_WALLOUT)
+	mapstsh::value_type("", slg::blender::TEX_PLASTIC),
+	mapstsh::value_type("plastic", slg::blender::TEX_PLASTIC),
+	mapstsh::value_type("wall_in", slg::blender::TEX_WALL_IN),
+	mapstsh::value_type("wall_out", slg::blender::TEX_WALL_OUT)
 };
 static const mapstsh stucciType(stucciTypeInit, stucciTypeInit + 4);
 short BlenderTexture3D::GetStucciType(const string &name)
@@ -136,14 +136,14 @@ short BlenderTexture3D::GetStucciType(const string &name)
 }
 
 static const mapstsh::value_type voronoiTypeInit[8] = {
-	mapstsh::value_type("", ACTUAL_DISTANCE),
-	mapstsh::value_type("actual_distance", ACTUAL_DISTANCE),
-	mapstsh::value_type("distance_squared", DISTANCE_SQUARED),
-	mapstsh::value_type("manhattan", MANHATTAN),
-	mapstsh::value_type("chebychev", CHEBYCHEV),
-	mapstsh::value_type("minkovsky_half", MINKOWSKI_HALF),
-	mapstsh::value_type("minkovsky_four", MINKOWSKI_FOUR),
-	mapstsh::value_type("minkovsky", MINKOWSKI)
+	mapstsh::value_type("", slg::blender::ACTUAL_DISTANCE),
+	mapstsh::value_type("actual_distance", slg::blender::ACTUAL_DISTANCE),
+	mapstsh::value_type("distance_squared", slg::blender::DISTANCE_SQUARED),
+	mapstsh::value_type("manhattan", slg::blender::MANHATTAN),
+	mapstsh::value_type("chebychev", slg::blender::CHEBYCHEV),
+	mapstsh::value_type("minkovsky_half", slg::blender::MINKOWSKI_HALF),
+	mapstsh::value_type("minkovsky_four", slg::blender::MINKOWSKI_FOUR),
+	mapstsh::value_type("minkovsky", slg::blender::MINKOWSKI)
 };
 static const mapstsh voronoiType(voronoiTypeInit, voronoiTypeInit + 8);
 short BlenderTexture3D::GetVoronoiType(const string &name)
@@ -152,11 +152,11 @@ short BlenderTexture3D::GetVoronoiType(const string &name)
 }
 
 static const mapstsh::value_type woodTypeInit[5] = {
-	mapstsh::value_type("", TEX_BAND),
-	mapstsh::value_type("bands", TEX_BAND),
-	mapstsh::value_type("rings", TEX_RING),
-	mapstsh::value_type("bandnoise", TEX_BANDNOISE),
-	mapstsh::value_type("ringnoise", TEX_RINGNOISE)
+	mapstsh::value_type("", slg::blender::BANDS),
+	mapstsh::value_type("bands", slg::blender::BANDS),
+	mapstsh::value_type("rings", slg::blender::RINGS),
+	mapstsh::value_type("bandnoise", slg::blender::BANDNOISE),
+	mapstsh::value_type("ringnoise", slg::blender::RINGNOISE)
 };
 static const mapstsh woodType(woodTypeInit, woodTypeInit + 5);
 short BlenderTexture3D::GetWoodType(const string &name)
@@ -176,17 +176,17 @@ short BlenderTexture3D::GetNoiseType(const string &name)
 }
 
 static const mapstsh::value_type noiseBasisInit[11] = {
-	mapstsh::value_type("", BLENDER_ORIGINAL),
-	mapstsh::value_type("blender_original", BLENDER_ORIGINAL),
-	mapstsh::value_type("original_perlin", ORIGINAL_PERLIN),
-	mapstsh::value_type("improved_perlin", IMPROVED_PERLIN),
-	mapstsh::value_type("voronoi_f1", VORONOI_F1),
-	mapstsh::value_type("voronoi_f2", VORONOI_F2),
-	mapstsh::value_type("voronoi_f3", VORONOI_F3),
-	mapstsh::value_type("voronoi_f4", VORONOI_F4),
-	mapstsh::value_type("voronoi_f2_f1", VORONOI_F2_F1),
-	mapstsh::value_type("voronoi_crackle", VORONOI_CRACKLE),
-	mapstsh::value_type("cell_noise", CELL_NOISE)
+	mapstsh::value_type("", slg::blender::BLENDER_ORIGINAL),
+	mapstsh::value_type("blender_original", slg::blender::BLENDER_ORIGINAL),
+	mapstsh::value_type("original_perlin", slg::blender::ORIGINAL_PERLIN),
+	mapstsh::value_type("improved_perlin", slg::blender::IMPROVED_PERLIN),
+	mapstsh::value_type("voronoi_f1", slg::blender::VORONOI_F1),
+	mapstsh::value_type("voronoi_f2", slg::blender::VORONOI_F2),
+	mapstsh::value_type("voronoi_f3", slg::blender::VORONOI_F3),
+	mapstsh::value_type("voronoi_f4", slg::blender::VORONOI_F4),
+	mapstsh::value_type("voronoi_f2_f1", slg::blender::VORONOI_F2_F1),
+	mapstsh::value_type("voronoi_crackle", slg::blender::VORONOI_CRACKLE),
+	mapstsh::value_type("cell_noise", slg::blender::CELL_NOISE)
 };
 static const mapstsh noiseBasis(noiseBasisInit, noiseBasisInit + 11);
 short BlenderTexture3D::GetNoiseBasis(const string &name)
@@ -195,10 +195,10 @@ short BlenderTexture3D::GetNoiseBasis(const string &name)
 }
 
 static const mapstsh::value_type noiseShapeInit[4] = {
-	mapstsh::value_type("", TEX_SIN),
-	mapstsh::value_type("sin", TEX_SIN),
-	mapstsh::value_type("saw", TEX_SAW),
-	mapstsh::value_type("tri", TEX_TRI)
+	mapstsh::value_type("", slg::blender::TEX_SIN),
+	mapstsh::value_type("sin", slg::blender::TEX_SIN),
+	mapstsh::value_type("saw", slg::blender::TEX_SAW),
+	mapstsh::value_type("tri", slg::blender::TEX_TRI)
 };
 static const mapstsh noiseShape(noiseShapeInit, noiseShapeInit + 4);
 short BlenderTexture3D::GetNoiseShape(const string &name)

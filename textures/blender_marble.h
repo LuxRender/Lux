@@ -52,6 +52,16 @@ public:
 		const ParamSet &tp) {
 		return new BlenderMarbleTexture3D(tex2world, tp);
 	}
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const short GetType() const { return tex.stype; }
+	const float GetNoiseT() const { return tex.noisetype; }
+	const short GetNoiseB() const { return tex.noisebasis; }
+	const short GetNoiseB2() const { return tex.noisebasis2; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const int GetNoiseDepth() const { return tex.noisedepth; };		
+	const float GetTurbulence() const { return tex.turbul; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

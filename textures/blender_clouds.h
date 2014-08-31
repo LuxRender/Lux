@@ -51,9 +51,10 @@ public:
 	}
 	const float GetBright() const { return tex.bright; }
 	const float GetContrast() const { return tex.contrast; }
+	const short GetNoiseB() const { return tex.noisebasis; }
 	const float GetNoiseSize() const { return tex.noisesize; }
 	const float GetNoiseDepth() const { return tex.noisedepth; }
-	const float GetNoiseT() const { return tex.noisetype; }
+	const short GetNoiseT() const { return tex.noisetype; }
 	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 

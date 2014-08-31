@@ -47,6 +47,15 @@ public:
 		const ParamSet &tp) {
 		return new BlenderStucciTexture3D(tex2world, tp);
 	}
+
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const short GetNoiseT() const { return tex.noisetype; }
+	const float GetNoiseSize() const { return tex.noisesize; }
+	const float GetTurbulence() const { return tex.turbul; }
+	const short GetType() const { return tex.stype; }
+	const short GetNoiseB() const { return tex.noisebasis; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

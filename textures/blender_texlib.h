@@ -68,7 +68,7 @@ typedef struct Tex {
     /* newnoise: musgrave parameters */
     float mg_H, mg_lacunarity, mg_octaves, mg_offset, mg_gain;
 
-    /* newnoise: distorted noise amount, musgrave & voronoi ouput scale */
+    /* newnoise: distorted noise amount, musgrave & voronoi output scale */
     float dist_amount, ns_outscale;
 
     /* newnoise: voronoi nearest neighbour weights, minkovsky exponent, distance metric & color type */
@@ -123,12 +123,13 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_DISTNOISE	13
 
 /* musgrave stype */
+/*
 #define TEX_MFRACTAL		0
 #define TEX_RIDGEDMF		1
 #define TEX_HYBRIDMF		2
 #define TEX_FBM				3
 #define TEX_HTERRAIN		4
-
+*/
 /* newnoise: noisebasis 1 & 2 */
 /*
 #define TEX_BLENDER			0
@@ -192,28 +193,28 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 /* noisetype */
 #define TEX_NOISESOFT	0
 #define TEX_NOISEPERL	1
-
-/* tex->noisebasis2 in texture.c - wood waveforms */
+/*
+// tex->noisebasis2 in texture.c - wood waveforms
 #define TEX_SIN			0
 #define TEX_SAW			1
 #define TEX_TRI			2
 
-/* tex->stype in texture.c - wood types */
+// tex->stype in texture.c - wood types
 #define TEX_BAND		0
 #define TEX_RING		1
 #define TEX_BANDNOISE	2
 #define TEX_RINGNOISE	3
-
+*/
 /* tex->stype in texture.c - cloud types */
 #define TEX_DEFAULT		0
 #define TEX_COLOR		1
-
-/* tex->stype in texture.c - marble types */
+/*
+// tex->stype in texture.c - marble types 
 #define TEX_SOFT		0
 #define TEX_SHARP		1
 #define TEX_SHARPER		2
 
-/* tex->stype in texture.c - blend types */
+// tex->stype in texture.c - blend types 
 #define TEX_LIN			0
 #define TEX_QUAD		1
 #define TEX_EASE		2
@@ -222,11 +223,11 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_HALO		5
 #define TEX_RAD			6
 
-/* tex->stype in texture.c - stucci types */
+// tex->stype in texture.c - stucci types 
 #define TEX_PLASTIC		0
 #define TEX_WALLIN		1
 #define TEX_WALLOUT		2
-
+*/
 /* tex->stype in texture.c - voronoi types */
 #define TEX_INTENSITY	0
 #define TEX_COL1		1

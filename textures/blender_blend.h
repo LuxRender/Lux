@@ -41,6 +41,11 @@ public:
 		const ParamSet &tp) {
 		return new BlenderBlendTexture3D(tex2world, tp);
 	}
+	const short GetType() const { return tex.stype; }
+	const short GetDirection() const { return tex.flag; }
+	const float GetBright() const { return tex.bright; }
+	const float GetContrast() const { return tex.contrast; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 };
 
 } // namespace lux

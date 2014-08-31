@@ -106,7 +106,16 @@
 #include "textures/uv.h"
 #include "textures/band.h"
 #include "textures/hitpointcolor.h"
+#include "slg/sdl/blender_noiselib.h"
+#include "slg/sdl/blender_texture.h"
+#include "textures/blender_blend.h"
 #include "textures/blender_clouds.h"
+#include "textures/blender_distortednoise.h"
+#include "textures/blender_magic.h"
+#include "textures/blender_marble.h"
+#include "textures/blender_musgrave.h"
+#include "textures/blender_stucci.h"
+#include "textures/blender_voronoi.h"
 #include "textures/blender_wood.h"
 
 #include "volumes/clearvolume.h"
@@ -623,54 +632,511 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("windy") <<
 					GetLuxCoreTexMapping(windy->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderBlendTexture3D *>(tex)) {
+					const BlenderBlendTexture3D *blend = dynamic_cast<const BlenderBlendTexture3D *>(tex);	
+					std::string progressiontype;
+					std::string direction = "vertical";
+
+					if(!blend->GetDirection()) direction = "horizontal";
+
+					switch(blend->GetType()) {
+						default:
+						case slg::blender::TEX_LIN:
+							progressiontype = "linear";
+							break;
+						case slg::blender::TEX_QUAD:
+							progressiontype = "quadratic";
+							break;
+						case slg::blender::TEX_EASE:
+							progressiontype = "easing";
+							break;
+						case slg::blender::TEX_DIAG:
+							progressiontype = "diagonal";
+							break;
+						case slg::blender::TEX_SPHERE:
+							progressiontype = "spherical";
+							break;
+						case slg::blender::TEX_HALO:
+							progressiontype = "halo";
+							break;
+						case slg::blender::TEX_RAD:
+							progressiontype = "radial";
+							break;
+					}
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_blend") <<
+					luxrays::Property("scene.textures." + texName + ".progressiontype")(progressiontype) <<
+					luxrays::Property("scene.textures." + texName + ".direction")(direction) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(blend->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(blend->GetContrast())) <<
+					GetLuxCoreTexMapping(blend->GetTextureMapping3D(), "scene.textures." + texName);
+
 		} else if (dynamic_cast<const BlenderCloudsTexture3D *>(tex)) {
 			const BlenderCloudsTexture3D *clouds = dynamic_cast<const BlenderCloudsTexture3D *>(tex);
 					std::string noisetype= "soft_noise";
+					std::string noisebasis;
 					if(clouds->GetNoiseT()) noisetype = "hard_noise";
+
+					switch((slg::blender::BlenderNoiseBasis) clouds->GetNoiseB()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
 
 					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_clouds") <<
 					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis")(noisebasis) <<
 					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(clouds->GetNoiseSize())) <<
 					luxrays::Property("scene.textures." + texName + ".noisedepth")(ToString(clouds->GetNoiseDepth())) <<
 					luxrays::Property("scene.textures." + texName + ".bright")(ToString(clouds->GetBright())) <<
 					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(clouds->GetContrast())) <<
 					GetLuxCoreTexMapping(clouds->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderDistortedNoiseTexture3D *>(tex)) {
+			const BlenderDistortedNoiseTexture3D *distnoise = dynamic_cast<const BlenderDistortedNoiseTexture3D *>(tex);
+					std::string noisebasis, noisebasis2;
+
+					switch((slg::blender::BlenderNoiseBasis) distnoise->GetNoiseB()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
+
+					switch((slg::blender::BlenderNoiseBasis) distnoise->GetNoiseB2()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis2 = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis2 = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis2 = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis2 = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis2 = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis2 = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis2 = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis2 = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis2 = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis2 = "cell_noise";
+							break;
+					}
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_distortednoise") <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis")(noisebasis) <<
+					luxrays::Property("scene.textures." + texName + ".noisedistortion")(noisebasis2) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(distnoise->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".distortion")(ToString(distnoise->GetDistAmount())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(distnoise->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(distnoise->GetContrast())) <<
+					GetLuxCoreTexMapping(distnoise->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderMagicTexture3D *>(tex)) {
+			const BlenderMagicTexture3D *magic = dynamic_cast<const BlenderMagicTexture3D *>(tex);
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_magic") <<
+					luxrays::Property("scene.textures." + texName + ".noisedepth")(ToString(magic->GetNoiseDepth())) <<
+					luxrays::Property("scene.textures." + texName + ".turbulence")(ToString(magic->GetTurbulence())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(magic->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(magic->GetContrast())) <<
+					GetLuxCoreTexMapping(magic->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderMarbleTexture3D *>(tex)) {
+			const BlenderMarbleTexture3D *marble = dynamic_cast<const BlenderMarbleTexture3D *>(tex);
+					std::string type, noisebasis, noisebasis2;
+
+					switch((slg::blender::BlenderMarbleType) marble->GetType()) {
+						default:
+						case slg::blender::TEX_SOFT:
+							type = "soft";
+							break;						
+						case slg::blender::TEX_SHARP:
+							type = "sharp";
+							break;
+						case slg::blender::TEX_SHARPER:
+							type = "sharper";
+							break;
+					}
+
+					switch((slg::blender::BlenderNoiseBasis) marble->GetNoiseB()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
+
+					switch((slg::blender::BlenderNoiseBase) marble->GetNoiseB2()) {
+						default:
+						case slg::blender::TEX_SIN:
+							noisebasis2 = "sin";
+							break;
+						case slg::blender::TEX_SAW:
+							noisebasis2 = "saw";
+							break;
+						case slg::blender::TEX_TRI:
+							noisebasis2 = "tri";
+							break;
+					}
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_marble") <<
+					luxrays::Property("scene.textures." + texName + ".marbletype")(type) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis")(noisebasis) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis2")(noisebasis2) <<
+					luxrays::Property("scene.textures." + texName + ".noisedepth")(ToString(marble->GetNoiseDepth())) <<
+					luxrays::Property("scene.textures." + texName + ".turbulence")(ToString(marble->GetTurbulence())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(marble->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(marble->GetContrast())) <<
+					GetLuxCoreTexMapping(marble->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderMusgraveTexture3D *>(tex)) {
+			const BlenderMusgraveTexture3D *musgrave = dynamic_cast<const BlenderMusgraveTexture3D *>(tex);
+					std::string type, noisebasis;
+
+					switch((slg::blender::BlenderNoiseBasis) musgrave->GetNoiseB()) {
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
+					switch((slg::blender::BlenderMusgraveType) musgrave->GetType()) {				
+						default:
+						case slg::blender::TEX_MULTIFRACTAL:
+							type = "multifractal";
+							break;
+						case slg::blender::TEX_RIDGED_MULTIFRACTAL:
+							type = "ridged_multifractal";
+							break;
+						case slg::blender::TEX_HYBRID_MULTIFRACTAL:
+							type = "hybrid_multifractal";
+							break;
+						case slg::blender::TEX_FBM:
+							type = "fBM";
+							break;
+						case slg::blender::TEX_HETERO_TERRAIN:
+							type = "hetero_terrain";
+							break;
+					};
+
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_musgrave") <<
+					luxrays::Property("scene.textures." + texName + ".musgravetype")(type) <<
+					luxrays::Property("scene.textures." + texName + ".dimension")(ToString(musgrave->GetDimension())) <<
+//					luxrays::Property("scene.textures." + texName + ".intensity")(ToString(musgrave->GetIntensity())) <<
+					luxrays::Property("scene.textures." + texName + ".lacunarity")(ToString(musgrave->GetLacunarity())) <<
+					luxrays::Property("scene.textures." + texName + ".offset")(ToString(musgrave->GetOffset())) <<
+					luxrays::Property("scene.textures." + texName + ".gain")(ToString(musgrave->GetGain())) <<
+					luxrays::Property("scene.textures." + texName + ".octaves")(ToString(musgrave->GetOctaves())) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis")(noisebasis) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(musgrave->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(musgrave->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(musgrave->GetContrast())) <<
+					GetLuxCoreTexMapping(musgrave->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderStucciTexture3D *>(tex)) {
+			const BlenderStucciTexture3D *stucci = dynamic_cast<const BlenderStucciTexture3D *>(tex);
+					std::string type, noisebasis;
+
+					switch((slg::blender::BlenderNoiseBasis) stucci->GetNoiseB()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
+
+					switch((slg::blender::BlenderStucciType) stucci->GetType()) {
+						default:
+						case slg::blender::TEX_PLASTIC:
+							type = "plastic";
+							break;
+						case slg::blender::TEX_WALL_IN:
+							type = "wall_in";
+							break;
+						case slg::blender::TEX_WALL_OUT:
+							type = "wall_out";
+							break;
+					}
+
+					switch((slg::blender::BlenderStucciType) stucci->GetNoiseT()) {
+						default:
+						case slg::blender::TEX_PLASTIC:
+							type = "plastic";
+							break;
+						case slg::blender::TEX_WALL_IN:
+							type = "wall_in";
+							break;
+						case slg::blender::TEX_WALL_OUT:
+							type = "wall_out";
+							break;
+					}
+					
+					std::string noisetype = "soft_noise";
+					if(stucci->GetNoiseT() ) noisetype = "hard_noise";
+
+					
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_stucci") <<
+					luxrays::Property("scene.textures." + texName + ".stuccitype")(type) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(stucci->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".turbulence")(ToString(stucci->GetTurbulence())) <<
+					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(stucci->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(stucci->GetContrast())) <<
+					GetLuxCoreTexMapping(stucci->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BlenderVoronoiTexture3D *>(tex)) {
+			const BlenderVoronoiTexture3D *voronoi = dynamic_cast<const BlenderVoronoiTexture3D *>(tex);
+					std::string distmetric;
+					switch((slg::blender::DistanceMetric) voronoi->GetDistanceMetric()) {
+						default:
+						case slg::blender::ACTUAL_DISTANCE:
+							distmetric = "actual_distance";
+							break;
+						case slg::blender::DISTANCE_SQUARED:
+							distmetric = "distance_squared";
+							break;
+						case slg::blender::MANHATTAN:
+							distmetric = "manhattan";
+							break;
+						case slg::blender::CHEBYCHEV:
+							distmetric = "chebychev";
+							break;
+						case slg::blender::MINKOWSKI_HALF:
+							distmetric = "minkowski_half";
+							break;
+						case slg::blender::MINKOWSKI_FOUR:
+							distmetric = "minkowski_four";
+							break;
+						case slg::blender::MINKOWSKI:
+							distmetric = "minkowski";
+							break;
+					}
+
+					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_voronoi") <<
+					luxrays::Property("scene.textures." + texName + ".distmetric")(distmetric) <<
+					luxrays::Property("scene.textures." + texName + ".noisesize")(ToString(voronoi->GetNoiseSize())) <<
+					luxrays::Property("scene.textures." + texName + ".w1")(ToString(voronoi->GetWeight1())) <<
+					luxrays::Property("scene.textures." + texName + ".w2")(ToString(voronoi->GetWeight2())) <<
+					luxrays::Property("scene.textures." + texName + ".w3")(ToString(voronoi->GetWeight3())) <<
+					luxrays::Property("scene.textures." + texName + ".w4")(ToString(voronoi->GetWeight4())) <<
+					luxrays::Property("scene.textures." + texName + ".bright")(ToString(voronoi->GetBright())) <<
+					luxrays::Property("scene.textures." + texName + ".contrast")(ToString(voronoi->GetContrast())) <<
+					GetLuxCoreTexMapping(voronoi->GetTextureMapping3D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const BlenderWoodTexture3D *>(tex)) {
 			const BlenderWoodTexture3D *wood = dynamic_cast<const BlenderWoodTexture3D *>(tex);
 					std::string woodtype = "";
+					std::string noisebasis = "";
+					std::string noisebasis2= "";
+
 					switch(wood->GetType()) {
 						default:
-						case 0:
+						case slg::blender::BANDS:
 							woodtype = "bands";
 							break;
-						case 1:
+						case slg::blender::RINGS:
 							woodtype = "rings";
 							break;
-						case 2:
+						case slg::blender::BANDNOISE:
 							woodtype = "bandnoise";
 							break;
-						case 3:
+						case slg::blender::RINGNOISE:
 							woodtype = "ringnoise";
 							break;
 					}					
 					
-					std::string noisebasis2= "";
 					switch(wood->GetNoiseBasis2()) {
 						default:
-						case 0:
+						case slg::blender::TEX_SIN:
 							noisebasis2 = "sin";
 							break;
-						case 1:
+						case slg::blender::TEX_SAW:
 							noisebasis2 = "saw";
 							break;
-						case 2:
+						case slg::blender::TEX_TRI:
 							noisebasis2 = "tri";
 							break;
 					}
+
+					switch((slg::blender::BlenderNoiseBasis) wood->GetNoiseB()) {
+						default:
+						case slg::blender::BLENDER_ORIGINAL:
+							noisebasis = "blender_original";
+							break;
+						case slg::blender::ORIGINAL_PERLIN:
+							noisebasis = "original_perlin";
+							break;
+						case slg::blender::IMPROVED_PERLIN:
+							noisebasis = "improved_perlin";
+							break;
+						case slg::blender::VORONOI_F1:
+							noisebasis = "voronoi_f1";
+							break;
+						case slg::blender::VORONOI_F2:
+							noisebasis = "voronoi_f2";
+							break;
+						case slg::blender::VORONOI_F3:
+							noisebasis = "voronoi_f3";
+							break;
+						case slg::blender::VORONOI_F4:
+							noisebasis = "voronoi_f4";
+							break;
+						case slg::blender::VORONOI_F2_F1:
+							noisebasis = "voronoi_f2_f1";
+							break;
+						case slg::blender::VORONOI_CRACKLE:
+							noisebasis = "voronoi_crackle";
+							break;
+						case slg::blender::CELL_NOISE:
+							noisebasis = "cell_noise";
+							break;
+					}
+
 					std::string noisetype= "soft_noise";
 					if(wood->GetNoiseT()) noisetype = "hard_noise";
 					texProps << luxrays::Property("scene.textures." + texName + ".type")("blender_wood") <<
 					luxrays::Property("scene.textures." + texName + ".woodtype")(woodtype) <<
+					luxrays::Property("scene.textures." + texName + ".noisebasis")(noisebasis) <<
 					luxrays::Property("scene.textures." + texName + ".noisebasis2")(noisebasis2) <<
 					luxrays::Property("scene.textures." + texName + ".noisetype")(noisetype) <<
 					luxrays::Property("scene.textures." + texName + ".bright")(ToString(wood->GetBright())) <<
@@ -738,7 +1204,8 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
 					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
 					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
-					"HitPointAlphaTexture, HitPointGreyTexture, BlenderCloudsTexture3D and BlenderWoodTexture3D"
+					"HitPointAlphaTexture, HitPointGreyTexture, BlenderBlendTexture3D, BlenderCloudsTexture3D, BlenderDistortedNoiseTexture3D, "
+					"BlenderMagicTexture3D, BlenderMarbleTexture3D, BlenderMusgraveTexture3D, BlenderVoronoiTexture3D and BlenderWoodTexture3D "
 					"(i.e. not " << ToClassName(tex) << ").";
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("constfloat1") <<
