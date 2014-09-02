@@ -33,7 +33,7 @@
 namespace lux
 {
 
-class QueryableRegistry
+class LUX_EXPORT QueryableRegistry
 {
 public:
 	void Insert(Queryable* object);
