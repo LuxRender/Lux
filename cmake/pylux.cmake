@@ -24,8 +24,8 @@
 IF(APPLE)
 	IF(OSX_OPTION_PYLUX)
 		# use Blender python libs for static compiling !
-		SET(PYTHON_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py33_uni_intel/libbf_python_ext.a ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py33_uni_intel/libbf_python.a)
-		SET(PYTHON_INCLUDE_PATH ${OSX_DEPENDENCY_ROOT}/include/Python3.3m)
+		SET(PYTHON_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py34_intel64/libbf_python_ext.a ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py34_intel64/libbf_python.a)
+		SET(PYTHON_INCLUDE_PATH ${OSX_DEPENDENCY_ROOT}/include/Python3.4m)
 		SET(PYTHONLIBS_FOUND ON)
 	ELSE(OSX_OPTION_PYLUX)
 		# compile pylux for genral purpose against Python framework
