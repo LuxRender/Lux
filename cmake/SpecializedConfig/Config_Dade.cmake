@@ -11,7 +11,7 @@ MESSAGE(STATUS "Using Dade Configuration settings")
 
 SET(LuxRays_HOME		"../luxrays")
 
-SET(OPENCL_SEARCH_PATH		"$ENV{ATISTREAMSDKROOT}")
+SET(OPENCL_SEARCH_PATH		"$ENV{AMDAPPSDKROOT}")
 SET(OPENCL_INCLUDE_DIR		"${OPENCL_SEARCH_PATH}/include")
 #SET(OPENCL_LIBRARYDIR		"${OPENCL_SEARCH_PATH}/lib/x86_64")
 set(OPENIMAGEIO_ROOT_DIR    "/home/david/projects/luxrender-dev/oiio-RB-1.3/dist/linux64")
