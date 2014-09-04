@@ -223,6 +223,8 @@ public:
 	 */
 	virtual Camera* Clone() const = 0;
 
+	const MotionSystem &GetMotionSystem() const { return CameraMotion; }
+	
 	// Camera Public Data
 	Film *film;
 	Transform CameraToWorld;

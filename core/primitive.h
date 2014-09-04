@@ -523,12 +523,12 @@ public:
 		return instance->Pdf(p, dgi) * factor;
 	}
 	virtual Transform GetLocalToWorld(float time) const {
-		return motionPath.Sample(time) * instance->GetLocalToWorld(time);
+		return Transform(motionPath.Sample(time)) * instance->GetLocalToWorld(time);
 	}
 
 	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
 	Material *GetMaterial() const { return material.get(); }
-	Transform GetTransform(const float t) const { return motionPath.Sample(t); }
+	const MotionSystem &GetMotionSystem() const { return motionPath; } 
 
 private:
 	// MotionPrimitive Private Data

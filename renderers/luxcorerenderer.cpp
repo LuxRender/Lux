@@ -1930,7 +1930,7 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, cons
 		mat = instance->GetMaterial();
 	} else
 	//--------------------------------------------------------------------------
-	// Check if it is an InstancePrimitive
+	// Check if it is a MotionPrimitive
 	//--------------------------------------------------------------------------
 	if (dynamic_cast<const MotionPrimitive *>(prim)) {
 		const MotionPrimitive *motionPrim = dynamic_cast<const MotionPrimitive *>(prim);
@@ -2500,10 +2500,20 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 						ToString(*mesh);
 					const string meshName = "Mesh-" + ToString(*mesh);
 
-					const luxrays::Properties createObjProps(
+					luxrays::Properties createObjProps(
 						luxrays::Property("scene.objects." + objName + ".ply")(meshName) <<
-						luxrays::Property("scene.objects." + objName + ".material")(matName) <<
-						luxrays::Property("scene.objects." + objName + ".transformation")(motionPrim->GetTransform(0.f).m));
+						luxrays::Property("scene.objects." + objName + ".material")(matName));
+					
+					const MotionSystem &ms = motionPrim->GetMotionSystem();
+					// Skip the first
+					for (u_int i = 1; i < ms.interpolatedTransforms.size(); ++i) {
+						createObjProps <<
+								luxrays::Property("scene.objects." + objName + ".motion." + ToString(i - 1) +
+									".time")(ms.interpolatedTransforms[i].startTime) <<
+								luxrays::Property("scene.objects." + objName + ".motion." + ToString(i - 1) +
+									".transformation")(ms.interpolatedTransforms[i].start.mInv);
+					}
+
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProps << "]";
 					lcScene->Parse(createObjProps);
 				}
@@ -2550,30 +2560,7 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 	// Setup the camera
 	//--------------------------------------------------------------------------
 
-	const Point orig(
-			(scene->camera)["position.x"].FloatValue(),
-			(scene->camera)["position.y"].FloatValue(),
-			(scene->camera)["position.z"].FloatValue());
-	const Point target= orig + Vector(
-			(scene->camera)["normal.x"].FloatValue(),
-			(scene->camera)["normal.y"].FloatValue(),
-			(scene->camera)["normal.z"].FloatValue());
-	Vector up(
-			(scene->camera)["up.x"].FloatValue(),
-			(scene->camera)["up.y"].FloatValue(),
-			(scene->camera)["up.z"].FloatValue());
-	if (renderEngineType == "FILESAVER") {
-		// I snap the up vector to the Z axis so moving inside LuxVR
-		// is a lot easier and work as expected
-		up.x = 0.f;
-		up.y = 0.f;
-		up.z = 1.f;
-	}
-
-	const luxrays::Properties createCameraProps(
-		luxrays::Property("scene.camera.lookat.orig")(orig) <<
-		luxrays::Property("scene.camera.lookat.target")(target) <<
-		luxrays::Property("scene.camera.up")(up) <<
+	luxrays::Properties createCameraProps(
 		luxrays::Property("scene.camera.screenwindow")(
 			(scene->camera)["ScreenWindow.0"].FloatValue(),
 			(scene->camera)["ScreenWindow.1"].FloatValue(),
@@ -2583,7 +2570,52 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 		luxrays::Property("scene.camera.lensradius")((scene->camera)["LensRadius"].FloatValue()) <<
 		luxrays::Property("scene.camera.focaldistance")((scene->camera)["FocalDistance"].FloatValue()) <<
 		luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
-		luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()));
+		luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
+		luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
+		luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()));
+
+	const MotionSystem &ms = scene->camera()->GetMotionSystem();
+	if (ms.interpolatedTransforms.size() > 1) {
+		// Camera motion blur
+
+		// Avoid to set scene.camera.lookat properties to tell LuxCore to use
+		// identity CameraToWorld transformation.
+
+		// Skip the first
+		for (u_int i = 1; i < ms.interpolatedTransforms.size(); ++i) {
+			createCameraProps <<
+					luxrays::Property("scene.camera.motion." + ToString(i - 1) +
+						".time")(ms.interpolatedTransforms[i].startTime) <<
+					luxrays::Property("scene.camera.motion." + ToString(i - 1) +
+						".transformation")(ms.interpolatedTransforms[i].start.mInv);
+		}
+	} else {
+		const Point orig(
+			(scene->camera)["position.x"].FloatValue(),
+			(scene->camera)["position.y"].FloatValue(),
+			(scene->camera)["position.z"].FloatValue());
+		const Point target= orig + Vector(
+				(scene->camera)["normal.x"].FloatValue(),
+				(scene->camera)["normal.y"].FloatValue(),
+				(scene->camera)["normal.z"].FloatValue());
+		Vector up(
+				(scene->camera)["up.x"].FloatValue(),
+				(scene->camera)["up.y"].FloatValue(),
+				(scene->camera)["up.z"].FloatValue());
+		if (renderEngineType == "FILESAVER") {
+			// I snap the up vector to the Z axis so moving inside LuxVR
+			// is a lot easier and work as expected
+			up.x = 0.f;
+			up.y = 0.f;
+			up.z = 1.f;
+		}
+
+		createCameraProps <<
+				luxrays::Property("scene.camera.lookat.orig")(orig) <<
+				luxrays::Property("scene.camera.lookat.target")(target) <<
+				luxrays::Property("scene.camera.up")(up);
+	}
+	
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera: [\n" << createCameraProps << "]";
 	lcScene->Parse(createCameraProps);
 }

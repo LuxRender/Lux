@@ -206,5 +206,5 @@ void MotionPrimitive::GetShadingInformation(const DifferentialGeometry &dgShadin
 
 BBox MotionPrimitive::WorldBound() const
 {
-	return motionPath.Bound(instance->WorldBound());
+	return motionPath.Bound(instance->WorldBound(), false);
 }
