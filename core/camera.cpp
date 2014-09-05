@@ -37,7 +37,7 @@ using namespace lux;
 Camera::Camera(const MotionSystem &w2c, float hither, float yon,
 	float sopen, float sclose, int sdist, Film *f) : CameraMotion(w2c)
 {
-	CameraToWorld = Inverse(CameraMotion.Sample(sopen));
+	CameraToWorld = Inverse(Transform(CameraMotion.Sample(sopen)));
 	ClipHither = hither;
 	ClipYon = yon;
 	ShutterOpen = sopen;
@@ -113,7 +113,7 @@ void Camera::SampleMotion(float time) {
 	if (CameraMotion.IsStatic())
 		return;
 
-	CameraToWorld = Inverse(CameraMotion.Sample(time));
+	CameraToWorld = Inverse(Transform(CameraMotion.Sample(time)));
 }
 
 float Camera::GetTime(float u1) const {

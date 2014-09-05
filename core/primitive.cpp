@@ -161,7 +161,7 @@ void InstancePrimitive::GetShadingInformation(const DifferentialGeometry &dgShad
 // MotionPrimitive Method Definitions
 bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
-	Transform InstanceToWorld = motionPath.Sample(r.time);
+	Transform InstanceToWorld = Transform(motionPath.Sample(r.time));
 
 	Ray ray(Inverse(InstanceToWorld) * r);
 	if (!instance->Intersect(ray, isect))
@@ -183,7 +183,7 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 
 bool MotionPrimitive::IntersectP(const Ray &r) const
 {
-	Transform InstanceToWorld = motionPath.Sample(r.time);
+	Transform InstanceToWorld =  Transform(motionPath.Sample(r.time));
 
 	return instance->IntersectP(Inverse(InstanceToWorld) * r);
 }
