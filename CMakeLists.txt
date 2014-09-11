@@ -151,7 +151,6 @@ IF(APPLE)
     endif()
 	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target
 	#SET(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES) #  -dead_strip, disabled for clang 3.4 lto bug
-	SET(UNEXPORTED_SYMBOLS_COMMAND -unexported_symbols_list ${CMAKE_SOURCE_DIR}/osx_locals.map) # Project-relative path to a file that lists the symbols not to export
 	if(OSX_OPTION_UNIVERSAL)
 		set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO)
 	endif(OSX_OPTION_UNIVERSAL)
