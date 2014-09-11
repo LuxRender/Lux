@@ -32,10 +32,7 @@ using namespace lux;
 void Lambertian::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	// VS2013 generates invalid code for the following line. Do it in two steps instead.
-	//*f_ += R * (INV_PI * fabsf(wo.z));
-	luxrays::SWCSpectrum c = R * INV_PI * fabsf(wo.z);
-	*f_ += c;
+	*f_ += R * (INV_PI * fabsf(wo.z));
 }
 
 bool Lambertian::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
