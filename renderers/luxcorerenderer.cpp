@@ -2807,8 +2807,8 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 		cfgProps << luxrays::Property("film.filter.type")("MITCHELL");
 	}
 
-	cfgProps << luxrays::Property("film.filter.xwidth")(filter->xWidth * .5f);
-	cfgProps << luxrays::Property("film.filter.ywidth")(filter->yWidth * .5f);
+	cfgProps << luxrays::Property("film.filter.xwidth")(filter->xWidth);
+	cfgProps << luxrays::Property("film.filter.ywidth")(filter->yWidth);
 
 	//--------------------------------------------------------------------------
 
