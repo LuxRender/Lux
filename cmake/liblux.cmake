@@ -900,7 +900,7 @@ IF(APPLE)
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_DYLIB_COMPATIBILITY_VERSION 2.0.0)
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_DYLIB_CURRENT_VERSION 2.0.0)
 	else()
-		SET_TARGET_PROPERTIES(luxshared PROPERTIES LINK_FLAGS "-compatibility_version 2.0.0 -current_version 2.0.0")
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES LINK_FLAGS "-compatibility_version 2.0.0 -current_version 2.0.0")
 		ADD_CUSTOM_COMMAND(
 			TARGET luxShared POST_BUILD
 			COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
