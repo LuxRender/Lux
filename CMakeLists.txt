@@ -24,8 +24,14 @@ IF(MSVC)
 	cmake_minimum_required(VERSION 2.8)
 	cmake_policy(VERSION 2.8)
 ELSEIF(APPLE)
-	cmake_minimum_required(VERSION 2.8.3) # new requirement for simplification
-	cmake_policy(VERSION 2.8.3)
+	if(${CMAKE_VERSION} VERSION_LESS 3.0)
+		cmake_minimum_required(VERSION 2.8.3) # new requirement for simplification
+		cmake_policy(VERSION 2.8.3)
+	else()
+		# keep until CMake-3.0 is min requirement
+		cmake_policy(VERSION 3.0.0)
+		cmake_policy(SET CMP0043 OLD)
+	endif()
 ELSE(MSVC)
 	cmake_minimum_required(VERSION 2.4)
 ENDIF(MSVC)    
@@ -84,6 +90,7 @@ IF(APPLE)
 
 	if(${MAC_SYS} MATCHES 14)
 		set(OSX_SYSTEM 10.10)
+		cmake_minimum_required(VERSION 3.0.0) # throw an error here, older cmake cannot handle 2 digit subversion !
 	elseif(${MAC_SYS} MATCHES 13)
 		set(OSX_SYSTEM 10.9)
 	elseif(${MAC_SYS} MATCHES 12)
@@ -114,7 +121,11 @@ IF(APPLE)
 	########## OSX_OPTIONS ###########
 	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
 	option(OSX_OPTION_CLANG "Build with CLANG compiler ( XCODE4 )" ON)
-	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" OFF)
+	if(${CMAKE_C_COMPILER_ID} MATCHES "Clang" AND NOT ${CMAKE_C_COMPILER_VERSION} LESS 5.0)
+		option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" ON)
+	else()
+		option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" OFF)
+	endif()
 	option(OSX_OPTION_USE_MAX_SSE "Build with highest SSE available on machine ( SSE_${HAS_SSE} )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
 	###################################
@@ -150,7 +161,9 @@ IF(APPLE)
         SET(CMAKE_XCODE_ATTRIBUTE_ARCHS $(NATIVE_ARCH_ACTUAL))
     endif()
 	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target
-	#SET(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES) #  -dead_strip, disabled for clang 3.4 lto bug
+	if(${CMAKE_C_COMPILER_ID} MATCHES "Clang" AND NOT ${CMAKE_C_COMPILER_VERSION} LESS 6.0) # Apple LLVM version 6.0 (clang-600.0.54) (based on LLVM 3.5svn)
+		SET(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES) #  -dead_strip, disabled for clang 3.4 lto bug
+	endif()
 	if(OSX_OPTION_UNIVERSAL)
 		set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO)
 	endif(OSX_OPTION_UNIVERSAL)
