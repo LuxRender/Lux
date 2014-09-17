@@ -28,8 +28,10 @@
 #include <string>
 #include <vector>
 
+#ifndef Q_MOC_RUN
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
+#endif
 
 #include "api.h"
 
