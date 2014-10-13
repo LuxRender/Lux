@@ -61,6 +61,8 @@ public:
 		return new PerspectiveCamera(*this);
 	}
 
+	bool HasAutoFocus() const { return autoFocus; }
+
 	static Camera *CreateCamera(const MotionSystem &world2cam,
 		const ParamSet &params, Film *film);
 

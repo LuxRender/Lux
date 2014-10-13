@@ -2552,8 +2552,8 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 
 void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
-	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
-	if (!perpCamera)
+	PerspectiveCamera *perspCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
+	if (!perspCamera)
 		throw std::runtime_error("LuxCoreRenderer supports only PerspectiveCamera");
 
 	//--------------------------------------------------------------------------
@@ -2572,7 +2572,8 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 		luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
 		luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
 		luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
-		luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()));
+		luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()) <<
+		luxrays::Property("scene.camera.autofocus.enable")(perspCamera->HasAutoFocus() ? 1 : 0));
 
 	const MotionSystem &ms = scene->camera()->GetMotionSystem();
 	if (ms.interpolatedTransforms.size() > 1) {
