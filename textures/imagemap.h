@@ -142,6 +142,8 @@ public:
 		mipmap->GetMinMaxFloat(channel, minValue, maxValue);
 	}
 
+	Channel GetChannel() const { return channel; }
+	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:

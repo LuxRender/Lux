@@ -237,7 +237,7 @@ template <typename T, u_int channels> string GetLuxCoreImageMapNameImpl(luxcore:
 			const TextureColor<T, channels> &col = (*map)(x, y);
 
 			for (u_int i = 0; i < channels; ++i)
-				*mapPtr++ = powf(col.c[i] / 255.f, gamma);
+				*mapPtr++ = powf(col.c[i] / std::numeric_limits<T>::max(), gamma);
 		}
 	}
 
@@ -337,6 +337,36 @@ template <> string GetLuxCoreImageMapNameImpl<float, 4>(luxcore::Scene *lcScene,
 }
 
 //------------------------------------------------------------------------------
+// Channels: all types
+//------------------------------------------------------------------------------
+
+template <typename T, u_int channels> string GetLuxCoreFloatImageMapNameImpl(luxcore::Scene *lcScene,
+		const MIPMapFastImpl<TextureColor<T, channels> > *mipMap,
+		const float gamma, const Channel selectionType) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName() + "_FLOAT_" + ToString(selectionType);
+	if (lcScene->IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<T, channels> > *map = mipMap->GetSingleMap();
+
+	float *lcMap = new float[map->uSize() * map->vSize()];
+	float *mapPtr = lcMap;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<T, channels> &col = (*map)(x, y);
+
+			*mapPtr++ = powf(col.GetFloat(selectionType), gamma);
+		}
+	}
+
+	lcScene->DefineImageMap(imageMapName, lcMap, gamma, 1,
+			(u_int)map->uSize(), (u_int)map->vSize());
+
+	return imageMapName;
+}
+
+//------------------------------------------------------------------------------
 
 static string GetLuxCoreDefaultImageMap(luxcore::Scene *lcScene) {
 	if (!lcScene->IsImageMapDefined("imagemap_default")) {
@@ -380,6 +410,46 @@ static string GetLuxCoreImageMapName(luxcore::Scene *lcScene,
 		return GetLuxCoreImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
 		return GetLuxCoreImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
+	else {
+		// Unsupported type
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float texture maps (i.e. not " <<
+					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
+		return GetLuxCoreDefaultImageMap(lcScene);
+	}
+}
+
+static string GetLuxCoreFloatImageMapName(luxcore::Scene *lcScene,
+		const MIPMap *mipMap, const float gamma, const Channel selectionType) {
+	if (!mipMap)
+		return GetLuxCoreDefaultImageMap(lcScene);
+
+	//--------------------------------------------------------------------------
+	// Channels: unsigned char
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 1> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned char, 1> > *)mipMap, gamma, selectionType);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 3> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned char, 3> > *)mipMap, gamma, selectionType);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 4> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned char, 4> > *)mipMap, gamma, selectionType);
+	//--------------------------------------------------------------------------
+	// Channels: unsigned short
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 1> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned short, 1> > *)mipMap, gamma, selectionType);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 3> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned short, 3> > *)mipMap, gamma, selectionType);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 4> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<unsigned short, 4> > *)mipMap, gamma, selectionType);
+	//--------------------------------------------------------------------------
+	// Channels: float
+	//--------------------------------------------------------------------------
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 1> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 1> > *)mipMap, gamma, selectionType);
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma, selectionType);
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
+		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma, selectionType);
 	else {
 		// Unsupported type
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float texture maps (i.e. not " <<
@@ -441,9 +511,9 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 					GetLuxCoreTexMapping(imgTex->GetTextureMapping2D(), "scene.textures." + texName);
 		} else if (dynamic_cast<const ImageFloatTexture *>(tex)) {
 			const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(tex);
-
+			
 			const TexInfo &texInfo = imgTex->GetInfo();
-			const string imageMapName = GetLuxCoreImageMapName(lcScene, imgTex->GetMIPMap(), texInfo.gamma);
+			const string imageMapName = GetLuxCoreFloatImageMapName(lcScene, imgTex->GetMIPMap(), texInfo.gamma, imgTex->GetChannel());
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("imagemap") <<
 					luxrays::Property("scene.textures." + texName + ".file")(imageMapName) <<
