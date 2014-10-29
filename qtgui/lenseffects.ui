@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>497</width>
-    <height>343</height>
+    <height>356</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <bool>true</bool>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="tab_gaussianBloom">
       <attribute name="title">
@@ -340,7 +340,7 @@
          <item row="0" column="2">
           <widget class="QLabel" name="checkBox_caAmountMax">
            <property name="text">
-            <string>1.0</string>
+            <string>0.5</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -378,13 +378,13 @@
             <number>3</number>
            </property>
            <property name="minimum">
-            <double>-1.000000000000000</double>
+            <double>0.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>1.000000000000000</double>
+            <double>0.500000000000000</double>
            </property>
            <property name="singleStep">
-            <double>0.100000000000000</double>
+            <double>0.001000000000000</double>
            </property>
           </widget>
          </item>

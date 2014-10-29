@@ -301,14 +301,14 @@ void LensEffectsWidget::caAmountChanged (double value)
 	if (m_Aberration_amount > ABERRATION_AMOUNT_RANGE) 
 		m_Aberration_amount = ABERRATION_AMOUNT_RANGE;
 	else if (m_Aberration_amount < 0.0f) 
-		m_Aberration_amount = 0.0f;
+		m_Aberration_amount = 0.f;
 
 	int sliderval = (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount));
 
 	updateWidgetValue(ui->slider_caAmount, sliderval);
 	updateWidgetValue(ui->spinBox_caAmount, m_Aberration_amount);
 
-	updateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
+	updateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, m_Aberration_amount);
 	
 	if (m_Aberration_enabled)
 		emit valuesChanged();
