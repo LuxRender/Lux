@@ -237,7 +237,7 @@ template <typename T, u_int channels> string GetLuxCoreImageMapNameImpl(luxcore:
 			const TextureColor<T, channels> &col = (*map)(x, y);
 
 			for (u_int i = 0; i < channels; ++i)
-				*mapPtr++ = powf(col.c[i] / std::numeric_limits<T>::max(), gamma);
+				*mapPtr++ = powf(col.c[i] / (float)std::numeric_limits<T>::max(), gamma);
 		}
 	}
 
