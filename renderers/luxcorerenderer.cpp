@@ -2937,7 +2937,7 @@ luxrays::Properties LuxCoreRenderer::CreateLuxCoreConfig() {
 }
 
 void LuxCoreRenderer::UpdateLuxFilm(luxcore::RenderSession *session) {
-	const luxcore::Film &lcFilm = session->GetFilm();
+	luxcore::Film &lcFilm = session->GetFilm();
 
 	Film *film = scene->camera()->film;
 	ColorSystem colorSpace = film->GetColorSpace();
