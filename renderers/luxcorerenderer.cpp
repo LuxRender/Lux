@@ -2451,7 +2451,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			} else {
 				createDistantLightProps <<
 						luxrays::Property(prefix + ".type")("distant") <<
-						luxrays::Property(prefix + ".theta")(theta);
+						luxrays::Property(prefix + ".theta")(Degrees(theta));
 			}
 
 			createDistantLightProps <<
