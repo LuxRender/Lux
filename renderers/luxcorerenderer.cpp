@@ -2451,11 +2451,11 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 			} else {
 				createDistantLightProps <<
 						luxrays::Property(prefix + ".type")("distant") <<
-						luxrays::Property(prefix + ".type")(theta);
+						luxrays::Property(prefix + ".theta")(theta);
 			}
 
 			createDistantLightProps <<
-				luxrays::Property(prefix + ".direction")(distantLight->GetDirection()) <<
+				luxrays::Property(prefix + ".direction")(-distantLight->GetDirection()) <<
 				luxrays::Property(prefix + ".gain")(gain, gain, gain) <<
 				luxrays::Property(prefix + ".color")(colorR, colorG, colorB) <<
 				luxrays::Property(prefix + ".transformation")(light2World.m) <<
