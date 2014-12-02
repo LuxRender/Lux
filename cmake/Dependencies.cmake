@@ -108,13 +108,44 @@ ENDIF(LUXRAYS_DISABLE_OPENCL)
 
 FIND_PACKAGE(OpenGL)
 IF (OPENGL_FOUND)
-	message(STATUS "OpenGL include directory: " "${OPENGL_INCLUDE_DIRS}")
-	message(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
+	MESSAGE(STATUS "OpenGL include directory: " "${OPENGL_INCLUDE_DIRS}")
+	MESSAGE(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
 	INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIRS})
 ELSE (OPENGL_FOUND)
 	MESSAGE(FATAL_ERROR "OpenGL not found.")
 ENDIF (OPENGL_FOUND)
 
+
+#############################################################################
+#############################################################################
+########################      Find Intel Embree       #######################
+#############################################################################
+#############################################################################
+
+SET(EMBREE_ROOT "${EMBREE_SEARCH_PATH}")
+FIND_PACKAGE(Embree)
+
+IF (EMBREE_FOUND)
+	INCLUDE_DIRECTORIES(SYSTEM ${EMBREE_INCLUDE_PATH})
+ELSE (EMBREE_FOUND)
+	MESSAGE(FATAL_ERROR "Intel Embree not found.")
+endif (EMBREE_FOUND)
+
+
+#############################################################################
+#############################################################################
+###########################      Find OpenMP       ##########################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(OpenMP)
+IF (OPENMP_FOUND)
+	MESSAGE(STATUS "OpenMP found - compiling with")
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+ELSE(OPENMP_FOUND)
+	MESSAGE(WARNING "OpenMP not found - compiling without")
+endif(OPENMP_FOUND)
 
 
 #############################################################################
@@ -130,6 +161,7 @@ IF (NOT BISON_NOT_AVAILABLE)
 	ENDIF (NOT BISON_FOUND)
 ENDIF (NOT BISON_NOT_AVAILABLE)
 
+
 #############################################################################
 #############################################################################
 ###########################      Find FLEX        ###########################
@@ -142,6 +174,7 @@ IF (NOT FLEX_NOT_AVAILABLE)
 		MESSAGE(FATAL_ERROR "flex not found - aborting")
 	ENDIF (NOT FLEX_FOUND)
 ENDIF (NOT FLEX_NOT_AVAILABLE)
+
 
 #############################################################################
 #############################################################################
