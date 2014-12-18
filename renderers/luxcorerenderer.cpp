@@ -87,6 +87,7 @@
 #include "materials/null.h"
 #include "materials/roughglass.h"
 #include "materials/velvet.h"
+#include "materials/glossytranslucent.h"
 
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
@@ -1955,6 +1956,58 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 					luxrays::Property("scene.materials." + matName +".m1")(m1TexName) <<
 					luxrays::Property("scene.materials." + matName +".m2")(m2TexName) <<
 					luxrays::Property("scene.materials." + matName +".m3")(m3TexName));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
+			lcScene->Parse(matProps);
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material GlossyTranslucent
+	//------------------------------------------------------------------
+	if (dynamic_cast<GlossyTranslucent *>(mat)) {
+		// Define the material
+		GlossyTranslucent *glossyt = dynamic_cast<GlossyTranslucent *>(mat);
+		matName = glossyt->GetName();
+
+		// Check if the material has already been defined
+		if (!lcScene->IsMaterialDefined(matName)) {
+			const string kdTexName = GetLuxCoreTexName(lcScene, glossyt->GetKdTexture());
+			const string ktTexName = GetLuxCoreTexName(lcScene, glossyt->GetKtTexture());
+			const string ksTexName = GetLuxCoreTexName(lcScene, glossyt->GetKsTexture());
+			const string kaTexName = GetLuxCoreTexName(lcScene, glossyt->GetKaTexture());
+			const string nuTexName = GetLuxCoreTexName(lcScene, glossyt->GetNuTexture());
+			const string nvTexName = GetLuxCoreTexName(lcScene, glossyt->GetNvTexture());
+			const string depthTexName = GetLuxCoreTexName(lcScene, glossyt->GetDepthTexture());
+			const string indexTexName = GetLuxCoreTexName(lcScene, glossyt->GetIndexTexture());
+			const bool isMultibounce = glossyt->IsMultiBounce();
+			const string ksbfTexName = GetLuxCoreTexName(lcScene, glossyt->GetKsBfTexture());
+			const string kabfTexName = GetLuxCoreTexName(lcScene, glossyt->GetKaBfTexture());
+			const string nubfTexName = GetLuxCoreTexName(lcScene, glossyt->GetNuBfTexture());
+			const string nvbfTexName = GetLuxCoreTexName(lcScene, glossyt->GetNvBfTexture());
+			const string depthbfTexName = GetLuxCoreTexName(lcScene, glossyt->GetDepthBfTexture());
+			const string indexbfTexName = GetLuxCoreTexName(lcScene, glossyt->GetIndexTexture());
+			const bool isMultibouncebf = glossyt->IsMultiBounceBf();
+
+			const luxrays::Properties matProps(
+				luxrays::Property("scene.materials." + matName +".type")("glossytranslucent") <<
+				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+					emissionEfficency, emissionMapName, lightID, lightImportance, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
+				luxrays::Property("scene.materials." + matName +".kd")(kdTexName) <<
+				luxrays::Property("scene.materials." + matName +".kt")(ktTexName) <<
+				luxrays::Property("scene.materials." + matName +".ks")(ksTexName) <<
+				luxrays::Property("scene.materials." + matName +".ka")(kaTexName) <<
+				luxrays::Property("scene.materials." + matName +".uroughness")(nuTexName) <<
+				luxrays::Property("scene.materials." + matName +".vroughness")(nvTexName) <<
+				luxrays::Property("scene.materials." + matName +".d")(depthTexName) <<
+				luxrays::Property("scene.materials." + matName +".index")(indexTexName) <<
+				luxrays::Property("scene.materials." + matName +".multibounce")(isMultibounce ? "1" : "0") <<
+				luxrays::Property("scene.materials." + matName +".ks_bf")(ksbfTexName) <<
+				luxrays::Property("scene.materials." + matName +".ka_bf")(kabfTexName) <<
+				luxrays::Property("scene.materials." + matName +".uroughness_bf")(nubfTexName) <<
+				luxrays::Property("scene.materials." + matName +".vroughness_bf")(nvbfTexName) <<
+				luxrays::Property("scene.materials." + matName +".d_bf")(depthbfTexName) <<
+				luxrays::Property("scene.materials." + matName +".index_bf")(indexbfTexName) <<
+				luxrays::Property("scene.materials." + matName +".multibounce_bf")(isMultibouncebf ? "1" : "0"));
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
 			lcScene->Parse(matProps);
 		}
