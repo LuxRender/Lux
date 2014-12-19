@@ -147,7 +147,7 @@ void LensEffectsWidget::resetValues()
 	m_Vignetting_Scale = 0.4;
 	
 	m_Aberration_enabled = false;
-	m_Aberration_amount = 0.5;
+	m_Aberration_amount = ABERRATION_AMOUNT_RANGE;
 
 	m_Glare_amount = 0.03f;
 	m_Glare_radius = 0.03f;
