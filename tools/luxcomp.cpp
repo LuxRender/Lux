@@ -239,7 +239,7 @@ int main(int ac, char *av[]) {
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
 				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
 				("type,t", po::value< int >(), "Select the type of comparison")
-				("error,e", po::value< double >(), "Error treshold for a failure")
+				("error,e", po::value< double >(), "Error threshold for a failure")
 				;
 
 		// Hidden options, will be allowed both on command line and

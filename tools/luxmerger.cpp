@@ -59,6 +59,7 @@ int main(int ac, char *av[]) {
 				("help,h", "Produce help message")
 				("debug,d", "Enable debug mode")
 				("output,o", po::value< std::string >()->default_value("merged.flm"), "Output file")
+				("save-png,s", "Output PNG tone-mapped image")
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
 				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
 				;
@@ -165,6 +166,11 @@ int main(int ac, char *av[]) {
 			LOG( LUX_INFO,LUX_NOERROR) << "Merged " << mergedCount << " FLM files, writing merged FLM to " << outputFileName;
 
 			film->WriteFilmToFile(outputFileName);
+
+			if (vm.count("save-png")) {
+				(*film)["write_PNG"] = true;
+				film->WriteImage(IMAGE_FILEOUTPUT);
+			}
 		} else {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "luxmerger: no input file";
 		}
