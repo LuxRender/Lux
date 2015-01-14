@@ -2036,7 +2036,6 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, cons
 	string emissionMapName = "";
 	u_int lightID = 0;
 	float lightImportance = 1.f;
-	
 
 	//--------------------------------------------------------------------------
 	// Check if it is a Shape
@@ -2561,12 +2560,17 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 		// InstancePrimitive and MotionPrimitive require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			const string matName = GetLuxCoreMaterialName(scene, lcScene, instance, colorSpace);
+			const string instanceMatName = GetLuxCoreMaterialName(scene, lcScene, instance, colorSpace);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
 			for (u_int i = 0; i < instanceSources.size(); ++i) {
 				const Primitive *instancedSource = instanceSources[i].get();
+				string matName = instanceMatName;
+				if (matName == "mat_default") {
+					// Check if I can get material information from the instanced object
+					matName = GetLuxCoreMaterialName(scene, lcScene, instancedSource, colorSpace);
+				}
 
 				vector<luxrays::ExtTriangleMesh *> meshList;
 				// Check if I have already defined one of the original primitive
@@ -2597,12 +2601,17 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 			}
 		} else if (dynamic_cast<const MotionPrimitive *>(prim)) {
 			const MotionPrimitive *motionPrim = dynamic_cast<const MotionPrimitive *>(prim);
-			const string matName = GetLuxCoreMaterialName(scene, lcScene, motionPrim, colorSpace);
+			const string motionMatName = GetLuxCoreMaterialName(scene, lcScene, motionPrim, colorSpace);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = motionPrim->GetInstanceSources();
 
 			for (u_int i = 0; i < instanceSources.size(); ++i) {
 				const Primitive *instancedSource = instanceSources[i].get();
+				string matName = motionMatName;
+				if (matName == "mat_default") {
+					// Check if I can get material information from the instanced object
+					matName = GetLuxCoreMaterialName(scene, lcScene, instancedSource, colorSpace);
+				}
 
 				vector<luxrays::ExtTriangleMesh *> meshList;
 				// Check if I have already defined one of the original primitive
