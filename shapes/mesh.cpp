@@ -59,7 +59,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 
 	// Dade - copy vertex data
 	nverts = nv;
-	p = new Point[nverts];
+	p = luxrays::TriangleMesh::AllocVerticesBuffer(nverts);
 	// Dade - transform mesh vertices to world space
 	for (u_int i  = 0; i < nverts; ++i)
 		p[i] = ObjectToWorld * P[i];
@@ -174,7 +174,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	if (ntris == 0)
 		triVertexIndex = NULL;
 	else {
-		triVertexIndex = new int[3 * ntris];
+		triVertexIndex = (int *)luxrays::TriangleMesh::AllocTrianglesBuffer(ntris);
 		memcpy(triVertexIndex, tris, 3 * trisCount * sizeof(int));
 
 		for (size_t i = 0; i < nquadsToSplit; ++i) {
