@@ -371,6 +371,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 	
 #if defined(__APPLE__) // cosmetical work
 	ui->tab_queue->setFont(QFont  ("Lucida Grande", 12));
+	ui->textEdit_log->setFont(QFont  ("Lucida Grande", 12));
 	ui->horizontalLayout_queueControls->setSpacing(6);
 #endif
 	
