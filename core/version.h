@@ -28,8 +28,8 @@
 #define VERSION_STR(v) XVERSION_STR(v)
 
 
-#define LUX_VERSION 1.4
-#define LUX_VERSION_POSTFIX "rc2"
+#define LUX_VERSION 1.5
+#define LUX_VERSION_POSTFIX "dev"
 
 #define LUX_SERVER_PROTOCOL_VERSION 1011
 

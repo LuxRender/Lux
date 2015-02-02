@@ -29,8 +29,9 @@
 int main(int argc, char *argv[])
 {
 //	Q_INIT_RESOURCE(icons);
-#if defined(__APPLE__) // for OSX 10.9 changed default font
+#if defined(__APPLE__) // for since OSX 10.9 changed default font
 	QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande");
+	QFont::insertSubstitution(".Helvetica Neue DeskInterface", "Lucida Grande");
 #endif
 	
 	LuxGuiApp application(argc, argv);
