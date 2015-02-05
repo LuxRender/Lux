@@ -896,14 +896,14 @@ IF(APPLE)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 
 	if(${CMAKE_GENERATOR} MATCHES "Xcode")
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/../Library/liblux.dylib)
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/liblux.dylib)
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_DYLIB_COMPATIBILITY_VERSION 2.0.0)
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_DYLIB_CURRENT_VERSION 2.0.0)
 	else()
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES LINK_FLAGS "-compatibility_version 2.0.0 -current_version 2.0.0")
 		ADD_CUSTOM_COMMAND(
 			TARGET luxShared POST_BUILD
-			COMMAND install_name_tool -id @loader_path/../Library/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
+			COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
 	endif()
 ELSEIF(MSVC)
 	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
