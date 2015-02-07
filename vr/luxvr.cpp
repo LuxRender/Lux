@@ -306,7 +306,7 @@ int main(int argc, char **argv) {
 				slgPath = exePath / "slg";
 			if (!boost::filesystem::exists(slgPath))
 				slgPath = exePath / "slg.exe";
-			// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
+			// On Apple slg inside "MacOS" has nasty sideeffects, so we use an x-tra bin dir
 			if (!boost::filesystem::exists(slgPath))
 				slgPath = exePath / "../SmallluxGPU/slg4";
 			if (!boost::filesystem::exists(slgPath))

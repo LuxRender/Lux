@@ -379,8 +379,8 @@ int RenderView::getHeight()
 
 void RenderView::wheelEvent(QWheelEvent* event)
 {
-   if (!zoomEnabled)
-	   return;
+	if (!zoomEnabled)
+		return;
 
 	const float zoomsteps[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12.5, 17, 25, 33, 45, 50, 67, 75, 100, 
 		125, 150, 175, 200, 250, 300, 400, 500, 600, 700, 800, 1000, 1200, 1600 };
