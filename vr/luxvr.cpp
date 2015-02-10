@@ -318,6 +318,9 @@ int main(int argc, char **argv) {
 			const string slgCmd = "\"" + slg + "\""
 				" -R" // Use LuxVR name
 				" -D renderengine.type RTPATHOCL"
+				" -D opencl.gpu.use 1"
+				" -D opencl.cpu.use 0"
+				" -D opencl.gpu.workgroup.size 64"
 				" -D sampler.type RANDOM"
 				" -D film.alphachannel.enable 0" // Alpha channel is useless for LuxVR
 				" -d \"" + slgScene + "\""
