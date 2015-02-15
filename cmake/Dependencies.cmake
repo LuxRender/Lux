@@ -50,7 +50,7 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 
 IF(APPLE)
 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
-	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.dylib ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
 	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 ELSE(APPLE)
@@ -138,15 +138,16 @@ endif (EMBREE_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(OpenMP)
-IF (OPENMP_FOUND)
-	MESSAGE(STATUS "OpenMP found - compiling with")
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-ELSE(OPENMP_FOUND)
-	MESSAGE(WARNING "OpenMP not found - compiling without")
-endif(OPENMP_FOUND)
-
+IF(NOT APPLE)
+	FIND_PACKAGE(OpenMP)
+	IF (OPENMP_FOUND)
+		MESSAGE(STATUS "OpenMP found - compiling with")
+	    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	ELSE(OPENMP_FOUND)
+		MESSAGE(WARNING "OpenMP not found - compiling without")
+	endif(OPENMP_FOUND)
+endif()
 
 #############################################################################
 #############################################################################
