@@ -59,7 +59,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 
 	// Dade - copy vertex data
 	nverts = nv;
-	p = new Point[nverts];
+	p = luxrays::TriangleMesh::AllocVerticesBuffer(nverts);
 	// Dade - transform mesh vertices to world space
 	for (u_int i  = 0; i < nverts; ++i)
 		p[i] = ObjectToWorld * P[i];
@@ -174,7 +174,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	if (ntris == 0)
 		triVertexIndex = NULL;
 	else {
-		triVertexIndex = new int[3 * ntris];
+		triVertexIndex = (int *)luxrays::TriangleMesh::AllocTrianglesBuffer(ntris);
 		memcpy(triVertexIndex, tris, 3 * trisCount * sizeof(int));
 
 		for (size_t i = 0; i < nquadsToSplit; ++i) {
@@ -305,9 +305,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				// Copy the new mesh data
 				nverts = res->nverts;
 				ntris = res->ntris;
-				triVertexIndex = new int[3 * ntris];
+				triVertexIndex = (int *)luxrays::TriangleMesh::AllocTrianglesBuffer(ntris);
 				memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
-				p = new Point[nverts];
+				p = luxrays::TriangleMesh::AllocVerticesBuffer(nverts);
 				memcpy(p, res->P, nverts * sizeof(Point));
 
 				if (res->uv) {
@@ -919,7 +919,7 @@ void Mesh::GenerateTangentSpace() {
 	data.sign = NULL;
 
 	float* vertDataOut = new float[3 * ntris * floatsPerVert];
-	int* remapTable = new int[3 * ntris];
+	int* remapTable = (int *)luxrays::TriangleMesh::AllocTrianglesBuffer(ntris);
 
 	if (!vertDataOut || !remapTable) {
 		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
@@ -941,7 +941,7 @@ void Mesh::GenerateTangentSpace() {
 	delete[] vertDataIn;	
 
 	triVertexIndex = remapTable;
-	p = new Point[nverts];
+	p = luxrays::TriangleMesh::AllocVerticesBuffer(nverts);
 	n = new Normal[nverts];
 	uvs = new float[2*nverts];
 	t = new Vector[nverts];

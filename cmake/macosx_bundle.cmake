@@ -27,14 +27,12 @@
 #############################################################################
 
 	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
+	# Note: would like to use only this setup without copying the plist, but cannot set all i need
 	# Bundle version is the version the OS looks at.
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
+	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
 	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "Luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "LuxRender" )
 	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
@@ -45,21 +43,26 @@
 	endif()
 	ADD_CUSTOM_COMMAND(
 		TARGET DYNAMIC_BUILD POST_BUILD
-		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/SmallluxGPU
-		COMMAND mkdir ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxqueue.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/1.4/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
-		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app
-#		COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
+		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app # this assures bundle name is right and case sensitive operations following do not fail
+		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU
+		COMMAND mkdir ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxqueue.icns ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/1.5/Info.plist ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxvr ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxvr
+		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/embree2/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib
+		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS
+		COMMAND cp ${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/libembree.2.4.0.dylib
 		COMMAND cp ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
-		COMMAND mkdir ${CMAKE_BUILD_TYPE}/SmallluxGPU
-		COMMAND cp ${OSX_DEPENDENCY_ROOT}/bin/slg4 ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SmallluxGPU/slg4
+		COMMAND mkdir ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU
+		COMMAND cp ${OSX_DEPENDENCY_ROOT}/bin/slg4 ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4
+		COMMAND install_name_tool -change @loader_path/libembree.2.4.0.dylib @loader_path/../MacOS/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4 # change dyld path
+		COMMAND install_name_tool -change @loader_path/libluxcore.dylib @loader_path/../MacOS/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4 # change dyld path
 		)

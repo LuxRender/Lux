@@ -306,9 +306,9 @@ int main(int argc, char **argv) {
 				slgPath = exePath / "slg";
 			if (!boost::filesystem::exists(slgPath))
 				slgPath = exePath / "slg.exe";
-			// On Apple slg inside bundle has nasty sideeffects, so we look in default release location
+			// On Apple slg inside "MacOS" has nasty sideeffects, so we use an x-tra bin dir
 			if (!boost::filesystem::exists(slgPath))
-				slgPath = exePath / "../../../SmallluxGPU/slg4";
+				slgPath = exePath / "../SmallluxGPU/slg4";
 			if (!boost::filesystem::exists(slgPath))
 				throw runtime_error("Unable to find slg executable");
 			LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
@@ -318,6 +318,9 @@ int main(int argc, char **argv) {
 			const string slgCmd = "\"" + slg + "\""
 				" -R" // Use LuxVR name
 				" -D renderengine.type RTPATHOCL"
+				" -D opencl.gpu.use 1"
+				" -D opencl.cpu.use 0"
+				" -D opencl.gpu.workgroup.size 64"
 				" -D sampler.type RANDOM"
 				" -D film.alphachannel.enable 0" // Alpha channel is useless for LuxVR
 				" -d \"" + slgScene + "\""
