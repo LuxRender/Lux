@@ -22,7 +22,7 @@
 
 #include <boost/foreach.hpp>
 
-#include "slg/sampler/sampler.h"
+#include "slg/samplers/sobol.h"
 
 #include "sobol.h"
 #include "scene.h"
