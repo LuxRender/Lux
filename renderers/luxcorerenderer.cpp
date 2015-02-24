@@ -2748,13 +2748,6 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 				(scene->camera)["up.x"].FloatValue(),
 				(scene->camera)["up.y"].FloatValue(),
 				(scene->camera)["up.z"].FloatValue());
-//		if (renderEngineType == "FILESAVER") {
-//			// I snap the up vector to the Z axis so moving inside LuxVR
-//			// is a lot easier and work as expected
-//			up.x = 0.f;
-//			up.y = 0.f;
-//			up.z = 1.f;
-//		}
 
 		createCameraProps <<
 				luxrays::Property("scene.camera.lookat.orig")(orig) <<
