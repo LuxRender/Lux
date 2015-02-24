@@ -102,6 +102,7 @@
 #include "textures/dots.h"
 #include "textures/brick.h"
 #include "textures/add.h"
+#include "textures/subtract.h"
 #include "textures/windy.h"
 #include "textures/wrinkled.h"
 #include "textures/uv.h"
@@ -567,6 +568,18 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("add") <<
 					luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
 					luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
+		} else
+		//----------------------------------------------------------------------
+		// Subtract texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const SubtractTexture<T, T> *>(tex)) {
+			const SubtractTexture<T, T> *scaleTex = dynamic_cast<const SubtractTexture<T, T> *>(tex);
+			const string tex1Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex1());
+			const string tex2Name = GetLuxCoreTexName(lcScene, scaleTex->GetTex2());
+			
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("subtract") <<
+			luxrays::Property("scene.textures." + texName + ".texture1")(tex1Name) <<
+			luxrays::Property("scene.textures." + texName + ".texture2")(tex2Name);
 		} else
 		//----------------------------------------------------------------------
 		// Scale texture
@@ -1274,7 +1287,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
 					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
-					"FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
+					"FBmTexture, Marble, Dots, Brick, Add, Subtract, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
 					"HitPointAlphaTexture, HitPointGreyTexture, BlenderBlendTexture3D, BlenderCloudsTexture3D, BlenderDistortedNoiseTexture3D, "
 					"BlenderMagicTexture3D, BlenderMarbleTexture3D, BlenderMusgraveTexture3D, BlenderVoronoiTexture3D and BlenderWoodTexture3D "
 					"(i.e. not " << ToClassName(tex) << ").";
