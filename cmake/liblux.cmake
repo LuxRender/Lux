@@ -891,7 +891,7 @@ INCLUDE_DIRECTORIES(BEFORE
 #############################################################################
 IF(APPLE)
 	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
+	TARGET_LINK_LIBRARIES(luxShared ${LUXRAYS_LIBRARY} ${SLG_LIBRARY} ${EMBREE_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${FFTW_LIBRARIES} ${LUXCORE_LIBRARY} ${SYS_LIBRARIES})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 
