@@ -63,6 +63,7 @@ IF (NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE Release)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
 
 #############################################################################
 #############################################################################
@@ -174,7 +175,7 @@ IF(APPLE)
 		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
 	endif(OSX_OPTION_LTO)
 	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode") # will be set later in XCode
-		SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
+		#SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
 		# Setup binaries output directory in Xcode manner
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
 		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
