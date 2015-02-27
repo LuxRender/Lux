@@ -1287,7 +1287,7 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, "
 					"ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, "
-					"FBmTexture, Marble, Dots, Brick, Add, Subtract, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
+					"FBmTexture, Marble, Mix, Dots, Brick, Add, Subtract, Scale, Windy, Wrinkled, UVTexture, BandTexture, HitPointRGBColorTexture, "
 					"HitPointAlphaTexture, HitPointGreyTexture, BlenderBlendTexture3D, BlenderCloudsTexture3D, BlenderDistortedNoiseTexture3D, "
 					"BlenderMagicTexture3D, BlenderMarbleTexture3D, BlenderMusgraveTexture3D, BlenderVoronoiTexture3D and BlenderWoodTexture3D "
 					"(i.e. not " << ToClassName(tex) << ").";
