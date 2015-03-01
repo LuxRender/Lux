@@ -56,13 +56,13 @@
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxvr ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxvr
-		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/embree2/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib
-		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
-		COMMAND cp ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS
-		COMMAND cp ${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/libembree.2.4.0.dylib
-		COMMAND cp ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
+		COMMAND cp -f ${OSX_DEPENDENCY_ROOT}/lib/embree2/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib
+		COMMAND cp -f ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+		COMMAND cp -f ${OSX_DEPENDENCY_ROOT}/lib/LuxRays/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS
+		COMMAND cp -f ${CMAKE_BUILD_TYPE}/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/libembree.2.4.0.dylib
+		COMMAND cp -f ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
 		COMMAND mkdir ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU
-		COMMAND cp ${OSX_DEPENDENCY_ROOT}/bin/slg4 ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4
+		COMMAND cp -f ${OSX_DEPENDENCY_ROOT}/bin/slg4 ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4
 		COMMAND install_name_tool -change @loader_path/libembree.2.4.0.dylib @loader_path/../MacOS/libembree.2.4.0.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4 # change dyld path
 		COMMAND install_name_tool -change @loader_path/libluxcore.dylib @loader_path/../MacOS/libluxcore.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU/slg4 # change dyld path
 		)
