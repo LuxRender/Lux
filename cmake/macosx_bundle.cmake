@@ -26,24 +26,14 @@
 #############################################################################
 #############################################################################
 
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# Note: would like to use only this setup without copying the plist, but cannot set all i need
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "LuxRender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-	if(OSX_OPTION_PYLUX)
-		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp luxvr pylux )
-	else()
-		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp luxvr)
-	endif()
+# Gather the date in finder-style
+execute_process(COMMAND date "+%m/%d/%Y/%H:%M" OUTPUT_VARIABLE BUNDLING_TIME OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+add_dependencies(luxrender luxShared luxrender luxconsole luxmerger luxcomp luxvr) # assure we can pack the bundle
 	ADD_CUSTOM_COMMAND(
-		TARGET DYNAMIC_BUILD POST_BUILD
+		TARGET luxrender POST_BUILD
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app # this assures bundle name is right and case sensitive operations following do not fail
+		COMMAND SetFile -d ${BUNDLING_TIME} -m ${BUNDLING_TIME} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app # set the creation/modification date to bundling time
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU
 		COMMAND mkdir ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources

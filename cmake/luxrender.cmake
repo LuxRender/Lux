@@ -127,7 +127,7 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		add_dependencies(luxrender luxShared) # explicitly say that the target depends on corelib build first
+		INCLUDE(macosx_bundle) # bundle operations
 		TARGET_LINK_LIBRARIES(luxrender ${OSX_SHARED_CORELIB} ${QT_LIBRARIES} ${EXTRA_LIBS} ${Boost_LIBRARIES})
 	ELSE(APPLE)
 		MESSAGE(STATUS "Qt libs: ${QT_LIBRARIES}}")
