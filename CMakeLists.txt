@@ -132,6 +132,7 @@ IF(APPLE)
 	###################################
 
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6) # keep this @ 10.6 to archieve bw-compatibility by weak-linking !
+	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-unexported_symbols_list -Wl, cpp_api/unexported_symbols.map")
 
 	if(${XCODE_VERSION} VERSION_LESS 4.3)
 		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk)
