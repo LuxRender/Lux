@@ -243,8 +243,8 @@ template <typename T, u_int channels> string GetLuxCoreImageMapNameImpl(luxcore:
 		}
 	}
 
-	lcScene->DefineImageMap(imageMapName, lcMap, gamma, channels,
-			(u_int)map->uSize(), (u_int)map->vSize());
+	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, channels,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
 }
@@ -275,8 +275,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 1>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap(imageMapName, lcMap, gamma, 1,
-			(u_int)map->uSize(), (u_int)map->vSize());
+	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 1,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
 }
@@ -303,8 +303,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 3>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap(imageMapName, lcMap, gamma, 3,
-			(u_int)map->uSize(), (u_int)map->vSize());
+	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 3,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
 }
@@ -332,8 +332,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 4>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap(imageMapName, lcMap, gamma, 4,
-			(u_int)map->uSize(), (u_int)map->vSize());
+	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 4,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
 }
@@ -362,8 +362,8 @@ template <typename T, u_int channels> string GetLuxCoreFloatImageMapNameImpl(lux
 		}
 	}
 
-	lcScene->DefineImageMap(imageMapName, lcMap, gamma, 1,
-			(u_int)map->uSize(), (u_int)map->vSize());
+	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 1,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
 }
@@ -374,7 +374,7 @@ static string GetLuxCoreDefaultImageMap(luxcore::Scene *lcScene) {
 	if (!lcScene->IsImageMapDefined("imagemap_default")) {
 		float *map = new float[1];
 		map[0] = 1.f;
-		lcScene->DefineImageMap("imagemap_default", map, 1.f, 1, 1, 1);
+		lcScene->DefineImageMap("imagemap_default", map, 1.f, 1, 1, 1, luxcore::Scene::DEFAULT);
 	}
 
 	return "imagemap_default";
