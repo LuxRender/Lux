@@ -232,8 +232,8 @@ template <typename T, u_int channels> string GetLuxCoreImageMapNameImpl(luxcore:
 
 	const BlockedArray<TextureColor<T, channels> > *map = mipMap->GetSingleMap();
 
-	float *lcMap = new float[map->uSize() * map->vSize() * channels];
-	float *mapPtr = lcMap;
+	vector<float> lcMap(map->uSize() * map->vSize() * channels);
+	float *mapPtr = &lcMap[0];
 	for (u_int y = 0; y < map->vSize(); ++y) {
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<T, channels> &col = (*map)(x, y);
@@ -243,7 +243,7 @@ template <typename T, u_int channels> string GetLuxCoreImageMapNameImpl(luxcore:
 		}
 	}
 
-	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, channels,
+	lcScene->DefineImageMap<float>(imageMapName, &lcMap[0], gamma, channels,
 			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
@@ -265,8 +265,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 1>(luxcore::Scene *lcScene,
 
 	const BlockedArray<TextureColor<float, 1> > *map = mipMap->GetSingleMap();
 
-	float *lcMap = new float[map->uSize() * map->vSize() * 1];
-	float *mapPtr = lcMap;
+	vector<float> lcMap(map->uSize() * map->vSize() * 1);
+	float *mapPtr = &lcMap[0];
 	for (u_int y = 0; y < map->vSize(); ++y) {
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 1> &col = (*map)(x, y);
@@ -275,7 +275,7 @@ template <> string GetLuxCoreImageMapNameImpl<float, 1>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 1,
+	lcScene->DefineImageMap<float>(imageMapName, &lcMap[0], gamma, 1,
 			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
@@ -291,8 +291,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 3>(luxcore::Scene *lcScene,
 
 	const BlockedArray<TextureColor<float, 3> > *map = mipMap->GetSingleMap();
 
-	float *lcMap = new float[map->uSize() * map->vSize() * 3];
-	float *mapPtr = lcMap;
+	vector<float> lcMap(map->uSize() * map->vSize() * 3);
+	float *mapPtr = &lcMap[0];
 	for (u_int y = 0; y < map->vSize(); ++y) {
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 3> &col = (*map)(x, y);
@@ -303,7 +303,7 @@ template <> string GetLuxCoreImageMapNameImpl<float, 3>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 3,
+	lcScene->DefineImageMap<float>(imageMapName, &lcMap[0], gamma, 3,
 			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
@@ -319,8 +319,8 @@ template <> string GetLuxCoreImageMapNameImpl<float, 4>(luxcore::Scene *lcScene,
 
 	const BlockedArray<TextureColor<float, 4> > *map = mipMap->GetSingleMap();
 
-	float *lcMap = new float[map->uSize() * map->vSize() * 4];
-	float *mapPtr = lcMap;
+	vector<float> lcMap(map->uSize() * map->vSize() * 4);
+	float *mapPtr = &lcMap[0];
 	for (u_int y = 0; y < map->vSize(); ++y) {
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 4> &col = (*map)(x, y);
@@ -332,7 +332,102 @@ template <> string GetLuxCoreImageMapNameImpl<float, 4>(luxcore::Scene *lcScene,
 		}
 	}
 
-	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 4,
+	lcScene->DefineImageMap<float>(imageMapName, &lcMap[0], gamma, 4,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
+
+	return imageMapName;
+}
+
+//------------------------------------------------------------------------------
+// Channels: u_char
+// 
+// Partial function specialization are not allowed in C++
+//------------------------------------------------------------------------------
+
+template <> string GetLuxCoreImageMapNameImpl<u_char, 1>(luxcore::Scene *lcScene,
+		const MIPMapFastImpl<TextureColor<u_char, 1> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (lcScene->IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<u_char, 1> > *map = mipMap->GetSingleMap();
+
+	vector<u_char> lcMap(map->uSize() * map->vSize() * 1);
+	u_char *mapPtr = &lcMap[0];
+	const u_char maxv = std::numeric_limits<u_char>::max();
+	const float norm = 1.f / maxv;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<u_char, 1> &col = (*map)(x, y);
+
+			*mapPtr++ = (u_char)floorf(powf(col.c[0] * norm, gamma) * maxv + .5f);
+		}
+	}
+
+	lcScene->DefineImageMap<u_char>(imageMapName, &lcMap[0], gamma, 1,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
+
+	return imageMapName;
+}
+
+template <> string GetLuxCoreImageMapNameImpl<u_char, 3>(luxcore::Scene *lcScene,
+		const MIPMapFastImpl<TextureColor<u_char, 3> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (lcScene->IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<u_char, 3> > *map = mipMap->GetSingleMap();
+
+	vector<u_char> lcMap(map->uSize() * map->vSize() * 3);
+	u_char *mapPtr = &lcMap[0];
+	const u_char maxv = std::numeric_limits<u_char>::max();
+	const float norm = 1.f / maxv;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<u_char, 3> &col = (*map)(x, y);
+
+			*mapPtr++ = (u_char)floorf(powf(col.c[0] * norm, gamma) * maxv + .5f);
+			*mapPtr++ = (u_char)floorf(powf(col.c[1] * norm, gamma) * maxv + .5f);
+			*mapPtr++ = (u_char)floorf(powf(col.c[2] * norm, gamma) * maxv + .5f);
+		}
+	}
+
+	lcScene->DefineImageMap<u_char>(imageMapName, &lcMap[0], gamma, 3,
+			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
+
+	return imageMapName;
+}
+
+template <> string GetLuxCoreImageMapNameImpl<u_char, 4>(luxcore::Scene *lcScene,
+		const MIPMapFastImpl<TextureColor<u_char, 4> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (lcScene->IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<u_char, 4> > *map = mipMap->GetSingleMap();
+
+	vector<u_char> lcMap(map->uSize() * map->vSize() * 4);
+	u_char *mapPtr = &lcMap[0];
+	const u_char maxv = std::numeric_limits<u_char>::max();
+	const float norm = 1.f / maxv;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<u_char, 4> &col = (*map)(x, y);
+
+			*mapPtr++ = (u_char)floorf(powf(col.c[0] * norm, gamma) * maxv + .5f);
+			*mapPtr++ = (u_char)floorf(powf(col.c[1] * norm, gamma) * maxv + .5f);
+			*mapPtr++ = (u_char)floorf(powf(col.c[2] * norm, gamma) * maxv + .5f);
+			*mapPtr++ = col.c[3];
+		}
+	}
+
+	lcScene->DefineImageMap<u_char>(imageMapName, &lcMap[0], gamma, 4,
 			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
@@ -352,8 +447,8 @@ template <typename T, u_int channels> string GetLuxCoreFloatImageMapNameImpl(lux
 
 	const BlockedArray<TextureColor<T, channels> > *map = mipMap->GetSingleMap();
 
-	float *lcMap = new float[map->uSize() * map->vSize()];
-	float *mapPtr = lcMap;
+	vector<float> lcMap(map->uSize() * map->vSize());
+	float *mapPtr = &lcMap[0];
 	for (u_int y = 0; y < map->vSize(); ++y) {
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<T, channels> &col = (*map)(x, y);
@@ -362,7 +457,7 @@ template <typename T, u_int channels> string GetLuxCoreFloatImageMapNameImpl(lux
 		}
 	}
 
-	lcScene->DefineImageMap<float>(imageMapName, lcMap, gamma, 1,
+	lcScene->DefineImageMap<float>(imageMapName, &lcMap[0], gamma, 1,
 			(u_int)map->uSize(), (u_int)map->vSize(), luxcore::Scene::DEFAULT);
 
 	return imageMapName;
