@@ -183,7 +183,9 @@ IF(APPLE)
 	else() # replace CMAKE_BUILD_TYPE with XCode env var $(CONFIGURATION) globally
 		SET(CMAKE_BUILD_TYPE "$(CONFIGURATION)" )
 	endif()
-	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+	IF ( NOT OSX_DEPENDENCY_ROOT )
+  	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+  ENDIF()
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
 	SET(GUI_TYPE MACOSX_BUNDLE)
 	set(LUX_CUSTOM_CONFIG Config_OSX)
