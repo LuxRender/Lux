@@ -2121,6 +2121,43 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, Mate
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material GlossyCoating
+	//------------------------------------------------------------------
+	if (dynamic_cast<GlossyCoating *>(mat)) {
+		// Define the material
+		GlossyCoating *glossy = dynamic_cast<GlossyCoating *>(mat);
+		matName = glossy->GetName();
+
+		// Check if the material has already been defined
+		if (!lcScene->IsMaterialDefined(matName)) {
+			const string baseMatName = GetLuxCoreMaterialName(scene, lcScene, glossy->GetBaseMaterial(), prim,
+				"0.0 0.0 0.0", 0.f, 0.f, 0.f, "", 0, 1.f, colorSpace);
+			const string ksTexName = GetLuxCoreTexName(lcScene, glossy->GetKsTexture());
+			const string kaTexName = GetLuxCoreTexName(lcScene, glossy->GetKaTexture());
+			const string nuTexName = GetLuxCoreTexName(lcScene, glossy->GetNuTexture());
+			const string nvTexName = GetLuxCoreTexName(lcScene, glossy->GetNvTexture());
+			const string depthTexName = GetLuxCoreTexName(lcScene, glossy->GetDepthTexture());
+			const string indexTexName = GetLuxCoreTexName(lcScene, glossy->GetIndexTexture());
+			const bool isMultibounce = glossy->IsMultiBounce();
+
+			const luxrays::Properties matProps(
+				luxrays::Property("scene.materials." + matName +".type")("glossycoating") <<
+				GetLuxCoreCommonMatProps(matName, emissionTexName, emissionGain, emissionPower, 
+					emissionEfficency, emissionMapName, lightID, lightImportance, bumpTex, normalTex,
+					interiorVol, exteriorVol) <<
+				luxrays::Property("scene.materials." + matName +".base")(baseMatName) <<
+				luxrays::Property("scene.materials." + matName +".ks")(ksTexName) <<
+				luxrays::Property("scene.materials." + matName +".ka")(kaTexName) <<
+				luxrays::Property("scene.materials." + matName +".uroughness")(nuTexName) <<
+				luxrays::Property("scene.materials." + matName +".vroughness")(nvTexName) <<
+				luxrays::Property("scene.materials." + matName +".d")(depthTexName) <<
+				luxrays::Property("scene.materials." + matName +".index")(indexTexName) <<
+				luxrays::Property("scene.materials." + matName +".multibounce")(isMultibounce ? "1" : "0"));
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProps << "]";
+			lcScene->Parse(matProps);
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{

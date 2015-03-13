@@ -113,6 +113,15 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 	
+	Material *GetBaseMaterial() { return basemat.get(); }
+	Texture<SWCSpectrum> *GetKsTexture() { return Ks.get(); }
+	Texture<SWCSpectrum> *GetKaTexture() { return Ka.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
+	Texture<float> *GetDepthTexture() { return depth.get(); }
+	Texture<float> *GetIndexTexture() { return index.get(); }
+	bool IsMultiBounce() const { return multibounce; }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:
