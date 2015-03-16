@@ -895,7 +895,7 @@ IF(APPLE)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 	### tentative fix for crashing ultra long reality stacks ###
-	SET_SOURCE_FILES_PROPERTIES(renderers/luxcorerenderer.cpp COMPILE_FLAGS "-O1 -fno-lto")
+	SET_SOURCE_FILES_PROPERTIES(renderers/luxcorerenderer.cpp COMPILE_FLAGS "-O0 -fno-lto")
 
 	if(${CMAKE_GENERATOR} MATCHES "Xcode")
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/liblux.dylib)
