@@ -22,10 +22,10 @@
 
 #include "shape.h"
 #include "paramset.h"
-#include "./cyhair/cyHairFile.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/geometry/uv.h"
+#include "luxrays/utils/cyhair/cyHairFile.h"
 
 namespace lux
 {
@@ -41,7 +41,7 @@ public:
 			const string &accelType, const TessellationType tesselType,
 			const u_int adaptiveMaxDepth, const float adaptiveError, 
 			const u_int solidSideCount, const bool solidCapBottom, const bool solidCapTop,
-			const float colorGamma, boost::shared_ptr<cyHairFile> &hairFile);
+			const float colorGamma, boost::shared_ptr<luxrays::cyHairFile> &hairFile);
 	virtual ~HairFile();
 
 	virtual BBox ObjectBound() const;
@@ -90,7 +90,7 @@ protected:
 	u_int solidSideCount;
 	bool solidCapBottom, solidCapTop;
 
-	boost::shared_ptr<cyHairFile> hairFile;
+	boost::shared_ptr<luxrays::cyHairFile> hairFile;
 
 	// I need to keep alive refined Shapes for Tessellate() and ExtTessellate() methods
 	mutable vector<boost::shared_ptr<Shape> > refinedHairs;

@@ -509,7 +509,7 @@ static string GetLuxCoreImageMapName(luxcore::Scene *lcScene,
 		return GetLuxCoreImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
 	else {
 		// Unsupported type
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float texture maps (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float/short/byte texture maps (i.e. not " <<
 					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
 		return GetLuxCoreDefaultImageMap(lcScene);
 	}
@@ -549,7 +549,7 @@ static string GetLuxCoreFloatImageMapName(luxcore::Scene *lcScene,
 		return GetLuxCoreFloatImageMapNameImpl(lcScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma, selectionType);
 	else {
 		// Unsupported type
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float texture maps (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only RGB(A) float/short/byte texture maps (i.e. not " <<
 					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
 		return GetLuxCoreDefaultImageMap(lcScene);
 	}
