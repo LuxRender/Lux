@@ -317,7 +317,7 @@ SOURCE_GROUP("Source Files\\Renderers\\Statistics" FILES ${lux_rendererstatistic
 
 SET(lux_shapes_src
 	shapes/cone.cpp
-	shapes/cyhair/cyHairFile.h
+#	shapes/cyhair/cyHairFile.h
 	shapes/cylinder.cpp
 	shapes/deferred.cpp
 	shapes/disk.cpp
