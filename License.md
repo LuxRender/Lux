@@ -1,8 +1,8 @@
 ##LuxRender 
 
-LuxRender is free software: you can redistribute it and/or modify it under the terms of either the Apache License 2.0 or the GNU General Public License as published by the Free Software Foundation, either version 3 of the License or (at your option) any later version.
+LuxRender is free software: you can redistribute it and/or modify it under the terms of either the GNU General Public License as published by the Free Software Foundation, either version 3 of the License or (at your option) any later version, or the Apache License 2.0 for the LuxCore API.  See below for details.
 
-While the initial version of LuxRender was licensed under the GPL, starting with LuxRender 1.3 a second version of the C++ and Python APIs have been written. That new API, named *LuxCore*, is covered by the Apache 2.0 license and allows for any type of program, both Open Source or closed-source commercial applications, to link to LuxRender without the restrictions presented by the GPL. 
+While the initial version of LuxRender was licensed under the GPL, which is still standing,  starting with LuxRender 1.3 a second version of the C++ and Python APIs have been written. That new API, named *LuxCore*, is covered by the Apache 2.0 license and allows for any type of program, both Open Source or closed-source commercial applications, to link to LuxRender without the restrictions presented by the GPL. 
 
 LuxRender is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY. Without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License below for more details.
 
