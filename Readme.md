@@ -8,13 +8,13 @@ LuxCore needs to be enabled by the exporter that you use so check with the expor
 
 ###OS X
 - Drag the LuxRender folder into the Application folder, as instructed in the DMG file.
-- If you want to use the command-line tools, included with LuxRender, execute the script `create_systemwide_links` in the LuxRender/interactive_script folder. That will give you access to all the tools, like luxconsole, from the Terminal
-- There are some pre-configured scripts that can be used to start useful services, like the node renderer, by simply double-clicking on them from Finder.
+- If you want to use the command-line tools, included with LuxRender, execute the script `create_systemwide_symlinks` in the LuxRender/interactive_script folder. That will give you access to all the tools, like luxconsole, from everywhere in the Terminal
+- There are some pre-configured scripts that can be used to start useful services ( guided ), like the node renderer, by simply double-clicking on them from Finder.
 
 ####Blender plugin.
 LuxRender includes support for Blender, the Open Source 3D modelling program. The following instructions describe how to install the LuxRender plugin for Blender.
 
-To use the Blender plugin you will need Blender v. 2.71 or higher, and  OS X 10.6 or higher, since LuxBlende is a 64-bit plugin.
+To use the Blender plugin you will need Blender v. 2.71 or higher, and  OS X 10.6 or higher, since LuxBlend is a 64-bit plugin.
 
 - Start Blender and from the menu select **File | User Preferences**
 - Click on the **Add-ons** tab
