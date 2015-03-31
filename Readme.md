@@ -14,15 +14,15 @@ LuxCore needs to be enabled by the exporter that you use so check with the expor
 ####Blender plugin.
 LuxRender includes support for Blender, the Open Source 3D modelling program. The following instructions describe how to install the LuxRender plugin for Blender.
 
-To use the Blender plugin you will need Blender v.2.71 or higher, and  OS X 10.6 or higher, since the plugin only works as a 64-bit extension.
+To use the Blender plugin you will need Blender v. 2.71 or higher, and  OS X 10.6 or higher, since LuxBlende is a 64-bit plugin.
 
-	1.	Start Blender and from the menu select **File | User Preferences**
-	2. Click on the **Add-ons** tab
-	3. Click on the **Install from File...** button.
-	2.	Navigate to the opened LuxRender DMG file, which should be /Volumes/LuxRender. From there select the LuxBlend.zip file. 
-	3.	You should now see the LuxRender add-on listed in the add-ons menu. Click the box on the right to activate it.
-	4.	To make the installation permanent, click on the **Save User Settings** button or press the *Ctrl-u* key combination.
-	5.	For further instructions about starting a rendering, please visit http://www.luxrender.net/wiki/LuxBlend_2.5_installation_instructions
+- Start Blender and from the menu select **File | User Preferences**
+- Click on the **Add-ons** tab
+- Click on the **Install from File...** button.
+- Navigate to the opened LuxRender DMG file, which should be /Volumes/LuxRender. From there select the LuxBlend.zip file. 
+- You should now see the LuxRender add-on listed in the add-ons menu. Click the box on the right to activate it.
+- To make the installation permanent, click on the **Save User Settings** button or press the *Ctrl-u* key combination.
+- For further instructions about starting a rendering, please visit http://www.luxrender.net/wiki/LuxBlend_2.5_installation_instructions
 
 ###Windows
 TBD
