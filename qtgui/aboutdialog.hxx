@@ -68,7 +68,7 @@ protected:
 
 private:
 	QGraphicsScene *scene;
-	QGraphicsTextItem *authors;
+	QGraphicsTextItem *authors, *versionNo;
 	QTimer *scrolltimer;
 
 private slots:
