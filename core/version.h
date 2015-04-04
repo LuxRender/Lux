@@ -22,21 +22,26 @@
 
 #ifndef LUX_VERSION_H
 #define LUX_VERSION_H
-// version.h*
 
+//! Macros that convert a number in input into a string. 
 #define XVERSION_STR(v) #v
 #define VERSION_STR(v) XVERSION_STR(v)
 
+#define LUX_VN_MAJOR 1
+#define LUX_VN_MINOR 5
+#define LUX_VN_PATCH 0
+#define LUX_VN_BUILD 0
+#define LUX_VN_LABEL "dev"
 
-#define LUX_VERSION 1.5
-#define LUX_VERSION_POSTFIX "dev"
+#define LUX_SERVER_PROTOCOL_VERSION  1011
 
-#define LUX_SERVER_PROTOCOL_VERSION 1011
+#define LUX_VERSION_STRING           VERSION_STR(LUX_VN_MAJOR)     \
+                                     "." VERSION_STR(LUX_VN_MINOR) \
+                                     "." VERSION_STR(LUX_VN_PATCH) \
+                                     "." VERSION_STR(LUX_VN_BUILD) \
+                                     " " LUX_VN_LABEL
 
-
-#define LUX_VERSION_STRING    VERSION_STR(LUX_VERSION) LUX_VERSION_POSTFIX
-
-// renderfarm relies on the 'protocol' part of in server version string
+//! Renderfarms rely on the 'protocol' part of in server version string
 #define LUX_SERVER_VERSION_STRING    LUX_VERSION_STRING " (protocol: " VERSION_STR(LUX_SERVER_PROTOCOL_VERSION) ")"
 
 #endif // LUX_VERSION_H
