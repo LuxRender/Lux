@@ -28,12 +28,16 @@ argParser.add_argument("-r", "--read",
                        help="Read the build number from a file, instead of generating a new one.")
 argParser.add_argument("-w", "--write", 
                        help="generates a new build number then it writes to the file specified.")
-
+argParser.add_argument("--notime", action="store_true",
+                       help="Don't add the hour to the build number")
 args = argParser.parse_args()
 
 #! Generate the build number
 def makeBuildNumber():
+  global args
   t = time.gmtime()
+  if args.notime:
+    return "%d%03d" % (t.tm_year-2000, t.tm_yday)    
   return "%d%03d%X" % (t.tm_year-2000, t.tm_yday, int(t.tm_hour*15/24))
 
 if args.read:
