@@ -33,7 +33,7 @@ add_dependencies(luxrender luxShared luxrender luxconsole luxmerger luxcomp luxv
 	ADD_CUSTOM_COMMAND(
 		TARGET luxrender POST_BUILD
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app # this assures bundle name is right and case sensitive operations following do not fail
-		COMMAND SetFile -d ${BUNDLING_TIME} -m ${BUNDLING_TIME} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app # set the creation/modification date to bundling time
+		COMMAND SetFile -d "${BUNDLING_TIME}" -m "${BUNDLING_TIME}" ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app # set the creation/modification date to bundling time
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/SmallluxGPU
 		COMMAND mkdir ${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/Resources
