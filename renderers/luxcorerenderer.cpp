@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
+ *   Copyright (C) 1998-2015 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -567,8 +567,9 @@ template<class T> luxrays::Properties GetLuxCoreTexMapping(const T *mapping, con
 					luxrays::Property(prefix + ".mapping.uvdelta")(uvMapping2D->GetUDelta(), uvMapping2D->GetVDelta());
 		} else if (dynamic_cast<const UVMapping3D *>(mapping)) {
 			const UVMapping3D *uvMapping3D = dynamic_cast<const UVMapping3D *>(mapping);
-			return prefix + ".mapping.type = uvmapping3d\n" +
-					prefix + ".mapping.transformation = " + ToString(uvMapping3D->WorldToTexture.m) + "\n";
+			return luxrays::Properties() <<
+					luxrays::Property(prefix + ".mapping.type")("uvmapping3d") <<
+					luxrays::Property(prefix + ".mapping.transformation")(uvMapping3D->WorldToTexture.m);
 		} else if (dynamic_cast<const GlobalMapping3D *>(mapping)) {
 			const GlobalMapping3D *globalMapping3D = dynamic_cast<const GlobalMapping3D *>(mapping);
 			return luxrays::Properties() <<
