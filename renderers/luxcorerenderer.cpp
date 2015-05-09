@@ -2539,7 +2539,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				colorB = (*constRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only spot light with constant color. (i.e. not " <<
-					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+					ToClassName(spotLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
@@ -2584,7 +2584,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				colorB = (*constRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only projection light with constant color. (i.e. not " <<
-					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+					ToClassName(projectionLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
@@ -2628,7 +2628,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 				colorB = (*constRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only distant light with constant color. (i.e. not " <<
-					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+					ToClassName(distantLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
