@@ -481,6 +481,8 @@ float MIPMapFastImpl<T>::Triangle(Channel channel, u_int level,
 	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -496,6 +498,8 @@ SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
 	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -511,6 +515,8 @@ RGBAColor MIPMapFastImpl<T>::Triangle(u_int level,
 	level = luxrays::Clamp(level, 0U, nLevels - 1);
 	s *= uSize(level);
 	t *= vSize(level);
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -525,6 +531,8 @@ float MIPMapFastImpl<T>::Triangle(Channel channel, float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -538,6 +546,8 @@ SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -550,6 +560,8 @@ RGBAColor MIPMapFastImpl<T>::Triangle(float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return luxrays::Lerp(ds,
@@ -562,6 +574,8 @@ float MIPMapFastImpl<T>::Nearest(Channel channel, float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(channel, s0, t0);
 }
@@ -571,6 +585,8 @@ SWCSpectrum MIPMapFastImpl<T>::Nearest(const SpectrumWavelengths &sw,
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(sw, s0, t0);
 }
@@ -579,6 +595,8 @@ RGBAColor MIPMapFastImpl<T>::Nearest(float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
+	s -= .5f;
+	t -= .5f;
 	const int s0 = luxrays::Floor2Int(s), t0 = luxrays::Floor2Int(t);
 	return Texel(s0, t0);
 }
