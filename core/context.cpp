@@ -907,8 +907,9 @@ void lux::Context::ObjectInstance(const string &n) {
 			l.reset(new InstanceAreaLight(curTransform.StaticTransform(), li));
 		else
 			l.reset(new MotionAreaLight(curTransform.GetMotionSystem(), li));
-		// Add the instanced light
-		renderOptions->lights.push_back(l);
+		// Add the instanced light only if not inside Object block
+		if (!renderOptions->currentAreaLightInstance)
+			renderOptions->lights.push_back(l);
 		// Add the instanced primitives
 		if (renderOptions->currentAreaLightInstance)
 			renderOptions->currentAreaLightInstance->push_back(vector<boost::shared_ptr<AreaLightPrimitive> >());
