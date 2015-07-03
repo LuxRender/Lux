@@ -30,7 +30,6 @@
 #define LUX_VN_MAJOR 1
 #define LUX_VN_MINOR 5
 #define LUX_VN_PATCH 0
-#define LUX_VN_BUILD 0
 #define LUX_VN_LABEL "RC1"
 
 #define LUX_SERVER_PROTOCOL_VERSION  1011
@@ -38,8 +37,7 @@
 #define LUX_VERSION_STRING           VERSION_STR(LUX_VN_MAJOR)     \
                                      "." VERSION_STR(LUX_VN_MINOR) \
                                      "." VERSION_STR(LUX_VN_PATCH) \
-                                     " " LUX_VN_LABEL \
-                                     " Build " VERSION_STR(LUX_VN_BUILD)
+                                     " " LUX_VN_LABEL
 
 //! Renderfarms rely on the 'protocol' part of in server version string
 #define LUX_SERVER_VERSION_STRING    LUX_VERSION_STRING " (protocol: " VERSION_STR(LUX_SERVER_PROTOCOL_VERSION) ")"
