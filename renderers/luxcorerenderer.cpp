@@ -3478,6 +3478,7 @@ void LuxCoreRenderer::Render(Scene *s) {
 			float haltThreshold = config->GetProperty("batch.haltthreshold").Get<float>();
 
 			double lastFilmUpdate = startTime - 2.0; // -2.0 is to anticipate the first display update by 2 secs
+			int countFilmUpdate = 0;
 			Film *film = scene->camera()->film;
 			int xStart, xEnd, yStart, yEnd;
 			film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
@@ -3514,6 +3515,13 @@ void LuxCoreRenderer::Render(Scene *s) {
 
 			const bool isBiasPath = (session->GetRenderConfig().GetProperty("renderengine.type").Get<string>() == "BIASPATHCPU") ||
 				(session->GetRenderConfig().GetProperty("renderengine.type").Get<string>() == "BIASPATHOCL");
+
+			// Make sure we have one early update to fill the viewport for sampler-like userexperience
+			if (countFilmUpdate < 1) {
+				UpdateLuxFilm(session.get());
+				countFilmUpdate +=1;
+			}
+
 			for (;;) {
 				if (state == PAUSE) {
 					session->BeginSceneEdit();
