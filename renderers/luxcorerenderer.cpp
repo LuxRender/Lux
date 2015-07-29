@@ -2281,7 +2281,7 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, cons
 			lightID, lightImportance, colorSpace);
 }
 
-void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
+void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene, ColorSystem &colorSpace) {
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
 		//----------------------------------------------------------------------
 		// Check if it is a sun light source
@@ -2472,15 +2472,25 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 		PointLight *pointLight = dynamic_cast<PointLight *>(scene->lights[i].get());
 		if (pointLight) {
 			float colorR, colorG, colorB;
-			if (dynamic_cast<const ConstantRGBColorTexture *>(pointLight->GetLbaseTexture())) {
-				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(pointLight->GetLbaseTexture());
+			Texture<SWCSpectrum> *emisTex = pointLight->GetLbaseTexture();
+			if (dynamic_cast<const ConstantRGBColorTexture *>(emisTex)) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(emisTex);
 
 				colorR = (*constRGBTex)["color.r"].FloatValue();
 				colorG = (*constRGBTex)["color.g"].FloatValue();
 				colorB = (*constRGBTex)["color.b"].FloatValue();
+			} else if (dynamic_cast<BlackBodyTexture *>(emisTex)) {
+				BlackBodyTexture *bbTex = dynamic_cast<BlackBodyTexture *>(emisTex);
+
+				const SPD *spd = bbTex->GetBlackBodySPD();
+				RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+				colorR = rgb.c[0];
+				colorG = rgb.c[1];
+				colorB = rgb.c[2];
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only point light with constant color. (i.e. not " <<
-					ToClassName(pointLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only point light with constant color or blackbody. (i.e. not " <<
+					ToClassName(emisTex) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
@@ -2531,15 +2541,25 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene) {
 		SpotLight *spotLight = dynamic_cast<SpotLight *>(scene->lights[i].get());
 		if (spotLight) {
 			float colorR, colorG, colorB;
-			if (dynamic_cast<const ConstantRGBColorTexture *>(spotLight->GetLbaseTexture())) {
-				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(spotLight->GetLbaseTexture());
+			Texture<SWCSpectrum> *emisTex = spotLight->GetLbaseTexture();
+			if (dynamic_cast<const ConstantRGBColorTexture *>(emisTex)) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(emisTex);
 
 				colorR = (*constRGBTex)["color.r"].FloatValue();
 				colorG = (*constRGBTex)["color.g"].FloatValue();
 				colorB = (*constRGBTex)["color.b"].FloatValue();
+			} else if (dynamic_cast<BlackBodyTexture *>(emisTex)) {
+				BlackBodyTexture *bbTex = dynamic_cast<BlackBodyTexture *>(emisTex);
+
+				const SPD *spd = bbTex->GetBlackBodySPD();
+				RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+
+				colorR = rgb.c[0];
+				colorG = rgb.c[1];
+				colorB = rgb.c[2];
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only spot light with constant color. (i.e. not " <<
-					ToClassName(spotLight->GetLbaseTexture()) << "). Ignoring the unsupported feature.";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only spot light with constant color or blackbody. (i.e. not " <<
+					ToClassName(emisTex) << "). Ignoring the unsupported feature.";
 				colorR = 1.f;
 				colorG = 1.f;
 				colorB = 1.f;
@@ -2916,7 +2936,7 @@ luxcore::Scene *LuxCoreRenderer::CreateLuxCoreScene(const luxrays::Properties &l
 	// Setup lights
 	//--------------------------------------------------------------------------
 
-	ConvertLights(lcScene);
+	ConvertLights(lcScene, colorSpace);
 
 	//--------------------------------------------------------------------------
 	// Convert geometry
