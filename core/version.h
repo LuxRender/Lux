@@ -31,7 +31,7 @@
 #define LUX_VN_MINOR 5
 #define LUX_VN_PATCH 0
 #define LUX_VN_BUILD 0
-#define LUX_VN_LABEL "RC2"
+#define LUX_VN_LABEL ""
 
 #define LUX_SERVER_PROTOCOL_VERSION  1011
 
