@@ -309,6 +309,28 @@ inline float ValueScale(FalseScaleMethod scalemethod, float value)
 	return result;
 }
 
+inline float InverseValueScale(FalseScaleMethod scalemethod, float value)
+{
+	float result;
+
+	switch (scalemethod) {
+	case Method_Linear: //linear
+		result = value;
+		break;
+	case Method_Log: //log
+		result = (powf(10.f, value) - 1.f) / 9.f; //logarythme curve
+		break;
+	case Method_Log3: //log3
+		result = powf(value, 3.f); // power of 3
+		result = (powf(10.f, result) - 1.f) / 9.f; //logarythme curve
+		break;
+	default:
+		//LOG(LUX_ERROR,LUX_BADTOKEN) << "False color tonemapping method unknown.";
+		result = value;
+	}
+	return result;
+}
+
 inline RGBColor ValuetoRGB(FalseColorScale colorscale, float value)
 {
 	RGBColor color;

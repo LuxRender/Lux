@@ -780,7 +780,7 @@ void ToneMapWidget::falseDrawLegend(QPaintDevice * dev)
 			const float coeff = 1.f - i / (nb - 1.f);
 			tabPix[i] = luxrays::Floor2Int(_heightPix * coeff);
 
-			tabVal[i] = Clamp<float>(lux::ValueScale(lux::FalseScaleMethod(m_false_method), coeff) *
+			tabVal[i] = Clamp<float>(lux::InverseValueScale(lux::FalseScaleMethod(m_false_method), coeff) *
 				(m_TM_FalseMaxSat - m_TM_FalseMinSat) +
 				m_TM_FalseMinSat, m_TM_FalseMinSat, m_TM_FalseMaxSat);
 		}
