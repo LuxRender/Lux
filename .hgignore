@@ -51,3 +51,4 @@ lux.build*
 *.DS_Store
 *-qrc.cpp
 lto-llvm.o*
+build
