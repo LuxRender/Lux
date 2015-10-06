@@ -29,7 +29,7 @@
 
 #define LUX_VN_MAJOR 1
 #define LUX_VN_MINOR 5
-#define LUX_VN_PATCH 0
+#define LUX_VN_PATCH 1
 #define LUX_VN_BUILD 0
 #define LUX_VN_LABEL ""
 
