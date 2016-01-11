@@ -94,7 +94,9 @@ using namespace cimg_library;
 #endif*/
 
 using namespace lux;
+#ifndef LUX_FREEIMAGE
 using namespace OIIO_NAMESPACE;
+#endif
 using namespace Imf;
 using namespace Imath;
 
