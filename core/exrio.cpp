@@ -468,9 +468,9 @@ namespace lux {
 					format = TypeDesc::FLOAT;
 					break;
 				default:
-					data = NULL;
 					LOG(LUX_ERROR, LUX_SYSTEM) <<
 						"Unsupported pixel type (size=" << bytesPerChannel << ")";
+					return NULL;
 				}
 
 				if (data) in->read_image(format, data);
