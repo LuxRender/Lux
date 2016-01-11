@@ -473,7 +473,7 @@ namespace lux {
 					return NULL;
 				}
 
-				if (data) in->read_image(format, data);
+				in->read_image(format, data);
 
 				in->close();
 				in.reset();
