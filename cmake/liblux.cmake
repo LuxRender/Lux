@@ -878,15 +878,6 @@ INCLUDE_DIRECTORIES(BEFORE
 	)
 
 #############################################################################
-# Here we build the static core library liblux.a
-#############################################################################
-#IF(NOT APPLE)
-#	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-#	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
-#	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
-#ENDIF(NOT APPLE)
-
-#############################################################################
 # Here we build the shared core library liblux.so
 #############################################################################
 IF(APPLE)

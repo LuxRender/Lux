@@ -245,16 +245,17 @@ ENDIF(Boost_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(FreeImage REQUIRED)
+IF(LUX_USE_FREEIMAGE)
+	FIND_PACKAGE(FreeImage REQUIRED)
 
-IF(FREEIMAGE_FOUND)
-	MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_DIR})
-	MESSAGE(STATUS "FreeImage library: " ${FREEIMAGE_LIBRARIES})
-	INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_DIR})
-ELSE(FREEIMAGE_FOUND)
-	MESSAGE(FATAL_ERROR "Could not find FreeImage")
-ENDIF(FREEIMAGE_FOUND)
-
+	IF(FREEIMAGE_FOUND)
+		MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_DIR})
+		MESSAGE(STATUS "FreeImage library: " ${FREEIMAGE_LIBRARIES})
+		INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_DIR})
+	ELSE(FREEIMAGE_FOUND)
+		MESSAGE(FATAL_ERROR "Could not find FreeImage")
+	ENDIF(FREEIMAGE_FOUND)
+ENDIF(LUX_USE_FREEIMAGE)
 
 #############################################################################
 #############################################################################
@@ -320,41 +321,42 @@ ENDIF(NOT APPLE)
 #############################################################################
 #############################################################################
 
-# The OpenEXR library might be accessible from the FreeImage library
-# Otherwise add it to the FreeImage library (required by exrio)
-TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
-	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
-	CMAKE_FLAGS
-	"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
-	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
-	COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
+IF(LUX_USE_FREEIMAGE)
+	# The OpenEXR library might be accessible from the FreeImage library
+	# Otherwise add it to the FreeImage library (required by exrio)
+	TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
+		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+		CMAKE_FLAGS
+		"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
+		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+		COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
 
-# The PNG library might be accessible from the FreeImage library
-# Otherwise add it to the FreeImage library (required by pngio)
-TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
-	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
-	CMAKE_FLAGS
-	"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDE_DIRS}"
-	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
-	COMPILE_DEFINITIONS -D__TEST_PNG__)
-IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
-	IF(OPENEXR_LIBRARIES)
-		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
-		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
-	ELSE(OPENEXR_LIBRARIES)
-		MESSAGE(FATAL_ERROR "Unable to find OpenEXR library")
-	ENDIF(OPENEXR_LIBRARIES)
-ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+	# The PNG library might be accessible from the FreeImage library
+	# Otherwise add it to the FreeImage library (required by pngio)
+	TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
+		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+		CMAKE_FLAGS
+		"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDE_DIRS}"
+		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+		COMPILE_DEFINITIONS -D__TEST_PNG__)
+	IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+		IF(OPENEXR_LIBRARIES)
+			MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
+			SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
+		ELSE(OPENEXR_LIBRARIES)
+			MESSAGE(FATAL_ERROR "Unable to find OpenEXR library")
+		ENDIF(OPENEXR_LIBRARIES)
+	ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 
-IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
-	IF(PNG_LIBRARIES)
-		MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
-		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
-	ELSE(PNG_LIBRARIES)
-		MESSAGE(FATAL_ERROR "Unable to find PNG library")
-	ENDIF(PNG_LIBRARIES)
-ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
-
+	IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
+		IF(PNG_LIBRARIES)
+			MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
+			SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
+		ELSE(PNG_LIBRARIES)
+			MESSAGE(FATAL_ERROR "Unable to find PNG library")
+		ENDIF(PNG_LIBRARIES)
+	ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
+ENDIF(LUX_USE_FREEIMAGE)
 
 #############################################################################
 #############################################################################

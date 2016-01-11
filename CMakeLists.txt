@@ -50,6 +50,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 )
 option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
+option(LUX_USE_FREEIMAGE "Compile with FreeImage, otherwise OIIO is used exclusively" ON)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
@@ -279,7 +280,9 @@ ELSE(LUX_CUSTOM_CONFIG)
         SET(QT_QMAKE_EXECUTABLE       "$ENV{LIB_DIR}/qmake.exe")
         SET(QT_BINARY_DIR             "$ENV{LIB_DIR}")
 
-        ADD_DEFINITIONS(-DFREEIMAGE_LIB)
+	IF(LUX_USE_FREEIMAGE)
+		ADD_DEFINITIONS(-DFREEIMAGE_LIB)
+	ENDIF()
         ADD_DEFINITIONS(-DFREEGLUT_STATIC)
         ADD_DEFINITIONS(-DGLEW_STATIC)
       ENDIF()
@@ -416,6 +419,10 @@ ELSE(APPLE)
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
 ENDIF(APPLE)
+
+IF(LUX_USE_FREEIMAGE)
+	ADD_DEFINITIONS(-DLUX_FREEIMAGE)
+ENDIF()
 
 #############################################################################
 # Compiler flags for specific setup
