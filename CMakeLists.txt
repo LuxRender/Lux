@@ -50,7 +50,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 )
 option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
-option(LUX_USE_FREEIMAGE "Compile with FreeImage, otherwise OIIO is used exclusively" ON)
+option(LUX_USE_FREEIMAGE "Compile with FreeImage, otherwise OIIO is used exclusively" OFF)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
