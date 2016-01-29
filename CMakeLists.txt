@@ -67,9 +67,9 @@ MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(CMAKE_EXE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cpp_api/linux_symbol_exports.map')
-	set(CMAKE_SHARED_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cpp_api/linux_symbol_exports.map')
-	set(CMAKE_MODULE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cpp_api/linux_symbol_exports.map')
+	set(CMAKE_EXE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
+	set(CMAKE_SHARED_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
+	set(CMAKE_MODULE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
 ENDIF()
 
 #############################################################################
@@ -142,7 +142,7 @@ IF(APPLE)
 	###################################
 
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6) # keep this @ 10.6 to archieve bw-compatibility by weak-linking !
-	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-unexported_symbols_list -Wl, cpp_api/unexported_symbols.map")
+	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-unexported_symbols_list -Wl, cmake/exportmaps/unexported_symbols.map")
 
 	if(${XCODE_VERSION} VERSION_LESS 4.3)
 		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk)
