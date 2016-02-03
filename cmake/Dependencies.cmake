@@ -321,7 +321,6 @@ ENDIF(NOT APPLE)
 #############################################################################
 #############################################################################
 
-
 # The OpenEXR library might be accessible from the FreeImage library
 # Otherwise add it to the FreeImage library (required by exrio)
 TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
@@ -357,7 +356,6 @@ IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 		MESSAGE(FATAL_ERROR "Unable to find PNG library")
 	ENDIF(PNG_LIBRARIES)
 ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
-
 
 #############################################################################
 #############################################################################
