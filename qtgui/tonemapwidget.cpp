@@ -81,6 +81,11 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
 	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));
 
+#if defined(Q_WS_X11) // On Linux the pulldowns look oversized, changed individually to not break other OS balanced outcome
+	ui->comboBox_SensitivityPreset->setFont(QFont  ("Sans Serif", 10));
+	ui->comboBox_ExposurePreset->setFont(QFont  ("Sans Serif", 10));
+	ui->comboBox_FStopPreset->setFont(QFont  ("Sans Serif", 10));
+#endif
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
