@@ -178,7 +178,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 	stateBufferCount = stateBufCount;
 
 	// Create the LuxRays context
-	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
+	ctx = new luxrays::Context(LuxRaysDebugHandler, luxrays::Properties() <<
+			luxrays::Property("opencl.platform.index")(oclPlatformIndex));
 
 	// Create the device descriptions
 	HRHostDescription *host = new HRHostDescription(this, "Localhost");
