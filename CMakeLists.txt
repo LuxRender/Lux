@@ -574,7 +574,12 @@ ELSEIF(WIN32)
 
 	#TODO: custom install
 	IF (DEFINED ENV{LIB_DIR})
+      # Copy all the boost, Qt, Embree etc DLLs to the build destination
 	  FILE(COPY "$ENV{LIB_DIR}/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}" FILES_MATCHING PATTERN "*.dll")
+      # Copy the Qt plugins into the destination directory
+      FILE(COPY "$ENV{LIB_DIR}/qtplugins" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+      # Copy the qt.conf file
+      FILE(COPY "$ENV{LIB_DIR}/../../../qt.conf" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 	ENDIF()
 
 ELSE(APPLE)
