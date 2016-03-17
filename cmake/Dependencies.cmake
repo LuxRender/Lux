@@ -25,6 +25,10 @@
 #############################################################################
 #############################################################################
 
+IF( NOT LuxRays_HOME )
+  set(LuxRays_HOME ${CMAKE_SOURCE_DIR}../luxrays)
+ENDIF()
+
 IF(APPLE)
 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
 	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
@@ -47,10 +51,6 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 ########################        Find LuxCore         ########################
 #############################################################################
 #############################################################################
-
-IF( NOT LuxRays_HOME )
-  set(LuxRays_HOME ${CMAKE_SOURCE_DIR}../luxrays)
-ENDIF()
 
 IF(APPLE)
 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
