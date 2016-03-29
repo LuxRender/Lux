@@ -340,6 +340,8 @@ IF(LUX_USE_FREEIMAGE)
 		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
 		COMPILE_DEFINITIONS -D__TEST_PNG__)
 
+ENDIF(LUX_USE_FREEIMAGE)
+
 	IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 		IF(OPENEXR_LIBRARIES)
 			MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
@@ -357,7 +359,6 @@ IF(LUX_USE_FREEIMAGE)
 			MESSAGE(FATAL_ERROR "Unable to find PNG library")
 		ENDIF(PNG_LIBRARIES)
 	ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
-ENDIF(LUX_USE_FREEIMAGE)
 
 #############################################################################
 #############################################################################
