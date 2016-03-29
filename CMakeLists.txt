@@ -67,21 +67,9 @@ MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(LUX_CUSTOM_CONFIG Config_LINUX)
-	set(STRIP_FLAGS "-Wl,--strip-all")
-	SET(CLANG_LINUX_LTO ON)
-	if(CLANG_LINUX_LTO)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-		SET(LINUX_LTO_FLAGS"-flto -Wl,--plugin,/usr/local/clang3.7/lib/LLVMgold.so")	
-		SET(CMAKE_AR "/usr/local/clang3.7/bin/clang-ar")
-		SET(CMAKE_RANLIB ":")
-		SET(CMAKE_LINKER "/usr/local/clang3.7/bin/ld")
-		SET(CMAKE_NM "nm --plugin,/usr/local/clang3.7/lib/LLVMgold.so")
-	endif()
-	set(CMAKE_EXE_LINKER_FLAGS "-Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map' ${LINUX_LTO_FLAGS} ${STRIP_FLAGS}")
-	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map' ${LINUX_LTO_FLAGS} ${STRIP_FLAGS}")
-	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map' ${LINUX_LTO_FLAGS} ${STRIP_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
+	set(CMAKE_SHARED_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
+	set(CMAKE_MODULE_LINKER_FLAGS -Wl,--version-script='${CMAKE_SOURCE_DIR}/cmake/exportmaps/linux_symbol_exports.map')
 ENDIF()
 
 #############################################################################
@@ -430,20 +418,12 @@ ELSEIF(MSVC)
 ELSE(APPLE)
 	# Dade - default compiler options
 	# Removed "-O3" from definitions in order to have CMake Release/Debug options to work
-	ADD_DEFINITIONS(-ftree-vectorize -Wall -fPIC -DHAVE_PTHREAD_H -Wno-unused-private-field -Wno-unused-function -Wno-unused-variable)
-#	ADD_DEFINITIONS(-Ofast -msse -msse2 -msse3 -mssse3 -mavx -mavx2 -fslp-vectorize -fslp-vectorize-aggressive -fvectorize)
-	ADD_DEFINITIONS(-Ofast -march=native -mtune=native -fslp-vectorize-aggressive)
+	ADD_DEFINITIONS(-msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fvisibility=hidden -fvisibility-inlines-hidden")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=hidden -fvisibility-inlines-hidden")
-
-	IF(GCC OR NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-		MESSAGE(STATUS "${CMAKE_CXX_COMPILER_ID} reducing accelerator flags to sane values")
-		# The QBVH accelerator needs to be compiled with much reduced optimizations
-		# otherwise gcc produces incorrect code and ruins the render on 64bits machines
-		SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
-	ELSE()
-		MESSAGE(STATUS "${CMAKE_CXX_COMPILER_ID} using full optimized accelerators")
-	ENDIF()
+	# The QBVH accelerator needs to be compiled with much reduced optimizations
+	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
+	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
 ENDIF(APPLE)
 
 IF(LUX_USE_FREEIMAGE)
@@ -553,7 +533,7 @@ ELSE(APPLE)
 	SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 ENDIF(APPLE)
-SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${LUXCORE_LIBRARY} ${SLG_LIBRARY} ${EMBREE_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${OPENIMAGEIO_LIBRARIES} ${TIFF_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Boost_LIBRARIES} ${FFTW_LIBRARIES} ${SYS_LIBRARIES})
+SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${LUXCORE_LIBRARY} ${SLG_LIBRARY} ${EMBREE_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${OPENIMAGEIO_LIBRARIES} ${OPENEXR_LIBRARIES} ${TIFF_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Boost_LIBRARIES} ${FFTW_LIBRARIES} ${SYS_LIBRARIES})
 
 #############################################################################
 #############################################################################
