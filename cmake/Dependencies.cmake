@@ -310,14 +310,6 @@ IF(NOT APPLE)
 	IF(PNG_INCLUDE_DIRS)
 		MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
 		INCLUDE_DIRECTORIES(SYSTEM ${PNG_INCLUDE_DIRS})
-
-		# This is a fast hack to make windows jenkins buildbot work, pls win maintainer investigate
-		IF(${CMAKE_BUILD_TYPE} MATCHES Release)
-			SET(PNG_LIBRARIES ${PNG_LIBRARY_REL} ${Z_LIBRARY_REL})
-		ELSE()
-			SET(PNG_LIBRARIES ${PNG_LIBRARY_DBG} ${Z_LIBRARY_DBG})
-		ENDIF()
-
 	ELSE(PNG_INCLUDE_DIRS)
 		MESSAGE(STATUS "Warning : could not find PNG headers - building without png support")
 	ENDIF(PNG_INCLUDE_DIRS)
