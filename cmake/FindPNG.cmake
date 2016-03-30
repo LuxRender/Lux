@@ -43,7 +43,7 @@ FIND_PATH(ZLIB_INCLUDE_DIR
 	PATH_SUFFIXES ${PNG_INC_SUFFIXES}
 	DOC "The directory where zlib.h resides")
 
-SET(ZLIB_NAMES_REL z zlib zdll)
+SET(ZLIB_NAMES_REL z zlib zlib1 zdll) # workaround for win buildbot proposed by acasta69
 SET(PNG_LIB_SUFFIXES lib64 lib Lib lib/PNG Libs)
 SET(PNG_LIB_SUFFIXES_REL)
 SET(PNG_LIB_SUFFIXES_DBG)
