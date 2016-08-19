@@ -399,9 +399,9 @@ ELSEIF(MSVC)
 		# See http://public.kitware.com/Bug/view.php?id=6794
 		# /GL will be used to build the code but the selection is not displayed in the menu
 
-		#set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob2 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
-		# /Ob2 is bugged in VS2013 right now, so have to disable it :(
-		set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob0 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
+		# /Ob2 is bugged in VS2013 right now, so we had to disable it, but the problem has been fixed with this commit:
+		# https://bitbucket.org/luxrender/luxrays/commits/66e8d5dc99f5bda5f65f815a2d8b9b8cd4dcb62b
+		set(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /Ox /Ob2 /Oi /Oy /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /openmp /Gd /TP /GL /GF /Ot /Qfast_transcendentals /wd\"4244\" /wd\"4756\" /wd\"4267\" /wd\"4056\" /wd\"4305\" /wd\"4800\" ")
 		set(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
 		
 		set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   ${MSVC_RELEASE_COMPILER_FLAGS}")
