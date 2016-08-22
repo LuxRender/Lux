@@ -55,14 +55,12 @@ public:
 	bool NextState(u_int &nrContribs, u_int &nrSamples);
 
 	luxrays::RayBuffer *GetRayBuffer() { return rayBuffer; }
-	luxrays::Property *GetProperty() { return property; }
 
 private:
 	const Scene &scene;
 	ContributionBuffer *contribBuffer;
 	RandomGenerator *rng;
 	luxrays::RayBuffer *rayBuffer;
-	luxrays::Property *property;
 
 	vector<SurfaceIntegratorState *> integratorState;
 	size_t firstStateIndex;
