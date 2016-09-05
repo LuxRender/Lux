@@ -575,8 +575,13 @@ template<class T> luxrays::Properties GetLuxCoreTexMapping(const T *mapping, con
 			return luxrays::Properties() <<
 					luxrays::Property(prefix + ".mapping.type")("globalmapping3d") <<
 					luxrays::Property(prefix + ".mapping.transformation")(globalMapping3D->WorldToTexture.m);
+		} else if (dynamic_cast<const LocalMapping3D *>(mapping)) {
+			const LocalMapping3D *localMapping3D = dynamic_cast<const LocalMapping3D *>(mapping);
+			return luxrays::Properties() <<
+					luxrays::Property(prefix + ".mapping.type")("localmapping3d") <<
+					luxrays::Property(prefix + ".mapping.transformation")(localMapping3D->WorldToTexture.m);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only texture coordinate mapping with UVMapping2D, UVMapping3D and GlobalMapping3D (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only texture coordinate mapping with UVMapping2D, UVMapping3D, GlobalMapping3Dand LocalMapping3D (i.e. not " <<
 					ToClassName(mapping) << "). Ignoring the mapping.";
 		}
 	}
