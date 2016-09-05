@@ -581,7 +581,7 @@ template<class T> luxrays::Properties GetLuxCoreTexMapping(const T *mapping, con
 					luxrays::Property(prefix + ".mapping.type")("localmapping3d") <<
 					luxrays::Property(prefix + ".mapping.transformation")(localMapping3D->WorldToTexture.m);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only texture coordinate mapping with UVMapping2D, UVMapping3D, GlobalMapping3Dand LocalMapping3D (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxCoreRenderer supports only texture coordinate mapping with UVMapping2D, UVMapping3D, GlobalMapping3D and LocalMapping3D (i.e. not " <<
 					ToClassName(mapping) << "). Ignoring the mapping.";
 		}
 	}
