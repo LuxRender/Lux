@@ -150,8 +150,8 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 {
 	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
-	float p = paramSet.FindOneFloat("power", 0.f);		// Power/Lm in Watts
-	float e = paramSet.FindOneFloat("efficacy", 0.f);	// Efficacy Lm per Watt
+	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
+	float e = paramSet.FindOneFloat("efficacy", 17.f);	// Efficacy Lm per Watt
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);
 	// Compute spotlight world to light transformation
