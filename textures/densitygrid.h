@@ -152,6 +152,11 @@ public:
 		*minValue = dMin;
 		*maxValue = dMax;
 	}
+	int GetNx() const { return nx; }
+	int GetNy() const { return ny; }
+	int GetNz() const { return nz; }
+	WrapMode GetWrap() const { return wrapMode; }
+	vector<float> GetData() const { return density; }
 
 	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
 

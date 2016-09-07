@@ -99,6 +99,7 @@
 #include "textures/constant.h"
 #include "textures/imagemap.h"
 #include "textures/scale.h"
+#include "textures/densitygrid.h"
 #include "textures/dots.h"
 #include "textures/brick.h"
 #include "textures/add.h"
@@ -1348,6 +1349,18 @@ template<class T> string GetLuxCoreTexName(luxcore::Scene *lcScene,
 
 			texProps << luxrays::Property("scene.textures." + texName + ".type")("uv") <<
 					GetLuxCoreTexMapping(uvTex->GetTextureMapping2D(), "scene.textures." + texName);
+
+		} else if (dynamic_cast<const DensityGridTexture *>(tex)) {
+			const DensityGridTexture *densitygridTex = dynamic_cast<const DensityGridTexture *>(tex);
+
+			texProps << luxrays::Property("scene.textures." + texName + ".type")("densitygrid") <<
+					luxrays::Property("scene.textures." + texName + ".nx")(ToString(densitygridTex->GetNx())) <<
+					luxrays::Property("scene.textures." + texName + ".ny")(ToString(densitygridTex->GetNy())) <<
+					luxrays::Property("scene.textures." + texName + ".nz")(ToString(densitygridTex->GetNz())) <<
+					luxrays::Property("scene.textures." + texName + ".wrap")(ToString(densitygridTex->GetWrap())) <<
+					luxrays::Property("scene.textures." + texName + ".data")(densitygridTex->GetData()) <<
+					GetLuxCoreTexMapping(densitygridTex->GetTextureMapping3D(), "scene.textures." + texName);
+
 		} else if (dynamic_cast<const BandTexture<T> *>(tex)) {
 			const BandTexture<T> *bandTex = dynamic_cast<const BandTexture<T> *>(tex);
 			const string amountTexName = GetLuxCoreTexName(lcScene, bandTex->GetAmountTex());
