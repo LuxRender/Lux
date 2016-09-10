@@ -2241,7 +2241,7 @@ static string GetLuxCoreMaterialName(Scene *scene, luxcore::Scene *lcScene, cons
 			if (dynamic_cast<const MipMapSphericalFunction *>(sf)) {
 				const MipMapSphericalFunction *mmsf = dynamic_cast<const MipMapSphericalFunction *>(sf);
 
-				emissionMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 2.2f);
+				emissionMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 1.f);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Unsupported type of SphericalFunction in an area light (i.e. " <<
 					ToClassName(sf) << "). Ignoring the unsupported feature.";
@@ -2527,7 +2527,7 @@ void LuxCoreRenderer::ConvertLights(luxcore::Scene *lcScene, ColorSystem &colorS
 				if (dynamic_cast<const MipMapSphericalFunction *>(sf)) {
 					const MipMapSphericalFunction *mmsf = dynamic_cast<const MipMapSphericalFunction *>(sf);
 
-					const string imageMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 2.2f);
+					const string imageMapName = GetLuxCoreImageMapName(lcScene, mmsf->GetMipMap(), 1.f);
 					createPointLightProps << luxrays::Property(prefix + ".type")("mappoint") <<
 							luxrays::Property(prefix + ".mapfile")(imageMapName);
 				} else {
