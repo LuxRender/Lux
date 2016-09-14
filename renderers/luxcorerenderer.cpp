@@ -2869,17 +2869,31 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
 	luxrays::Properties createCameraProps;
 
+	//--------------------------------------------------------------------------
+	// Setup the cameras
+	//--------------------------------------------------------------------------
+
 	if (dynamic_cast<OrthoCamera *>(scene->camera())) {
 		OrthoCamera *orthoCamera = dynamic_cast<OrthoCamera *>(scene->camera());
 		if (orthoCamera)
-			throw std::runtime_error("OrthoCamera not yet supported");
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "OrthoCamera is work in progress !";
+
+		createCameraProps <<
+			luxrays::Property("scene.camera.screenwindow")(
+				(scene->camera)["ScreenWindow.0"].FloatValue(),
+				(scene->camera)["ScreenWindow.1"].FloatValue(),
+				(scene->camera)["ScreenWindow.2"].FloatValue(),
+				(scene->camera)["ScreenWindow.3"].FloatValue()) <<
+			luxrays::Property("scene.camera.type")("orthographic") <<
+			luxrays::Property("scene.camera.focaldistance")((scene->camera)["FocalDistance"].FloatValue()) <<
+			luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
+			luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()) <<
+			luxrays::Property("scene.camera.autofocus.enable")(orthoCamera->HasAutoFocus() ? 1 : 0);
 
 	} else if (dynamic_cast<PerspectiveCamera *>(scene->camera())) {
 		PerspectiveCamera *perspCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
-
-		//--------------------------------------------------------------------------
-		// Setup the camera
-		//--------------------------------------------------------------------------
 
 		createCameraProps <<
 			luxrays::Property("scene.camera.screenwindow")(

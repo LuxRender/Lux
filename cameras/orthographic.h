@@ -35,6 +35,7 @@ public:
 		float hither, float yon, float sopen, float sclose, int sdist, 
 		float lensr, float focald, bool autofocus, Film *film);
 	virtual ~OrthoCamera() { }
+	virtual void AddAttributes(Queryable *q) const;
 
 	virtual void SampleMotion(float time);
 
@@ -55,15 +56,18 @@ public:
 
 	virtual OrthoCamera* Clone() const { return new OrthoCamera(*this); }
 
+	bool HasAutoFocus() const { return autoFocus; }
+
 	static Camera *CreateCamera(const MotionSystem &world2cam,
 		const ParamSet &params, Film *film);
+	Point pos;
 
 private:
 	// Dade - field used for autofocus feature
 	bool autoFocus;
 
 	float screenDx,screenDy, posPdf;
-	Normal normal;
+	Normal normal, up;
 };
 
 }//namespace lux

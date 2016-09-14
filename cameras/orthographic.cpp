@@ -48,7 +48,23 @@ OrthoCamera::OrthoCamera(const MotionSystem &world2cam,
 	screenDx = Screen[1] - Screen[0];
 	screenDy = Screen[3] - Screen[2];
 	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
-	normal = CameraToWorld * Normal(0, 0, 1);
+	normal = CameraToWorld * Normal(0.f, 0.f, 1.f);
+	pos = CameraToWorld * Point(0.f, 0.f, 0.f);
+	up = CameraToWorld * Normal(0.f, 1.f, 0.f);
+}
+
+void OrthoCamera::AddAttributes(Queryable *q) const
+{
+	ProjectiveCamera::AddAttributes(q);
+	AddFloatConstant(*q, "position.x", "Ortho camera X", pos.x);
+	AddFloatConstant(*q, "position.y", "Ortho camera Y", pos.y);
+	AddFloatConstant(*q, "position.z", "Ortho camera Z", pos.z);
+	AddFloatConstant(*q, "normal.x", "Ortho camera normal X", normal.x);
+	AddFloatConstant(*q, "normal.y", "Ortho camera normal Y", normal.y);
+	AddFloatConstant(*q, "normal.z", "Ortho camera normal Z", normal.z);
+	AddFloatConstant(*q, "up.x", "Ortho camera up X", up.x);
+	AddFloatConstant(*q, "up.y", "Ortho camera up Y", up.y);
+	AddFloatConstant(*q, "up.z", "Ortho camera up Z", up.z);
 }
 
 void OrthoCamera::SampleMotion(float time)
