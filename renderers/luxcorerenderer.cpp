@@ -2875,8 +2875,6 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 
 	if (dynamic_cast<OrthoCamera *>(scene->camera())) {
 		OrthoCamera *orthoCamera = dynamic_cast<OrthoCamera *>(scene->camera());
-		if (orthoCamera)
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "OrthoCamera is work in progress !";
 
 		createCameraProps <<
 			luxrays::Property("scene.camera.screenwindow")(
