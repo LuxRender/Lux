@@ -45,6 +45,8 @@
 #include "luxcorerenderer.h"
 #include "renderers/statistics/luxcorestatistics.h"
 #include "cameras/perspective.h"
+#include "cameras/orthographic.h"
+#include "cameras/environment.h"
 #include "shape.h"
 #include "volume.h"
 #include "filter.h"
@@ -2865,28 +2867,46 @@ void LuxCoreRenderer::ConvertGeometry(luxcore::Scene *lcScene, ColorSystem &colo
 
 void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
-	PerspectiveCamera *perspCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
-	if (!perspCamera)
-		throw std::runtime_error("LuxCoreRenderer supports only PerspectiveCamera");
+	luxrays::Properties createCameraProps;
 
-	//--------------------------------------------------------------------------
-	// Setup the camera
-	//--------------------------------------------------------------------------
+	if (dynamic_cast<OrthoCamera *>(scene->camera())) {
+		OrthoCamera *orthoCamera = dynamic_cast<OrthoCamera *>(scene->camera());
+		if (orthoCamera)
+			throw std::runtime_error("OrthoCamera not yet supported");
 
-	luxrays::Properties createCameraProps(
-		luxrays::Property("scene.camera.screenwindow")(
-			(scene->camera)["ScreenWindow.0"].FloatValue(),
-			(scene->camera)["ScreenWindow.1"].FloatValue(),
-			(scene->camera)["ScreenWindow.2"].FloatValue(),
-			(scene->camera)["ScreenWindow.3"].FloatValue()) <<
-		luxrays::Property("scene.camera.fieldofview")(Degrees((scene->camera)["fov"].FloatValue())) <<
-		luxrays::Property("scene.camera.lensradius")((scene->camera)["LensRadius"].FloatValue()) <<
-		luxrays::Property("scene.camera.focaldistance")((scene->camera)["FocalDistance"].FloatValue()) <<
-		luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
-		luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
-		luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
-		luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()) <<
-		luxrays::Property("scene.camera.autofocus.enable")(perspCamera->HasAutoFocus() ? 1 : 0));
+	} else if (dynamic_cast<PerspectiveCamera *>(scene->camera())) {
+		PerspectiveCamera *perspCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
+
+		//--------------------------------------------------------------------------
+		// Setup the camera
+		//--------------------------------------------------------------------------
+
+		createCameraProps <<
+			luxrays::Property("scene.camera.screenwindow")(
+				(scene->camera)["ScreenWindow.0"].FloatValue(),
+				(scene->camera)["ScreenWindow.1"].FloatValue(),
+				(scene->camera)["ScreenWindow.2"].FloatValue(),
+				(scene->camera)["ScreenWindow.3"].FloatValue()) <<
+			luxrays::Property("scene.camera.type")("perspective") <<
+			luxrays::Property("scene.camera.fieldofview")(Degrees((scene->camera)["fov"].FloatValue())) <<
+			luxrays::Property("scene.camera.lensradius")((scene->camera)["LensRadius"].FloatValue()) <<
+			luxrays::Property("scene.camera.focaldistance")((scene->camera)["FocalDistance"].FloatValue()) <<
+			luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
+			luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue()) <<
+			luxrays::Property("scene.camera.autofocus.enable")(perspCamera->HasAutoFocus() ? 1 : 0);
+
+	} else 	if (dynamic_cast<EnvironmentCamera *>(scene->camera())) {
+		EnvironmentCamera *envCamera = dynamic_cast<EnvironmentCamera *>(scene->camera());
+
+		createCameraProps <<
+			luxrays::Property("scene.camera.type")("environment") <<
+			luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
+			luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutteropen")((scene->camera)["ShutterOpen"].FloatValue()) <<
+			luxrays::Property("scene.camera.shutterclose")((scene->camera)["ShutterClose"].FloatValue());
+	}
 
 	const MotionSystem &ms = scene->camera()->GetMotionSystem();
 	if (ms.interpolatedTransforms.size() > 1) {
@@ -2922,7 +2942,7 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 				luxrays::Property("scene.camera.lookat.target")(target) <<
 				luxrays::Property("scene.camera.up")(up);
 	}
-	
+
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera: [\n" << createCameraProps << "]";
 	lcScene->Parse(createCameraProps);
 }

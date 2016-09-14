@@ -53,7 +53,23 @@ EnvironmentCamera::EnvironmentCamera(const MotionSystem &world2cam,
 	: Camera(world2cam, hither, yon, sopen, sclose,
 		sdist, film)
 {
-		pos = CameraToWorld * Point(0, 0, 0);
+		pos = CameraToWorld * Point(0.f, 0.f, 0.f);
+		normal = CameraToWorld * Normal(0.f, 0.f, 1.f);
+		up = CameraToWorld * Normal(0.f, 1.f, 0.f);
+}
+
+void EnvironmentCamera::AddAttributes(Queryable *q) const
+{
+	Camera::AddAttributes(q);
+	AddFloatConstant(*q, "position.x", "Environment camera X", pos.x);
+	AddFloatConstant(*q, "position.y", "Environment camera Y", pos.y);
+	AddFloatConstant(*q, "position.z", "Environment camera Z", pos.z);
+	AddFloatConstant(*q, "normal.x", "Environment camera normal X", normal.x);
+	AddFloatConstant(*q, "normal.y", "Environment camera normal Y", normal.y);
+	AddFloatConstant(*q, "normal.z", "Environment camera normal Z", normal.z);
+	AddFloatConstant(*q, "up.x", "Environment camera up X", up.x);
+	AddFloatConstant(*q, "up.y", "Environment camera up Y", up.y);
+	AddFloatConstant(*q, "up.z", "Environment camera up Z", up.z);
 }
 
 void EnvironmentCamera::SampleMotion(float time)

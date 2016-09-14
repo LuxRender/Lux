@@ -33,7 +33,7 @@ public:
 	EnvironmentCamera(const MotionSystem &world2cam,
 		float hither, float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~EnvironmentCamera() { }
-
+	virtual void AddAttributes(Queryable *q) const;
 	virtual void SampleMotion(float time);
 
 	virtual bool SampleW(luxrays::MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -59,6 +59,7 @@ public:
 
 private:
 	Point pos;
+	Normal normal, up;
 };
 
 }//namespace lux
