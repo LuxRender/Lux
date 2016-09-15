@@ -2878,6 +2878,7 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 	// Setup the cameras
 	//--------------------------------------------------------------------------
 
+	// Properties shared by all cameras
 	luxrays::Properties createCameraProps(
 			luxrays::Property("scene.camera.cliphither")((scene->camera)["ClipHither"].FloatValue()) <<
 			luxrays::Property("scene.camera.clipyon")((scene->camera)["ClipYon"].FloatValue()) <<
@@ -2891,6 +2892,7 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 				(scene->camera)["ScreenWindow.1"].FloatValue(),
 				(scene->camera)["ScreenWindow.2"].FloatValue(),
 				(scene->camera)["ScreenWindow.3"].FloatValue()) <<
+			luxrays::Property("scene.camera.lensradius")((scene->camera)["LensRadius"].FloatValue()) <<
 			luxrays::Property("scene.camera.focaldistance")((scene->camera)["FocalDistance"].FloatValue());
 	}
 
@@ -2903,7 +2905,6 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 		createCameraProps <<
 			luxrays::Property("scene.camera.type")("perspective") <<
 			luxrays::Property("scene.camera.fieldofview")(Degrees((scene->camera)["fov"].FloatValue())) <<
-			luxrays::Property("scene.camera.lensradius")((scene->camera)["LensRadius"].FloatValue()) <<
 			luxrays::Property("scene.camera.autofocus.enable")(perspCamera->HasAutoFocus() ? 1 : 0);
 
 	} else 	if (dynamic_cast<EnvironmentCamera *>(scene->camera())) {
