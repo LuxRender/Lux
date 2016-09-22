@@ -1154,16 +1154,8 @@ bool FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			// convert to rgb
 			const u_int nPix = xPixelCount * yPixelCount;
 			vector<RGBColor> rgbColor(nPix);
-
-			if (write_EXR_channels == Y || write_EXR_channels == YA) {
-				// Use straight xyz non-normalized for true luminance output 
-				for (u_int i = 0; i < nPix; i++)
-					rgbColor[i] = RGBColor(xyzcolor[i].Y());
-			} else {
-				for ( u_int i = 0; i < nPix; i++ )
-					rgbColor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
-			}
-
+			for ( u_int i = 0; i < nPix; i++ )
+				rgbColor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
 			if (!premultiplyAlpha && write_EXR_alpha && !write_EXR_straight_colors) {
 				// only premultiply if we're writing an alpha channel
 				for ( u_int i = 0; i < nPix; i++ )
