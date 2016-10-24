@@ -76,6 +76,8 @@ ELSE (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
 	MESSAGE(FATAL_ERROR "LuxCore Library not found.")
 ENDIF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
 
+INCLUDE_DIRECTORIES(SYSTEM "${LUXCORE_INCLUDE_DIRS}/../deps/eos_portable_archive-v5.1")
+
 #############################################################################
 #############################################################################
 ###########################      Find OpenCL       ##########################
