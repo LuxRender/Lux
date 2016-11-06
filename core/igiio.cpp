@@ -92,7 +92,7 @@ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 	}
 
 	file.close();
-	delete xyz;
+	delete[] xyz;
 }
 
 }
