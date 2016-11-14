@@ -112,7 +112,7 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 	fov = foview;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
-	std::auto_ptr<ImageData> imgdata(ReadImage(texname));
+	std::unique_ptr<ImageData> imgdata(ReadImage(texname));
 	if (imgdata.get() != NULL) {
 		width = imgdata->getWidth();
 		height = imgdata->getHeight();

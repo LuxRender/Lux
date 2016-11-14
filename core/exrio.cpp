@@ -436,7 +436,7 @@ namespace lux {
 
 			ImageSpec config;
 			config.attribute("oiio:UnassociatedAlpha", 1);
-			std::auto_ptr<ImageInput> in(ImageInput::open(name, &config));
+			std::unique_ptr<ImageInput> in(ImageInput::open(name, &config));
 			if (in.get()) {
 				const ImageSpec &spec = in->spec();
 

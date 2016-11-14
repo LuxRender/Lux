@@ -238,7 +238,7 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(const TexInfo &texInfo
 			texInfo.filename << "'";
 		return textures[texInfo];
 	}
-	std::auto_ptr<ImageData> imgdata(ReadImage(texInfo.filename));
+	std::unique_ptr<ImageData> imgdata(ReadImage(texInfo.filename));
 	boost::shared_ptr<MIPMap> ret;
 	if (imgdata.get() != NULL) {
 		ret = boost::shared_ptr<MIPMap>(imgdata->createMIPMap(
