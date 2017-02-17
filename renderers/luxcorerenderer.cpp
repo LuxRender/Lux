@@ -3395,7 +3395,7 @@ void LuxCoreRenderer::Render(Scene *s) {
 	try {
 		//MallocInitHook();
 
-		std::unique_ptr<luxcore::Scene> lcScene;
+		std::auto_ptr<luxcore::Scene> lcScene;
 		luxrays::Properties lcConfigProps;
 
 		luxcore::Init(::LuxCoreDebugHandler);
@@ -3476,8 +3476,8 @@ void LuxCoreRenderer::Render(Scene *s) {
 
 		LuxCoreStatistics *lcStats = static_cast<LuxCoreStatistics *>(rendererStatistics);
 
-		std::unique_ptr<luxcore::RenderConfig> config(new luxcore::RenderConfig(lcConfigProps, lcScene.get()));
-		std::unique_ptr<luxcore::RenderSession> session(new luxcore::RenderSession(config.get()));
+		std::auto_ptr<luxcore::RenderConfig> config(new luxcore::RenderConfig(lcConfigProps, lcScene.get()));
+		std::auto_ptr<luxcore::RenderSession> session(new luxcore::RenderSession(config.get()));
 
 		// Statistic information about the devices will be available only after
 		// the start of the RenderSession

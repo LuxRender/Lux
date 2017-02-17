@@ -126,7 +126,7 @@ SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
 	// Create _mipmap_ for _PointLight_
 	SphericalFunction *mipmapFunc = NULL;
 	if (texname.length() > 0) {
-		std::unique_ptr<ImageData> imgdata(ReadImage(texname));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texname));
 		if (imgdata.get() != NULL) {
 			boost::shared_ptr<const MIPMap> mm(imgdata->createMIPMap());
 			mipmapFunc = new MipMapSphericalFunction(mm, flipZ);
