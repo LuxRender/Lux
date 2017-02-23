@@ -32,7 +32,7 @@
 
 #include "luxrays/utils/mcdistribution.h"
 #include "luxrays/utils/memory.h"
-#include "slg/utils/convtest/convtest.h"
+#include "core/convtest/convtest.h"
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
@@ -793,7 +793,7 @@ protected: // Put it here for better data alignment
 	boost::mutex write_mutex; // WriteImage/ConvergenceTest (i.e. image pipeline) synchronization
 
 	// Enabled by haltthreshold
-	slg::ConvergenceTest *convTest;
+	ConvergenceTest *convTest;
 
 	// May be enabled by the sampler
 	VarianceBuffer *varianceBuffer; // Used to build the noise map

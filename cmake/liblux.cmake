@@ -63,7 +63,10 @@ SET(lux_core_src
 	core/cameraresponse.cpp
 	core/context.cpp
 	core/contribution.cpp
+	core/convtest/convtest.cpp
 	core/partialcontribution.cpp
+	core/convtest/pdiff/lpyramid.cpp
+	core/convtest/pdiff/metric.cpp
 	core/dynload.cpp
 	core/exrio.cpp
 	core/filedata.cpp
