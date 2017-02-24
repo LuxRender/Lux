@@ -21,6 +21,7 @@
 
 #include <vector>
 
+#include "luxrays/luxrays.h"
 #include "core/convtest/pdiff/metric.h"
 
 namespace lux {
