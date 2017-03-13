@@ -35,6 +35,7 @@
 #include "luxrays/utils/ocl.h"
 #include "luxrays/core/virtualdevice.h"
 #include "luxcore/luxcore.h"
+#include "luxcore/luxcoreimpl.h"
 
 #include "api.h"
 #include "scene.h"
@@ -2722,9 +2723,10 @@ vector<luxrays::ExtTriangleMesh *> LuxCoreRenderer::DefinePrimitive(luxcore::Sce
 	vector<luxrays::ExtTriangleMesh *> meshList;
 	prim->ExtTessellate(&meshList, &scene->tessellatedPrimitives);
 
+	luxcore::detail::SceneImpl *lcSceneImpl = (luxcore::detail::SceneImpl *)lcScene;
 	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 		const string meshName = "Mesh-" + ToString(*mesh);
-		lcScene->DefineMesh(meshName, *mesh);
+		lcSceneImpl->DefineMesh(meshName, *mesh);
 	}
 
 	return meshList;
@@ -2952,7 +2954,7 @@ void LuxCoreRenderer::ConvertCamera(luxcore::Scene *lcScene) {
 }
 
 luxcore::Scene *LuxCoreRenderer::CreateLuxCoreScene(const luxrays::Properties &lcConfigProps, ColorSystem &colorSpace) {
-	luxcore::Scene *lcScene = new luxcore::Scene();
+	luxcore::Scene *lcScene = luxcore::Scene::Create();
 
 	// Tell to the cache to not delete mesh data (they are pointed by Lux
 	// primitives too and they will be deleted by Lux Context)
@@ -3476,8 +3478,8 @@ void LuxCoreRenderer::Render(Scene *s) {
 
 		LuxCoreStatistics *lcStats = static_cast<LuxCoreStatistics *>(rendererStatistics);
 
-		std::auto_ptr<luxcore::RenderConfig> config(new luxcore::RenderConfig(lcConfigProps, lcScene.get()));
-		std::auto_ptr<luxcore::RenderSession> session(new luxcore::RenderSession(config.get()));
+		std::auto_ptr<luxcore::RenderConfig> config(luxcore::RenderConfig::Create(lcConfigProps, lcScene.get()));
+		std::auto_ptr<luxcore::RenderSession> session(luxcore::RenderSession::Create(config.get()));
 
 		// Statistic information about the devices will be available only after
 		// the start of the RenderSession

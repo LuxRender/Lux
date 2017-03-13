@@ -51,7 +51,7 @@ using std::sort;
 #include "luxrays/core/geometry/transform.h"
 #include "luxrays/core/geometry/motionsystem.h"
 #include "luxrays/core/color/swcspectrum.h"
-#include "luxrays/core/utils.h"
+#include "luxrays/utils/utils.h"
 #include "luxrays/utils/memory.h"
 
 // boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011

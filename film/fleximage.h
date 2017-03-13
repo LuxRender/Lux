@@ -23,6 +23,8 @@
 #ifndef LUX_FLEXIMAGE_H
 #define LUX_FLEXIMAGE_H
 
+#include <boost/thread.hpp>
+
 #include "lux.h"
 #include "film.h"
 #include "luxrays/core/color/color.h"
