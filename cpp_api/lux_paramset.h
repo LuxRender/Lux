@@ -26,7 +26,7 @@
 #ifndef LUX_CPP_PARAMSET_H	// LUX_PARAMSET_H already used in Lux core/paramset.h
 #define LUX_CPP_PARAMSET_H
 
-#include "export_defs.h"
+#include "luxrays/utils/exportdefs.h"
 #include <string>
 
 // This is the CPP API Interface for a LuxRender ParamSet

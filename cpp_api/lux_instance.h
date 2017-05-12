@@ -25,7 +25,7 @@
 #ifndef LUX_INSTANCE_H
 #define LUX_INSTANCE_H
 
-#include "export_defs.h"
+#include "luxrays/utils/exportdefs.h"
 #include "lux_paramset.h"
 
 // This is the CPP API Interface for LuxRender

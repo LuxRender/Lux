@@ -21,7 +21,6 @@
  ***************************************************************************/
 
 // CPP API Includes
-#include "export_defs.h"
 #include "lux_instance.h"
 #include "lux_paramset.h"
 #include "lux_api.h"
