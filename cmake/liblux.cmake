@@ -609,7 +609,6 @@ SET(lux_cameras_hdr
 	)
 SOURCE_GROUP("Header Files\\Cameras" FILES ${lux_cameras_hdr})
 SET(lux_cpp_api_hdr
-	cpp_api/export_defs.h
 	cpp_api/lux_api.h
 	cpp_api/lux_instance.h
 	cpp_api/lux_paramset.h
